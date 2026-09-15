@@ -1,0 +1,18 @@
+{
+  "title": "We Must Pace the Frontier: Inside Amodei's Three-Step Plan to Slow AI",
+  "slug": "we-must-pace-the-frontier-explained",
+  "category": "Deep Dives",
+  "description": "Amodei's essay asks the AI industry to slow down. The verbatim three-step plan, what Anthropic committed to, who signed on, and the pushback.",
+  "publishedDate": "2026-09-15",
+  "author": "Agent Skills",
+  "keywords": [
+    "Dario Amodei",
+    "AI safety",
+    "pacing the frontier",
+    "embedded evaluators",
+    "AI regulation",
+    "Anthropic"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/we-must-pace-the-frontier-explained/hero.png"
+}
