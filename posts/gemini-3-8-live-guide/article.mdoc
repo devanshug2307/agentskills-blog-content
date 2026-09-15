@@ -1,0 +1,132 @@
+# Gemini 3.8 Live and 3.8 Live Extended Thinking: the developer's guide
+
+On September 15, 2026, Google released two real-time audio models for the Live API: **Gemini 3.8 Live** and **Gemini 3.8 Live Extended Thinking**. This guide covers what changed in the session config, how the two models split the work, full pricing, and the migration path from 3.1 Flash Live.
+
+{% callout type="tip" %}
+The one-line version: **3.8 Live** is the scale workhorse, **3.8 Live Extended Thinking** is the reason-and-speak model. They are separate model IDs — and plain 3.8 Live **rejects** `thinking_level`.
+{% /callout %}
+
+
+## What shipped
+
+On September 15, 2026, Google released two real-time audio models for the Live API: Gemini 3.8 Live and Gemini 3.8 Live Extended Thinking. Both are documented as Stable on the Gemini API with 131,072-token input and 65,536-token output windows, and both replace gemini-3.1-flash-live-preview as the Live models. If you build voice agents — support lines, phone bots, hands-free assistants — these are now the default models to evaluate.
+
+The API model IDs are gemini-3.8-live and gemini-3.8-live-extended-thinking (the wire form in the WebSocket setup message is models/gemini-3.8-live). Vercel's AI Gateway already aliases them with a google/ prefix. The changelog entry dated September 15 marks both as generally available, though the launch tweet says "public preview" and the Live API surface still carries a Preview banner — the accurate reading is Stable model IDs on a Preview API surface.
+
+
+## Two models, two jobs
+
+These are two separate models with separate endpoints, not one model with a toggle — and the distinction matters for how you architect your agent.
+
+- Gemini 3.8 Live is the low-latency workhorse: built for scale, speed, and cost. It handles mid-sentence interruptions (barge-in), switches languages mid-conversation — Google's launch material says 97 languages, though the Live API docs still say 70, a docs-lag discrepancy worth knowing before you promise a language count — and accepts visual context as JPEG frames capped at 1 FPS.
+
+- Gemini 3.8 Live Extended Thinking reasons and speaks in parallel. While it works through a multi-step request — querying records, calling your APIs, planning — it narrates progress with short conversational fillers so the user never hears dead air. Reasoning depth is configured with thinking_config.thinking_level: low, medium, or high.
+
+One asymmetry to burn in early: plain 3.8 Live rejects thinking_level — sending it errors out. If you want thinking, you switch model IDs. And the surfaces split too: 3.8 Live powers Search Live, while Extended Thinking powers Gemini Live in the Gemini app and the Workspace voice features (Docs, Gmail, Keep).
+
+
+## Session config: the 3.8 changes
+
+The Live API is a stateful WebSocket session: audio in as raw 16 kHz PCM, audio out as 24 kHz PCM, video as JPEG frames at most 1 FPS. The minimal setup message is just the model string:
+
+```json
+// Minimal setup — plain 3.8 Live
+{
+  "setup": {
+    "model": "models/gemini-3.8-live",
+    "response_modalities": ["AUDIO"]
+  }
+}
+
+// Extended Thinking: separate model + thinking level
+{
+  "setup": {
+    "model": "models/gemini-3.8-live-extended-thinking",
+    "response_modalities": ["AUDIO"],
+    "thinking_config": { "thinking_level": "medium" }
+  }
+}
+```
+
+Voice selection, tool declarations, VAD sensitivity, media_resolution, and transcription knobs all hang off the same session config as before. What changed on 3.8 is the defaults and the error behavior — covered in the migration checklist below. For production client-side apps, Google recommends ephemeral tokens instead of shipping a raw API key to the browser.
+
+
+## The Extended Thinking protocol
+
+This is the part that will break naive clients. On previous Live models, a turnComplete event meant the model was idle and safe to send the next prompt. On Extended Thinking that assumption no longer holds: the model can finish speaking a turn, then keep working — calling tools, reasoning — and speak again.
+
+- Track interaction_status, not turnComplete. The server sends IN_PROGRESS while reasoning or tool calls are pending and IDLE when the model is truly ready for input. Your UI state — mic gating, spinners, "working…" indicators — should key off this signal.
+
+- Tools must be NON_BLOCKING. A blocking tool declaration returns a hard error on Extended Thinking, because a tool call that freezes the session defeats narrated parallel work. Function scheduling configurations (SILENT, WHEN_IDLE, INTERRUPTED) are also unsupported there — they remain available on plain 3.8 Live.
+
+- Expect conversational fillers. The model speaks short placeholders ("let me check that") while it works. They are the user-facing product of the interaction_status machinery, not hallucinated chatter — design transcripts to tolerate them.
+
+Google's dedicated Thinking in the Live API guide walks the full protocol with side-by-side examples; the model page for gemini-3.8-live-extended-thinking documents the capability matrix (audio generation, async-only function calling, Search grounding; no caching, code execution, or structured outputs).
+
+
+## Pricing and cost math
+
+Both 3.8 models share a single row on the official pricing page — there is no premium for Extended Thinking in Google's rate card:
+
+| | Gemini 3.8 Live (both models) |
+|---|---|
+| Input | $0.005 / minute |
+| Output (incl. thinking tokens) | $0.018 / minute |
+| Free tier | $0 — flagged "used to improve products: Yes", unpublished rate limits |
+
+The cost math that matters for voice agents: a two-minute exchange with normal turn-taking runs roughly a cent of input and under four cents of output on the paid tier. But note the output line says including thinking tokens — Extended Thinking's parallel reasoning consumes output tokens even when the model is not speaking, so a thinking-heavy agent costs more per minute of conversation than its speech time suggests. Free-tier usage is flagged "used to improve our products: Yes" with unpublished rate limits, so production traffic belongs on the paid tier. Rate limits specific to the Live models are not yet published — the rate-limits page predates the launch.
+
+
+## Migration checklist from 3.1 Flash Live
+
+Swapping gemini-3.1-flash-live-preview for gemini-3.8-live is more than a model-string change. The official migration section lists eight breaking changes; work through them in order:
+
+- Model string. models/gemini-3.8-live in the setup message.
+
+- Remove thinking_level from plain Live sessions. It is unsupported on 3.8 Live — omit thinking_level/thinking_config entirely. On Extended Thinking, low/medium/high are accepted; MINIMAL is not.
+
+- Async function calling is the default. behavior: NON_BLOCKING. Blocking mode remains for compatibility via behavior: BLOCKING.
+
+- send_client_content works all session long with explicit roles, replacing 3.1's initial-history seeding. turn_complete: true now unconditionally interrupts active generation.
+
+- Proactive audio is permanently on. Setting it to false returns an error — remove the flag.
+
+- Affective dialogue is removed. Strip enable_affective_dialog.
+
+- Turn coverage default changed to include all video frames. Control frames explicitly if you manage context and cost per frame.
+
+- Audio is the only output modality. Enable output-audio transcription if you need a text transcript of what the model said.
+
+The fastest validation loop: point your existing 3.1 session at ai.studio/live (select "Stream") to feel the latency, then clone Google's Live API example apps and run your session config against the new model string. Both models derive from Gemini 3 Pro with a documented knowledge cutoff of January 2025, and all generated audio carries SynthID watermarking.
+
+
+## When to use which
+
+Use 3.8 Live for high-volume conversational traffic where the loop is: user speaks, agent answers immediately. Support lines, booking assistants, voice UIs. It is priced for scale and its barge-in handling is the point.
+
+Use Extended Thinking when your voice agent has to do things mid-conversation — look up records, call APIs, plan multi-step work — and the user should hear that it is working rather than hear silence. Budget for the extra output tokens its reasoning consumes, and design your client around interaction_status from day one.
+
+Hold off if your deployment targets Vertex AI and you need documented Cloud support today — the model card claims Vertex distribution, but the Vertex documentation pages for these models returned 404s at publication time. And if your Live session depends on affective dialogue or blocking tools, this generation removed them; plan the migration before switching model strings.
+
+Building this today? The model is only one piece of a voice loop. In this registry, [gemini-api](/skills/gemini-api) covers the API surface, [voice-agents](/skills/voice-agents) and [ai-multimodal](/skills/ai-multimodal) cover real-time audio plumbing, and [audio-transcriber](/skills/audio-transcriber) handles the transcription side. New to how these are packaged and installed? Start with [What Are Agent Skills?](/blog/what-are-agent-skills).
+
+
+## Sources
+
+Checked September 15, 2026, the day of the announcement:
+
+- [Introducing Gemini 3.8 Live and Gemini 3.8 Live Extended Thinking](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-8-live-gemini-3-8-live-extended-thinking/) — Google blog
+
+- [Build real-time voice applications with Gemini audio models](https://blog.google/innovation-and-ai/technology/developers-tools/build-real-time-voice-applications-gemini-audio/) — Google blog (developers)
+
+- [gemini-3.8-live model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live) — ai.google.dev
+
+- [gemini-3.8-live-extended-thinking model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live-extended-thinking) — ai.google.dev
+
+- [Thinking in the Live API](https://ai.google.dev/gemini-api/docs/live-api/thinking) — ai.google.dev
+
+- [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing) — ai.google.dev
+
+- Gemini 3.8 Audio model card — Google DeepMind
+
+- @GoogleAI launch thread — X

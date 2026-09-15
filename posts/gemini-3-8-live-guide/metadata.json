@@ -1,0 +1,18 @@
+{
+  "title": "Gemini 3.8 Live & Extended Thinking: the developer's guide",
+  "slug": "gemini-3-8-live-guide",
+  "category": "Deep Dives",
+  "description": "Google's two new real-time voice models on the Live API: session config changes, the Extended Thinking interaction_status protocol, pricing, and the migration path from 3.1 Flash Live.",
+  "publishedDate": "2026-09-15",
+  "author": "Agent Skills",
+  "keywords": [
+    "Gemini 3.8 Live",
+    "Gemini Live API",
+    "real-time voice AI",
+    "Extended Thinking",
+    "gemini-3.8-live",
+    "voice agents"
+  ],
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gemini-3-8-live-guide/hero.png",
+  "draft": false
+}
