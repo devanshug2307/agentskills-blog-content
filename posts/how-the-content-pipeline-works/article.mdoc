@@ -1,0 +1,38 @@
+# How this blog publishes instantly
+
+This post lives in a **content store**, not in the app source. The site fetches it,
+renders it, and caches the result — so adding a post never triggers a rebuild.
+
+{% callout type="tip" %}
+Content posts are Markdoc: Markdown plus a few tags for embeds, callouts, figures, and code.
+{% /callout %}
+
+## Rich blocks
+
+A YouTube embed:
+
+{% youtube id="dQw4w9WgXcQ" title="Example video" /%}
+
+A code block:
+
+```ts
+export async function getContentPost(slug: string) {
+  const meta = await readJson(`posts/${slug}/metadata.json`);
+  const markdoc = await readText(`posts/${slug}/article.mdoc`);
+  return meta && markdoc ? { meta, markdoc } : null;
+}
+```
+
+| block | tag |
+|---|---|
+| video | `youtube` |
+| post | `x` |
+| note | `callout` |
+| image | `figure` |
+
+## Why it works this way
+
+{% callout type="info" %}
+The app reads this file at request time and revalidates every minute, so a new post is
+live without rebuilding the site.
+{% /callout %}
