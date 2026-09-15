@@ -13,6 +13,8 @@ On September 15, 2026, Google released two real-time audio models for the Live A
 
 The API model IDs are gemini-3.8-live and gemini-3.8-live-extended-thinking (the wire form in the WebSocket setup message is models/gemini-3.8-live). Vercel's AI Gateway already aliases them with a google/ prefix. The changelog entry dated September 15 marks both as generally available, though the launch tweet says "public preview" and the Live API surface still carries a Preview banner — the accurate reading is Stable model IDs on a Preview API surface.
 
+{% x id="2099908000924193124" /%}
+
 
 ## Two models, two jobs
 
@@ -75,6 +77,10 @@ Both 3.8 models share a single row on the official pricing page — there is no 
 | Free tier | $0 — flagged "used to improve products: Yes", unpublished rate limits |
 
 The cost math that matters for voice agents: a two-minute exchange with normal turn-taking runs roughly a cent of input and under four cents of output on the paid tier. But note the output line says including thinking tokens — Extended Thinking's parallel reasoning consumes output tokens even when the model is not speaking, so a thinking-heavy agent costs more per minute of conversation than its speech time suggests. Free-tier usage is flagged "used to improve our products: Yes" with unpublished rate limits, so production traffic belongs on the paid tier. Rate limits specific to the Live models are not yet published — the rate-limits page predates the launch.
+
+Google's own walkthrough of the Live API surface:
+
+{% youtube id="3CyW24Pkz4o" title="What's new in the Gemini Live API — Google for Developers" /%}
 
 
 ## Migration checklist from 3.1 Flash Live
