@@ -5,5 +5,6 @@
   "description": "How agentskills.codes renders posts from a content store at request time, so publishing never waits on a build.",
   "publishedDate": "2026-09-15",
   "author": "Agent Skills",
-  "draft": false
+  "draft": true,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/how-the-content-pipeline-works/hero.png"
 }
