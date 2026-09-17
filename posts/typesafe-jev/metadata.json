@@ -1,0 +1,20 @@
+{
+  "title": "TypeSafe Jev: the model that answers instead of writing",
+  "slug": "typesafe-jev",
+  "category": "Deep Dives",
+  "description": "Jev, the first System One model from ChatGPT co-inventor Diogo Almeida's TypeSafe: $0.042/MTok input, free output tokens, 70-500ms decisions, no hallucinated types. How it works, where it fits, and what to distrust.",
+  "publishedDate": "2026-09-17",
+  "author": "Agent Skills",
+  "keywords": [
+    "TypeSafe AI",
+    "Jev",
+    "System One models",
+    "RLCD",
+    "structured outputs",
+    "AI decisions",
+    "calibrated confidence",
+    "Diogo Almeida"
+  ],
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/typesafe-jev/hero.png",
+  "draft": false
+}
