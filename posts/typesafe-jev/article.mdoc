@@ -1,6 +1,8 @@
-# TypeSafe Jev: the model that answers instead of writing
+# TypeSafe Jev & System One Models: the claim-vs-evidence guide
 
-On September 15, 2026, Diogo Almeida — co-inventor of RLHF and InstructGPT, the research lineage that became ChatGPT — announced [TypeSafe AI](https://typesafe.ai) and its first model, **Jev**. The pitch is deliberately strange: a frontier-intelligence model that **cannot write text**. It takes unstructured state in, returns typed decisions with calibrated probabilities out, in 70–500 milliseconds, at $0.042 per million input tokens with **output tokens free**.
+On September 15, 2026, Diogo Almeida — co-inventor of RLHF and InstructGPT, the research lineage that became ChatGPT — announced [TypeSafe AI](https://typesafe.ai) and its first model, **Jev**. The pitch is deliberately strange: a frontier-intelligence model that **cannot write text**. It takes unstructured state in, returns typed decisions with calibrated probabilities out, in 70–500 milliseconds, at $0.042 per million input tokens with **output tokens free**. The launch tweet drew 25 million views and 61,000 likes in a day, and the company raised a $40 million seed led by DCVC.
+
+What makes this launch worth more than a hot-take is the form of the argument. TypeSafe shipped the announcement with a "we love skeptics" section that pre-published the case against itself, an MIT-licensed adapter that lets anyone re-run their comparison on competitor models, and a live evals dashboard with per-case disagreement walkthroughs. This guide takes that material seriously: every load-bearing claim, checked against what is independently verifiable.
 
 {% callout type="tip" %}
 The one-line version: Jev is a **frontier-intelligence function call** — Almeida's own words. Unstructured state in, typed probabilistic answers out. It replaces hand-written `if` statements, not copywriters.
@@ -8,23 +10,49 @@ The one-line version: Jev is a **frontier-intelligence function call** — Almei
 
 ## What actually launched
 
-Three things, same day:
+Three artifacts shipped together on September 14–15, 2026. The company, founded 2024 in San Francisco, also includes CTO Erik Gafni and COO Sasha Sheng (ex-Meta/FAIR).
 
-- **A new model class** — "System One Models," named for Kahneman's fast, intuitive thinking. Jev classifies, routes, scores, extracts, and branches. It does not chat, write code, or explain itself.
-- **A new training method** — RLCD (Reinforcement Learning for Calibrated Decisions), positioned explicitly against RLHF/RLVR: instead of optimizing human preference or verifiable rewards, it optimizes *epistemically honest probabilities* on decision tasks.
-- **A new architecture** — parallel sampling. All questions in a request are answered in a single query, simultaneously, rather than token-by-token. TypeSafe's comparison: this is "the same way Transformers leapfrogged RNNs."
+**1. A new model class: "System One Models."** Named for Kahneman's fast, intuitive cognition (System 1 vs slow, deliberate System 2 reasoning). Jev, the first instance, does exactly five things: **classify, route, score, extract, branch**. TypeSafe's use-case line is "smart if-statements" — structured outputs slotting into ordinary software as fuzzy decision rules, with the surrounding code constraining their freedom. What it explicitly does not do: chat, write code, generate prose, explain its reasoning (there is literally none available — a compliance-relevant gap flagged in press coverage), accept images or audio input, call tools, or exceed a ~32,000-token state+questions budget.
 
-The launch tweet carried the headline numbers — 20–200x faster, 40–400x cheaper — with a 25-million-view debut and 61,000 likes. The company's homepage peaks at 193.6x faster / 444.6x cheaper on its own workflow evals. Hold those numbers loosely; the skeptic section below has the receipts.
+**2. A new training method: RLCD.** Reinforcement Learning for Calibrated Decisions. Where RLHF optimizes human preference — writeups raters liked — and RLVR optimizes verifiable rewards, RLCD optimizes *epistemically honest probabilities* on decision tasks: the model isn't rewarded for sounding right or being verifiably right in one sample, but for its probabilities being honest. Every output ships with a confidence score, and the pitch is that higher confidence actually correlates with higher accuracy.
+
+**3. A new architecture claim: parallel sampling.** LLMs generate one token at a time, each conditioned on the last — sequential and expensive. Jev answers all questions in a request simultaneously, in one query. The company compares this to "the same way Transformers leapfrogged RNNs," and the docs note that adding more questions does not create context rot, because each question is evaluated in isolation.
+
+The launch tweet carried the headline numbers — 20–200x faster, 40–400x cheaper — while the company homepage peaks at 193.6x faster / 444.6x cheaper on its own workflow evals, and the official Business Wire PR softened to "up to 100 times." Hold all three loosely; the evidence-check section below has the receipts.
 
 {% x id="2099925682726002904" /%}
 
+## Why a model that can't write
+
+The thesis, from Almeida's launch post: models have been superhuman at chat for years, yet automation hasn't followed — because strings are expensive, slow, and unreliable at the exact point where software needs to consume them. Strings must be parsed and validated; they hallucinate; they go off the rails. A model that gives up strings entirely gains three properties ordinary LLMs cannot promise:
+
+- **No type errors** — the output shape is defined in advance by the schema, so violating it is "mathematically impossible" (TypeSafe's words).
+- **Calibrated probabilities on every answer** — the model always communicates confidence and uncertainty, consistently returning similar answers for similar inputs.
+- **Parallel sampling economics** — one query answers everything at once, which is where the cost and speed claims come from.
+
+The second tweet in the launch thread makes the trade-off explicit: *"The gains aren't free: Jev can't generate text. Comparing Jev vs LLMs side-by-side makes the trade-off clear."* The third tweet carries the pricing plus the name:
+
+{% x id="2099925685720760404" /%}
+
+**Jev costs $42 per billion input tokens ($0.042/MTok) and output tokens are free — "too cheap to meter"** with the parallel architecture — and the name honors **Jevons paradox**: the economic observation that efficiency gains increase total consumption, because every order-of-magnitude drop in the cost of intelligence unlocks use cases that didn't exist before. Almeida expects machine intelligence to follow the same path as coal after the steam engine.
+
+## RLCD vs RLHF: the load-bearing claim
+
+This is the claim the whole launch rests on, so it deserves the most scrutiny.
+
+RLHF made models follow instructions by optimizing human preference — the model learns to produce writeups human raters liked. RLVR optimizes outputs a program can verify — useful for math and code, useless for judgment calls with no ground truth. RLCD, by contrast, optimizes **calibrated decision-making**: the model isn't rewarded for sounding right or even being verifiably right in one sample, but for its *probabilities being honest* — when it says 80%, it should be right about 80% of the time.
+
+Why this matters commercially: a 95%-accurate classifier that never communicates when it's in the 5% **cannot be automated around**. The confidence score is the product. TypeSafe's docs describe a three-band routing pattern — high confidence acts autonomously, medium confidence confirms or gathers more information, low confidence escalates to a human or a bigger model — with thresholds scaled per action by blast radius. Their example: `approve_transfer` requires confidence above 0.9; `check_balance` doesn't.
+
+And here is the problem, stated plainly: **there is no public evidence calibration works.** No paper, no reliability curve, no expected-calibration-error number, no ablation separating RLCD from the architecture, no parameter count, no architecture disclosure ("close to the chest for now," said Almeida on Hacker News). The docs themselves narrow the claim — calibration "is measured across groups of predictions; it does not guarantee that an individual answer is correct." On the Hacker News launch thread (475+ comments), the two questions the company left unanswered were exactly the RLCD-objective question and the calibration-maintenance question. This is the single biggest open question in the launch.
+
 ## The API: state in, typed questions out
 
-The whole product is one endpoint — `POST https://api.typesafe.ai/v1/systemone` — with a request shape nothing like OpenAI chat completions. You send a `state` (string, object, or array — unstructured program state), a model (`jev-latest`), and a map of typed **questions**. Three primitives:
+The whole product is one endpoint — `POST https://api.typesafe.ai/v1/systemone` — with a request shape deliberately unlike OpenAI chat completions. You send a `state` (string, object, or array — unstructured program state: source text, identities, relationships, policies, current facts), a model (`jev-latest`), and a map of typed **questions**. Three primitives:
 
 | Primitive | Shape | Returns |
 |---|---|---|
-| **Noul** | yes/no question, optional criteria for both branches | `noul` in [0,1] |
+| **Noul** | yes/no question, optional criteria describing both branches | `noul` in [0,1] — notably carries *no* confidence field |
 | **Choice** | pick one of N options, each with a rubric | `choice` (argmax), `probabilities` (sum to 1), `confidence` |
 | **Score** | rate on an ordered scale (≥2 levels) | `score` (probability-weighted, can land *between* levels), `legend`, `probabilities`, `confidence` |
 
@@ -40,38 +68,114 @@ The whole product is one endpoint — `POST https://api.typesafe.ai/v1/systemone
 }
 ```
 
-The response mirrors your keys: `answers.next_action.choice` with full `probabilities` and a `confidence` score, `answers.urgency.score` that may land at 2.4 ("between normal and high"), and a `usage` block. Practical envelope: ~32,000 tokens of state+questions, no image or audio input, Choice options capped at 255, and **no chat-completions compatibility** — you write a bespoke client or use the Python/JS SDKs.
+The response mirrors your keys: `answers.next_action.choice` with full `probabilities` and a `confidence` score, `answers.urgency.score` that may land at 2.4 ("between normal and high"), and a `usage` block with input and output token counts.
+
+Almeida maps the primitives to code directly on Hacker News: *"'choice' maps to a 'match' statement, 'score' maps to sorting, 'noul' — short for Bernoulli — maps to if-statements."* That's the whole integration model: code owns the workflow, the model owns the semantic judgment.
+
+**Practical envelope:** ~32,000 tokens of state+questions (~150k English characters), no image or audio input, Choice options capped at **255** cardinality (above that, a two-stage score-then-choose composition with added latency), and **no chat-completions compatibility** — one gateway blog summarized it as "calling it needs a bespoke client rather than a base-URL swap." Python and JS SDKs ship at launch, plus an agent skill (`npx skills add typesafe-ai/skills --skill typesafe-ai`), a browser playground, and cookbooks covering reranking, citation checks, extraction cascades, and hierarchical classification.
 
 ## Where this fits an agent stack
 
-Jev is not a chat model replacement and it does not compete with the reasoning models you already call. It slots into the layer those models are worst at: **frequent, cheap, latency-bounded decisions inside ordinary code**. The docs name four patterns:
+Jev is not a chat model replacement and it does not compete with the reasoning models you already call. It slots into the layer those models are worst at: **frequent, cheap, latency-bounded decisions inside ordinary code**. The docs productize four named patterns:
 
-1. **Speculative fan-out** — ask dozens of independent questions in one call; more questions do not create context rot because each is evaluated in isolation.
-2. **Confidence-gated routing** — high confidence → act autonomously; medium → confirm or gather more; low → escalate to a human or a bigger model. Thresholds scale per action by blast radius (approve_transfer needs > 0.9; check_balance does not).
-3. **Composite scoring** — decompose "rate this pitch" into market size, feasibility, and differentiation; ask all three in parallel; combine with your own formula.
-4. **Intent routing** — real-time classification at 100ms speeds where an LLM round-trip would wreck the UX.
+1. **Speculative fan-out** — ask dozens of independent questions in one call, including speculative ones; more questions do not create context rot because each is evaluated in isolation. Your code consumes only the answers it needs.
+2. **Confidence-gated routing** — the answer tells you *what*; confidence tells you *whether to act*. High → act autonomously; medium → confirm or gather more; low → escalate to a human or a bigger model.
+3. **Composite scoring** — decompose "rate this pitch" into market size, feasibility, and differentiation; ask all three in parallel; combine with your own formula in code. Changing a weight later doesn't require re-running inference.
+4. **Intent routing** — real-time classification at 100ms speeds where an LLM round-trip would wreck the UX: deterministic logic for known cases, a specialist LLM for hard ones, a human for the rest.
 
-Two independent tests give a feel for the envelope. Every's evals lead pushed 27 published articles plus 10 AI-styled counterparts through 21 questions each — **777 judgments in under 0.7 seconds for about a quarter of a cent**. A "Near Here" engineer's 50-case event-validation test measured Jev at 96% accuracy at **$0.043 per 1,000 decisions** vs $2.496 for Gemini 3.5 Flash-Lite on the same task. And the Doom demo — a bot playing on structured game state at ~10 decisions per second — costs about **$7/hour**, a number the founder posted himself.
+Vendor demo economics make the envelope tangible. The side-by-side comparison cost $0.000081 (0.114s) vs $0.013880 (8.566s) for GPT-5.6 Terra on the same questions. The Doom demo — a bot playing on structured game state at ~10 decisions per second — costs about **$7/hour**, a number Almeida posted himself. And the wikiracing demo shows the compounding benefit of not hallucinating across high-cardinality choices.
 
-## The honest skeptic's read
+## The economics: three pricing regimes in one launch
 
-TypeSafe pre-published the case against itself — the blog has a whole "we love skeptics" section with the vendor's own caveats — which raises the evidentiary floor, but the load-bearing claims remain unverified:
+The same launch carries three different speed/cost headlines, which is itself a fact worth reporting:
 
-- **The headline multiples are workload peaks.** 193.6x/444.6x hold against expensive frontier *reasoning* models on TypeSafe's own workflows. Independent testers measured ~5x faster / ~8.6x cheaper against Mistral Small 4, and ~25x faster vs Claude Fable 5.1 on a small benchmark. The honest range spans two orders of magnitude depending what you compare against.
-- **"Can't hallucinate" means can't break the schema.** Type errors are mathematically impossible — the output shape is guaranteed — but a wrong answer in a valid shape is still possible. The docs concede calibration is measured "across groups of predictions; it does not guarantee that an individual answer is correct."
-- **Calibration itself — RLCD's entire point — has no public evidence.** No paper, no reliability curve, no ablation, no architecture disclosure. On Hacker News the CEO answered "exactly right!" to *"this is basically a zero-shot classifier,"* and left the two hardest questions (what exactly changes in the RLCD objective, how calibration is maintained) unanswered.
-- **The benchmark reference is a competitor average.** Reference labels are the mean of GPT-6 Astra and Claude Fable 5.1 — disclosed bias — and the workflows were built by TypeSafe's own team.
-- **No named customers, no revenue, early access only.** Waitlist onboarding. Pricing sustainability is, in the vendor's own words, unprovable right now: "We can't prove it isn't subsidized."
+| Source | Speed claim | Cost claim |
+|---|---|---|
+| Launch tweet | 20–200x faster | 40–400x cheaper (output tokens free) |
+| Company homepage | **193.6x faster** | **444.6x cheaper** "based on workflows for System One tasks" |
+| Business Wire PR | — | "up to 100 times" faster and less expensive |
 
-The fair summary: the **cost and latency numbers are real and independently reproduced**; the **calibration story is marketing until a paper ships**; and accuracy on the vendor's own dashboard trails the frontier models it compares to (67.8% aggregate vs Opus 5's 73.1%) — the claim is Pareto-frontier economics, not peak intelligence.
+The homepage multiples come from TypeSafe's [workflow evals dashboard](https://evals.typesafe.ai) — four published workflows (customer service triage, security-incident response, agent-trace observability, invoice processing), each decomposed into atomic questions answered by every model through the same code harness. Jev's published numbers there: **$0.0001–$0.0011 per case at 0.3–0.5 seconds**, versus $0.03–$0.18 for the frontier models it is compared against.
+
+The footprint is real and consistent: $0.042/MTok input appears identically on the blog, home page, X thread, LLMReference, and Vercel's AI Gateway listing — and two independent testers measured costs in the same band. What is *not* established is sustainability. Free output tokens plus a $40M seed is a subsidy-shaped arrangement until proven otherwise, and TypeSafe says so itself: **"We can't prove it isn't subsidized; we'll need the long-term to prove the sustainability of our pricing (which we expect to go down, not up)."** The homepage's "238x lower input price than Claude Fable 5.1" comparison also ignores Anthropic's cache and batch discounts, as press coverage noted.
+
+## Claim-by-claim evidence check
+
+The table below is the core of this guide — every load-bearing launch claim, graded. "Verified" means independently reproduced or mechanically checkable; "vendor-only" means you are trusting TypeSafe's materials.
+
+| Claim | Status | The fine print |
+|---|---|---|
+| **$0.042/MTok input, output free** | ✅ Verified (5 consistent surfaces + independent cost measurements) | Sustainability explicitly unproven by the vendor; "forever" is a promise, not a contract term |
+| **70–500ms latency** | ✅ Verified (0.3–0.5s per case on the eval dashboard; Every measured 0.35s median; Near Here 0.59s avg) | All evals run "from our laptops on the West Coast" — no p50/p99 under load, no rate limits, no SLA published |
+| **Parallel sampling works** | ✅ Verified (777 judgments in <0.7s in Every's test; single-call parallel Choice confirmed) | The behavior is real; the *novelty* is contested (see reception) |
+| **No type errors** | ✅ Verified (schema conformance is mathematical; no counterexample surfaced in 475+ HN comments) | Guarantees the answer's format, not its truth — a wrong answer in a valid shape is still possible |
+| **Calibrated confidence (RLCD's whole point)** | ❌ Vendor-only — no paper, no reliability curve, no ECE number, no ablation | Docs concede calibration is group-level, not per-answer; the two unanswered HN questions were exactly these |
+| **"Can't hallucinate"** | ❌ Vendor-only framing | Conflates type-safety with truth; vendor footnote admits the 0% figure "is not empirical" |
+| **193.6x / 444.6x on workflows** | ⚠️ Vendor-workload peaks | Holds against expensive frontier reasoning models on TypeSafe's own workflows; independent tests measure ~5x–25x depending on the comparator |
+| **Workflow accuracy** | ⚠️ Vendor dashboard | 67.8% aggregate vs Opus 5's 73.1% and Sol's 74.1% — the honest claim is Pareto economics, not peak intelligence |
+| **Production readiness** | ❌ Early access only | Zero named customers, zero revenue disclosures, waitlist-gated access |
+
+## What independent tests found
+
+Two early hands-on tests exist, both small but both informative.
+
+**Every (Mike Taylor, head of evals):** pushed 27 published articles plus 10 AI-styled counterparts through 21 questions across 37 documents — **777 judgments in under 0.7 seconds for about a quarter of a cent**. A second test by Every's CEO: 12 synthetic passages (6 clean, 6 with planted defects) — Jev's median was 0.35s/passage vs 8.83s for Claude Fable 5.1 at high effort (~25x faster, ~1/580th the cost) — but Jev **missed one of the seven planted defects** the comparator caught. Taylor's own conclusion: "Just how well it gets the job done is still an open question."
+
+**Near Here (independent engineer):** a 50-case event-validation task — Jev scored **96% (48/50)** vs 84% for Mistral Small 4 and 86% for Gemini 3.5 Flash-Lite, with zero valid events wrongly rejected (its comparators rejected 5 and 1), at **$0.043 per 1,000 decisions** vs $2.496 for the Gemini model. This is the best independent evidence for the product: a narrow, real task where the cheap model was both the most accurate and two orders of magnitude cheaper.
+
+Both tests are single-task and small. The honest read: on *parallelizable, schema-shaped decision tasks*, the cost/latency advantages are real; on general judgment quality, the frontier models still lead — and Jev's own dashboard agrees.
+
+## Reception and the classifier concession
+
+The Hacker News thread (475+ comments) produced the week's sharpest technical debate. Engineers mapped Jev onto known techniques within hours: encoder classifiers (BERT/DeBERTa), GLiNER-class span models, constrained/grammar decoding with logit-derived confidence, text diffusion, conformal prediction, and DSPy typed signatures. A same-night Hugging Face reproduction claimed no new training is required at all — though that reproduction is itself untested by anyone, including its author.
+
+The pivotal exchange: when a commenter said *"this is basically a zero-shot classifier,"* Almeida **replied "exactly right!"** — a striking concession from a launch framed as a new model class. He also declined to disclose the architecture, deflected the constrained-decoding comparison by arguing OpenAI-style structured outputs "make models dumber… simply masking logits is insufficient because if ever a model was assigning probability to an invalid token, the model is by definition confused," and defended the hallucination semantics by noting "I don't think it's fair to say a random forest 'hallucinates.'"
+
+The counterweight, which matters for how you weigh all of this: TypeSafe pre-published the skeptic case against itself, shipped the MIT adapter specifically so outsiders could re-run comparisons on their own workflows, and published per-case disagreement walkthroughs on the evals site. That is an unusual evidentiary posture for a frontier-model launch — even where the claims remain unproven.
+
+## Caveats
+
+**The three-headlines problem.** The same launch carries 20–200x/40–400x (tweet), 193.6x/444.6x (homepage), and "up to 100x" (official PR). Progressive Robot's framing is the honest one: the peaks are workload-specific against frontier reasoning models, and "a headline that quotes only the peak is quoting the best case."
+
+**The eval methodology has disclosed biases.** Reference labels are the average of GPT-6 Astra and Claude Fable 5.1 (which "biases answers towards OpenAI and Anthropic's models… we likely underestimate our model," per the vendor — but agreement-with-consensus is not correctness, and shared errors go undetected). The workflows were built by TypeSafe's own capabilities team ("some bias could exist"). The LLM comparators ran through TypeSafe's own System One wrapper, which "tends to be slower and more expensive than giving decisions without probabilities." The LLM type-error numbers came from OpenRouter with vendor-admitted routing bias — set against a non-empirical 0% for Jev.
+
+**Demo caveats.** The Doom bot runs on structured game state, not vision — and the vendor notes a non-AI bot plays better. Wikiracing ran against comparators in non-reasoning mode "to make the demo more bearable to watch," with Choice cardinality capped at 255.
 
 ## What Jev does not do
 
-No strings, so no chat, prose, or code generation. No explanations of its reasoning — there is literally not one available, a compliance-relevant gap if you need auditable rationales. No images or audio input. No tool calling. No general long-context reasoning beyond the 32k budget. Not OpenAI-compatible, so it is not a base-URL swap. Any workflow that needs words still needs a generator alongside it.
+No strings, so no chat, prose, or code generation. No explanations of its reasoning — there is literally not one available, a compliance-relevant gap if you need auditable rationales. No images or audio input. No tool calling. No general long-context reasoning beyond the 32k budget. Not deterministic (probabilities plus confidence, not a fixed answer). Not OpenAI-compatible, so it is not a base-URL swap. Any workflow that needs words still needs a generator alongside it.
+
+## The practical verdict
+
+**Try Jev if** your product has a high-frequency decision layer: support-ticket triage, content moderation routing, lead scoring, alert classification, guardrailing LLM outputs, semantic search reranking over large corpora. The economics are real and independently reproduced — pennies per thousand decisions, sub-second latency — and the confidence-gated routing pattern is genuinely useful even if the calibration story turns out softer than marketed. The MIT adapter makes the comparison cheap to run on your own data.
+
+**Be skeptical if** your use case needs auditable reasoning (Jev provides none), needs production SLAs (nothing published, early access only), or is being sold on the 444x number (that is the best-case workload peak). And watch the calibration question: it is the difference between "a new model class" and "a well-engineered zero-shot classifier with honest pricing" — a distinction Almeida himself blurred with his "exactly right!" reply.
+
+**Watch for:** a calibration paper or reliability curves (the claim's life-or-death evidence), pricing changes after the seed money deploys, rate limits and load-tested latency, and the first named customers. Any of those arriving would materially upgrade this from "interesting launch" to "infrastructure."
 
 ## Try it
 
 Early access is waitlist-gated at [typesafe.ai](https://typesafe.ai), with [full docs](https://docs.typesafe.ai), a [live workflow-evals dashboard](https://evals.typesafe.ai) (four workflows with per-case disagreement walkthroughs), Python and JS SDKs, and an agent skill: `npx skills add typesafe-ai/skills --skill typesafe-ai`. There is also an MIT-licensed [System One LLM adapter](https://github.com/typesafe-ai/system-one-adapter-python) that runs the same API shape on OpenAI/Anthropic models — built specifically so you can re-run the comparison yourself.
+
+## FAQ
+
+**What is Jev?**
+TypeSafe AI's first model, launched September 15, 2026 — a "System One Model" that takes unstructured state in and returns typed decisions (yes/no, choice, score) with confidence scores in 70–500ms. It cannot generate text, code, or explanations.
+
+**How much does Jev cost?**
+$0.042 per million input tokens ($42 per billion), with output tokens free. Independently measured at roughly $0.04–$0.05 per 1,000 decisions on real tasks. The company acknowledges pricing sustainability is unproven.
+
+**What is RLCD?**
+Reinforcement Learning for Calibrated Decisions — TypeSafe's alternative to RLHF/RLVR. It optimizes for epistemically honest probabilities rather than human preference or verifiable rewards. No paper or calibration evidence has been published yet.
+
+**Can Jev hallucinate?**
+It cannot produce type errors — the output schema is guaranteed. But it can still select a wrong option in a valid format. The vendor's own docs note calibration is a group-level property, not a per-answer guarantee.
+
+**Who is behind TypeSafe?**
+Founded 2024 in San Francisco by Diogo Almeida (CEO; co-inventor of RLHF/InstructGPT, ex-OpenAI post-training, ex-Google Brain), Erik Gafni (CTO), and Sasha Sheng (COO, ex-Meta/FAIR). $40M seed led by DCVC.
+
+**Is it really 444x cheaper than GPT?**
+That figure is a workload-specific peak from TypeSafe's own evals against frontier reasoning models. Independent tests measured ~5x–25x depending on the comparator. The range across all sources is 5x to 444x — quote the use case, not the headline.
 
 ## Sources
 
