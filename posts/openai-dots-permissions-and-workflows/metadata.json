@@ -1,0 +1,19 @@
+{
+  "title": "OpenAI dots: the permission model and what to hand off",
+  "slug": "openai-dots-permissions-and-workflows",
+  "category": "Guides",
+  "description": "How OpenAI dots work: Auto-review, Custom Rules, read-only background research, the steps a dot hands back, and what to delegate.",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "OpenAI dots",
+    "GPT-6 Astra",
+    "Auto-review",
+    "Custom Rules",
+    "always-on agents",
+    "agent permissions",
+    "proactive research"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/openai-dots-permissions-and-workflows/hero.png"
+}
