@@ -1,0 +1,234 @@
+Ultrafast is OpenAI's fastest service tier: GPT-6 Astra Ultrafast generates tokens up to 8x faster than Standard in Codex, which OpenAI states as 300 tokens per second, and up to 6x faster in the API. GPT-6 Astra Ultrafast is live today in Codex, ChatGPT Work, and the API. GPT-6.1 Sol Ultrafast is coming in the coming days with up to 8x faster generation in Codex. Alongside it, OpenAI introduced Pro 500 at $500 per month and reopened Pro 200 at $200 per month.
+
+The pricing story is where most summaries go wrong, because OpenAI publishes two different multipliers and they apply to different things. One describes speed. The other describes how fast Ultrafast consumes your included subscription allowance. A planning decision made from the first number alone will be wrong by roughly an order of magnitude. This guide separates them, derives what they mean together, and gives the tier comparison and the request shape.
+
+Every dollar figure below comes from OpenAI's own help centre or documentation. Where a number is not published, this article says so instead of estimating it.
+
+{% x id="2104993966043320759" /%}
+
+## What Ultrafast Is and Is Not
+
+Ultrafast is a service tier, not a model. On the API you set `model` to `gpt-6-astra` and `service_tier` to `ultrafast`. In Codex and ChatGPT Work it is an option you select, and on Pro plans it appears in the model picker.
+
+The most important definitional caveat is in OpenAI's own documentation: the 8x figure compares token generation speed, and explicitly not billing rates or overall task completion time. That distinction matters in both directions. Token generation is the part of a task where the model is producing output; it does not include tool execution, repository indexing, test runs, network round trips, or the time a human spends reviewing. So a task with a large tool-use component will not get 8x faster end to end.
+
+Two other limits are documented and easy to miss. Ultrafast is not available to workspaces that require inference residency outside the United States, and workspace location alone does not determine eligibility. And other self-serve plans do not have access to Ultrafast at launch, even with purchased credits.
+
+## The Two Multipliers, and What They Mean Together
+
+OpenAI states two separate sets of numbers for Ultrafast on GPT-6 Astra, and reading them as one number is the single most common planning error.
+
+**Speed:** up to 8x faster token generation than Standard in Codex.
+
+**Billing:** included subscription limits are used at 8x the Standard rate, and purchased credits and Enterprise pay-as-you-go usage are billed at 6x the Standard rate. OpenAI adds the same caveat it adds to the speed figure: the multipliers do not describe speed increases.
+
+The distinction between the two billing paths is the interesting part, because 6x and 8x are not the same price for the same token:
+
+| Path | Multiplier on the Standard rate | Relative cost per Ultrafast token |
+|---|---:|---:|
+| Included subscription allowance | 8x | 100% |
+| Purchased credits or Enterprise pay-as-you-go | 6x | 75% |
+
+That table is OpenAI's own multipliers, nothing more. But the consequence is worth stating plainly: **the same Ultrafast token costs 25% less when it is paid for with purchased credits than when it is drawn from the included allowance.** That is not a discount program or a promotion; it falls out of the two published multipliers, and it is the opposite of the usual intuition that included usage is the cheapest way to consume a plan.
+
+Now combine the speed multiplier with the allowance multiplier, which is where the number that actually matters lives.
+
+| Quantity | Ultrafast vs Standard |
+|---|---:|
+| Tokens generated per second | 8x |
+| Included allowance consumed per wall-clock second | 64x |
+| Included allowance consumed per token | 8x |
+| Time for the included allowance to run out, at sustained use | 1/64th |
+
+This arithmetic is mine, derived from OpenAI's published 8x speed and 8x allowance figures, and it is not a vendor claim. Taking it seriously changes how Ultrafast is worth using. You are not buying more work for the same allowance; you are trading allowance for wall-clock time at a steep exchange rate. Sustained Ultrafast drains the included allowance roughly 64 times faster per second of generation than Standard does, because it is producing eight times the tokens and each of those tokens costs eight times as much allowance. The plan allowance buys roughly the same amount of *time*, not the same amount of *output*.
+
+{% callout type="tip" %}
+Practical consequence: Ultrafast is well suited to short bursts where latency is the constraint — an interactive session, a demo, a time-boxed debugging loop. It is poorly suited to long unattended runs, because a background job on Ultrafast will exhaust an included allowance it would have stretched across weeks at Standard speed.
+{% /callout %}
+
+## The Same Output for Eight Times the Allowance
+
+The burn-rate framing above is the right way to think about a sustained session, but the cleanest planning statement is about output volume, because that is what a budget actually buys.
+
+Take one unit of generated output — the same number of tokens written by the model. At Standard speed it consumes one unit of included allowance and takes one unit of time. At Ultrafast speed it consumes eight units of allowance and takes one-eighth of the time. Nothing about the tokens changes; only the exchange rate between allowance and wall-clock does.
+
+| Measure | Standard | Ultrafast | Ratio |
+|---|---:|---:|---:|
+| Tokens produced | 1 unit | 1 unit | same |
+| Included allowance consumed | 1 unit | 8 units | 8x |
+| Time taken | 1 unit | 1/8 unit | 0.125x |
+| Allowance consumed per second of generation | 1 unit | 64 units | 64x |
+
+Read the last two rows together and the trade becomes explicit. You are paying eight times the allowance to compress the work into an eighth of the time. That is a reasonable trade for a human waiting on a response and a poor one for a cron job with hours to spare.
+
+It also means the right unit to budget in is not tokens but **wall-clock minutes that matter**. A team that switches an entire nightly pipeline to Ultrafast has not bought speed it needed; it has bought speed it was not waiting for and paid eight times the allowance for it. A team that switches only the interactive review step has bought the latency a person actually feels, at a cost confined to a fraction of the workload.
+
+## Fine Print on the Multipliers
+
+Six details sit under the two headline numbers, and each one has broken someone's mental model.
+
+**Purchased credits do not unlock Ultrafast on Pro 100 or Pro 200.** Among Pro plans, Ultrafast is available only on Pro 500. At launch, buying credits on Pro 100 or Pro 200 does not unlock it.
+
+**On Pro 500, Ultrafast uses included usage first.** Only after that allowance is used does it draw from your credit balance.
+
+**Enterprise workspaces have Ultrafast off by default.** Workspace owners enable access for selected users or for the workspace through workspace permissions, and existing per-user spend controls apply to eligible Ultrafast usage.
+
+**Billing remains subject to the workspace agreement on Enterprise.** Eligible Enterprise workspaces use credit-based or USD usage-based agreements, and eligible Edu plans use credits. Legacy Enterprise plans that rely on rate limits instead of usage-based billing are not supported.
+
+**ChatGPT Work and Codex share usage.** Both use the same pricing, credits, and usage limits, so a Codex task and a ChatGPT Work task draw on the same pool.
+
+**An API key changes the billing model entirely.** With an API key, Codex uses API token pricing instead, and the ChatGPT credit multipliers do not apply. If you are mixing subscription work and API work, those are two separate budgets.
+
+## Ultrafast in the API
+
+The API path is the one with published request configuration and rate limits, so it is the easier of the two to plan against.
+
+Set the model to `gpt-6-astra` and the service tier to `ultrafast` on each `response.create` event. OpenAI strongly recommends WebSockets for agentic applications that make many tool calls in quick succession, because without a persistent connection network overhead can reduce the latency gains. The documentation is explicit about the reason: agentic loops with frequent tool calls are precisely the workload where per-request overhead is large relative to generation time.
+
+Ultrafast for GPT-6 Astra is available to all API users at low rate limits. The published default token-per-minute limits are:
+
+| API usage tier | Ultrafast tokens per minute |
+|---|---:|
+| Tiers 1–3 | 500,000 |
+| Tier 4 | 1,000,000 |
+| Tier 5 | 5,000,000 |
+
+Organisations working with an OpenAI account team can request higher rate limits or preview access to other models. A cURL request is enough to start:
+
+```bash
+curl https://api.openai.com/v1/responses \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-6-astra",
+    "input": "Explain why the sky is blue in one sentence.",
+    "service_tier": "ultrafast"
+  }'
+```
+
+Two API constraints are worth internalising before you design around it. Ultrafast supports US data residency and global processing only, and does not support EU or other non-US regional processing endpoints. And OpenAI points to a separate Ultrafast pricing table for input, cached input, cache write, and output rates — that table's values are not reproduced here because they were not retrieved, and inventing them would be worse than omitting them.
+
+{% x id="2104993967985381673" /%}
+
+## The Three Pro Tiers
+
+OpenAI's help centre publishes the Pro plan line explicitly, including which tier gets Ultrafast.
+
+| Plan | Monthly price | Ultrafast | Included usage | Notes |
+|---|---:|---|---|---|
+| Pro 100 | $100 | Not included | Base tier | No path to Ultrafast at launch, including by buying credits |
+| Pro 200 | $200 | Not included | More than Pro 100 | Reopened for new subscriptions with a lower allowance for non-grandfathered sign-ups |
+| Pro 500 | $500 | Included | Highest of the three, described as 25x the ChatGPT Plus allowance | Ultrafast uses included usage first, then credits |
+
+Three clarifications from the help centre prevent expensive mistakes.
+
+**Keeping a grandfathered allowance does not upgrade the plan.** If your Pro 200 subscription was active at the eligibility cutoff or during the seven days before it, you keep your previous included usage allowance through October 29, 2026 while the subscription is active. Your price stays at $200 per month, and OpenAI states directly that keeping the allowance does not upgrade you to Pro 500 or add Ultrafast. After October 29, the subscription moves to the lower included allowance at the same price.
+
+**A lapsed subscription can still qualify.** If your Pro 200 subscription lapsed during the seven days before the eligibility cutoff, you can subscribe again and still receive the previous allowance through October 29, 2026. Subscribers who are not eligible for grandfathering get the updated allowance.
+
+**Cancelling is not immediate.** Scheduling a cancellation keeps access until the end of the current billing period, and the cancellation can be undone before that period ends. That matters if you are mid-evaluation and decide to revert.
+
+One related date belongs in any planning document: GPT-5.5 retires from ChatGPT, ChatGPT Work, and Codex on all plans on October 14, 2026. The OpenAI API is not affected. If you have a pinned workflow on GPT-5.5, the migration window is the next two weeks, not the next two quarters.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/vLMMtGVk0E5bPSShgIGGc/c20e4f7d8ccd7be497ba594e50a983b8/PRO_500_.png?w=3840&q=90&fm=webp" alt="Official Pro 500 with Ultrafast artwork: white sans-serif lettering dispersing into particles over a dark starfield" caption="Pro 500 is the only Pro tier that includes Ultrafast among Pro plans; Pro 100 and Pro 200 do not get it even with purchased credits at launch. (Image: OpenAI)" /%}
+
+## Fast Mode for Comparison
+
+Ultrafast is the fastest tier, but it is not the only speed control, and the cheaper one is easy to overlook.
+
+Fast mode speeds up supported models including GPT-6.1 Sol, GPT-6 Astra, GPT-6 Sol, and GPT-6 Luna where available. For GPT-5.6 and GPT-5.5 the documented speed increase is 1.5x. In the CLI you toggle it with `/fast`, and `/statusline` shows the current state; you can persist a default with `service_tier = "fast"` plus `[features].fast_mode = true` in `config.toml`.
+
+The billing structure mirrors Ultrafast at lower multipliers: included subscription limits are used at 2.5x the Standard rate, and purchased credits and Enterprise pay-as-you-go usage are billed at 2x the Standard rate. The same relationship holds, with a smaller spread:
+
+| Tier | Speed | Included allowance multiplier | Credit multiplier | Credits versus included |
+|---|---|---:|---:|---:|
+| Fast mode | up to 1.5x on GPT-5.6/5.5; speedups on newer models where available | 2.5x | 2x | 20% cheaper per token |
+| Ultrafast (GPT-6 Astra) | up to 8x in Codex, up to 6x in the API | 8x | 6x | 25% cheaper per token |
+
+Fast mode is available in the ChatGPT desktop app, Codex CLI, and the IDE extension when you sign in with ChatGPT. It also supports GPT-6.1 Sol — OpenAI states Sol supports Standard and Fast where available, with access depending on plan, client, workspace settings, and rollout — which makes it the cheaper speed option for Sol work specifically, at least until Sol Ultrafast ships.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/qmAcSMFnLpnOnn8Xt1YHr/ef836426217602062b06315391747162/Ultrafast_in_the_API.png?w=3840&q=90&fm=webp" alt="Official Ultrafast title art over a hyperspace starfield with the subtitle Available in ChatGPT, Codex, and API" caption="OpenAI's Ultrafast art names the three surfaces where it is available. The API exposes it as service_tier set to ultrafast. (Image: OpenAI)" /%}
+
+## What a Skill Author Should Change
+
+If you maintain agent skills, the tier changes create three concrete decisions.
+
+**Decide which steps deserve speed and which deserve allowance.** A skill that fans out into parallel subagents is the worst case for Ultrafast, because every concurrent branch multiplies the allowance burn rate. The sensible split is to keep exploration, retrieval, and bulk editing at Standard or Fast, and reserve Ultrafast for the interactive step a human is waiting on. [ai-cost-optimizer](/skills/ai-cost-optimizer) and [cloud-cost-management](/skills/cloud-cost-management) are the registry entries for turning that split into a budget, and [budget-optimizer](/skills/budget-optimizer) covers the forecast side.
+
+**Track allowance and tokens as separate quantities.** The 64x wall-clock burn rate above is invisible in a token dashboard, because it is a property of the billing multiplier rather than of generation. A skill that logs tokens but not allowance consumption cannot explain why a plan emptied in an afternoon.
+
+**Pick the tier in the skill, not in the person.** If a workflow benefits from Ultrafast, encoding `service_tier` in the skill removes the variance of a human remembering to toggle `/fast`. [codex](/skills/codex) and [coding-agent](/skills/coding-agent) are the registry entries closest to the Codex-side configuration, and the Codex speed documentation is the authoritative reference for the exact setting names.
+
+## Decision Table
+
+| Your situation | Recommendation | Why |
+|---|---|---|
+| On Pro 100 or Pro 200, latency matters but budget does not stretch to $500 | Stay put, do not buy credits expecting Ultrafast | Credits do not unlock Ultrafast on Pro 100 or Pro 200 at launch |
+| On Pro 200 and eligible for grandfathering | Do not cancel before October 29, 2026 | The previous allowance runs through that date at the same price, and nothing else changes |
+| On Pro 200 with a lapsed subscription inside the grace window | Resubscribe before the cutoff if you want the previous allowance | The help centre states lapsed subscriptions from the seven days before the cutoff can still qualify |
+| Need Ultrafast for interactive work | Pro 500, or an eligible Enterprise or Edu workspace | Ultrafast is included only on Pro 500 among Pro plans |
+| Running long unattended jobs | Standard or Fast, not Ultrafast | Sustained Ultrafast drains the included allowance roughly 64x faster per wall-clock second |
+| Building on the API | `service_tier: ultrafast` with WebSockets, and request higher limits via your account team | API access is at low rate limits by default; persistent connections preserve the latency gain |
+
+## What Is Not Published
+
+Three gaps are worth naming so you do not fill them with assumptions.
+
+**No absolute allowance figure.** Pro 500 is described as 25 times the ChatGPT Plus allowance. That is a relative number, and the absolute token quantity sits behind a pricing page that returns HTTP 403 to non-browser clients.
+
+**The API Ultrafast rate card was not retrieved for this article.** OpenAI links a dedicated Ultrafast pricing table for input, cached input, cache write, and output. Those values are not reproduced here; the multipliers and request configuration above are what the documentation states and what was verified.
+
+**No published measurement of task-level speedup.** The 8x and 6x figures are token generation speeds. OpenAI states the comparison is not overall task completion time, and no first-party benchmark of end-to-end task latency under Ultrafast was published with this release. There is also no independent measurement of Ultrafast in the source set, so an end-to-end speedup claim would be unsupported.
+
+{% x id="2104993969486930015" /%}
+
+## The Planning Summary
+
+Hold three numbers apart and the decision becomes simple. Ultrafast is up to 8x faster at generating tokens. It consumes included allowance at 8x the Standard rate per token, which compounds to roughly 64x the burn per wall-clock second at sustained use. Purchased credits are billed at 6x rather than 8x, making them 25% cheaper per Ultrafast token than the included allowance path.
+
+From those three facts: use Ultrafast for latency-critical bursts, keep long-running work on Standard or Fast, and check your Pro 200 grandfathering status before October 29, 2026 before changing a subscription. If you are planning a budget rather than a session, the fastest tier is usually the wrong lever; a stable cached prefix on GPT-6.1 Sol at $0.10 per million cached input tokens is worth more per dollar than speed.
+
+Two sibling articles cover the other side of the same budget. The [DevDay 2026 roundup for agent builders](/blog/openai-devday-2026-recap-agent-builders) lists all 25 announcements with their availability status, and [GPT-6.1 Sol for coding agents](/blog/gpt-6-1-sol-agent-workloads) works through the per-token cost model that this tier choice sits on top of. For the basics of how an agent workflow is packaged and installed in the first place, see [What Are Agent Skills?](/blog/what-are-agent-skills).
+
+## FAQ
+
+**What is Ultrafast?**
+OpenAI's premium speed tier. GPT-6 Astra Ultrafast generates tokens up to 8x faster than Standard in Codex, stated as 300 tokens per second, and up to 6x in the API. It is available in Codex, ChatGPT Work, and the API.
+
+**How much does Ultrafast cost?**
+Billing is expressed as multipliers rather than a single rate: included subscription limits are used at 8x the Standard rate on GPT-6 Astra, and purchased credits or Enterprise pay-as-you-go usage are billed at 6x. OpenAI publishes a separate API Ultrafast pricing table for input, cached input, cache write, and output rates.
+
+**Does Ultrafast make my tasks 8x faster?**
+No. OpenAI states the comparison measures token generation speed, not overall task completion time, so tool execution, environment setup, and review time are outside the 8x figure.
+
+**Which plans include Ultrafast?**
+Among Pro plans, only Pro 500. It is also available in Codex and ChatGPT Work on eligible Enterprise and Edu plans, off by default with workspace owner enablement. Other self-serve plans do not have access at launch, even with purchased credits.
+
+**Should I buy credits for Ultrafast?**
+On Pro 500, Ultrafast uses included usage first and credits only after that allowance is exhausted. Since credits are billed at 6x against an 8x included rate, a single Ultrafast token costs 25% less when paid from credits than from included allowance. Buying credits on Pro 100 or Pro 200 does not unlock Ultrafast at all.
+
+**What happens to my Pro 200 subscription?**
+If it was active at the eligibility cutoff or during the seven days before it, you keep the previous included usage allowance through October 29, 2026 while the subscription is active, at the same $200 price. After that date it moves to the lower included allowance at the same price. Keeping the allowance does not add Ultrafast or upgrade the plan.
+
+**Is Ultrafast available everywhere?**
+No. It supports US data residency and global processing only, and does not support EU or other non-US regional processing endpoints. Workspaces that require inference residency outside the United States are not eligible, and workspace location alone does not determine eligibility.
+
+**What is Fast mode, and how is it different?**
+Fast mode is the cheaper speed tier: included limits at 2.5x the Standard rate and credits at 2x, with documented speed increases of 1.5x for GPT-5.6 and GPT-5.5 and speedups on newer models where available. It also supports GPT-6.1 Sol, which Ultrafast does not yet.
+
+## Sources
+
+Checked September 29, 2026.
+
+**OpenAI — primary**
+
+- [Codex speed documentation](https://learn.chatgpt.com/docs/agent-configuration/speed) — Ultrafast and Fast mode speed claims, the 8x/6x and 2.5x/2x multipliers, Enterprise requirements, and the GPT-5.5 retirement date
+- [Ultrafast mode in the API](https://developers.openai.com/api/docs/guides/ultrafast-mode) — request configuration, WebSocket recommendation, rate limits, data residency, and the API pricing table link
+- [About ChatGPT Pro tiers](https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers) — the three Pro plans, the Ultrafast inclusion table, grandfathering, and credits
+- [DevDay 2026 Recap](https://openai.com/index/devday-2026-recap/) — Pro 500 launch framing and official artwork
+- [Using Credits for Flexible Usage in ChatGPT](https://help.openai.com/en/articles/12642688) — supported features and rates for credit purchases
+- [@OpenAI on X](https://x.com/OpenAI) — the Ultrafast, Pro 500, and Pro 200 announcement posts embedded above
+
+{% callout type="warning" %}
+Pro 500 is described as 25 times the ChatGPT Plus allowance, which is a relative figure; no absolute token allowance is published. The API Ultrafast rate card was not retrieved for this article and its values are deliberately omitted. The 64x allowance-burn figure in this guide is this article's own arithmetic from OpenAI's published 8x speed and 8x allowance multipliers, not a vendor claim, and no independent measurement of task-level speedup under Ultrafast exists in the source set.
+{% /callout %}
