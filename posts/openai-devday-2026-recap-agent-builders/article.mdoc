@@ -1,0 +1,249 @@
+On September 29, 2026, OpenAI used DevDay to ship a set of releases that changes what an agent can be trusted to do on its own: always-on agents with their own cloud computer, a cheaper near-frontier model, a premium speed tier, a security agent that scans whole repositories, and a plugin platform that lets third-party products live inside ChatGPT. OpenAI's own recap describes it as "our biggest yet, with more than 20 major announcements across ChatGPT, Codex, our models, and entirely new forms of working with AI." Listed the way OpenAI lists them, that is **25 named items across five groups**, and this article walks all 25 with the availability status that matters if you build or buy agent tooling.
+
+The scope note matters for a roundup this large. Everything below traces to a first-party source: the official recap, the launch pages for dots and GPT-6.1 Sol, OpenAI's product documentation, the AWS page for Bedrock Managed Agents, and posts from OpenAI's own accounts. No press reporting, no leaks, and no third-party summaries are used as evidence. Where the recap and the documentation describe maturity differently, both readings are shown instead of picking the flattering one.
+
+{% x id="2104984508454121795" /%}
+
+## What DevDay 2026 Was
+
+The keynote framed the day around two ideas. The first is agents that take on ongoing responsibility rather than answering one question at a time; OpenAI's word for that is "always-on". The second is opening ChatGPT as a shared surface where people, agents, and developer-built experiences work on the same material — the recap puts the addressable audience at a collective 1.2 billion weekly users.
+
+OpenAI then grouped the announcements into five sections: new ways of working, building with Codex and the API, customizing ChatGPT with plugins, people and AI working together, and doing more with a ChatGPT subscription. Those groups are reproduced faithfully here because they are OpenAI's own taxonomy, which makes every row checkable against the source page rather than against a summary.
+
+One structural detail is worth stating up front, because most secondhand counts get it wrong in both directions. The recap contains **25 named items** in those five groups. OpenAI's own headline number is "more than 20". Separately, a safety policy document published earlier the same day, "Towards safety cases for frontier AI training", is not a DevDay announcement and is not counted in the 25; it gets its own section below.
+
+## The four flagship releases
+
+Four items carry enough product surface that they justify separate deep dives, and three of them are the highest-impact things announced.
+
+**dots.** Always-on agents powered by GPT-6 Astra, each with its own cloud computer. They reach more than 4,000 apps through OpenAI's plugin ecosystem, learn from feedback over time, and are reachable in ChatGPT on desktop, web, and mobile, plus Slack and Teams, with texting described as coming soon. Rolling out to Pro and Business Premium in eligible markets; Enterprise, Edu, and Healthcare can try the beta when a workspace admin enables it, off by default. Your first dot is included at no extra cost on those plans.
+
+Two permission details in the launch material are the ones that decide whether a dot is deployable in a real workflow. Background work, which OpenAI calls proactive research, is restricted in code to read-only tools: it cannot send messages, change content in connected apps, or control a browser or desktop. And consequential actions pass through Auto-review, a separate safety system that checks planned steps against your instructions, Custom Rules, and safety requirements before they run. Changing a password or transferring money between accounts is not something a dot completes — it hands those steps back.
+
+**GPT-6.1 Sol.** An upgrade to GPT-6 Sol that nearly matches GPT-6 Astra's intelligence on agentic coding, computer use, and professional work at one-fifth of Astra's standard input and output token prices. Standard API pricing is $2 per million input tokens, $0.10 per million cached input tokens, and $10 per million output tokens. Available in ChatGPT Work and Codex on Plus, Pro, Business, Enterprise, and Edu plans, and in the API as `gpt-6.1-sol`. It is not in Chat.
+
+**Ultrafast.** A premium service tier that generates tokens up to 8x faster than standard speed — OpenAI states 300 tokens per second in Codex and up to 6x in the API. GPT-6 Astra Ultrafast is live in the API and in Codex and ChatGPT Work on Pro 500 and eligible Enterprise and Edu plans. GPT-6.1 Sol Ultrafast is described as coming in the coming days, with no date.
+
+**Private Intelligence.** Enterprise data-protection controls: Zero Data Retention with Private Safety Processing, which enables automated safety reviews without giving OpenAI personnel access to the underlying content, plus a preview of Private Inference described as combining confidential computing with strict, verifiable controls and arriving in the fall. Access is a sales conversation, not self-service.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/5vzL2YrAB3qCUlFgZxXSp9/b06b6f54eab9abd97c3a41da31001f4e/GPT.6.1-_Sol.png?w=3840&q=90&fm=webp" alt="Official GPT-6.1 Sol title art: white lettering on a dark starry background" caption="Official GPT-6.1 Sol launch art from OpenAI's DevDay 2026 recap. (Image: OpenAI)" /%}
+
+## Codex and the API
+
+Seven developer-facing items landed in this group, and for anyone already running Codex it is the densest part of the release.
+
+**Codex in the cloud** runs Codex on a computer, remotely from a phone, or in the cloud from any device, with reusable development environments that give a team a shared setup including approved settings and permissions. Available on Plus, Pro, Business, Healthcare, Education, and Enterprise.
+
+**A refreshed Codex CLI** adds voice-driven start and steering of tasks, a new `/agents` view for delegating and tracking multiple tasks, improved prompt editing, session resume, worktrees, and a cleaner terminal UI. Available on all plans.
+
+**Code Review** arrives in the ChatGPT desktop app: read summaries, explore diffs, and ask Codex about potential issues before posting feedback on GitHub pull requests or GitLab merge requests. Automatic reviews let Codex take a first pass in the cloud while you are away. All plans.
+
+**Codex Security Cloud** scans entire GitHub repositories on demand or on a schedule, reviews new commits continuously, investigates findings, deduplicates them, and prepares fixes in the cloud. Access to cyber-capable models offered through Daybreak Blue is included by default, without a separate Daybreak Blue application. The recap lists availability for Pro, Business, Enterprise, and Edu on desktop and web; OpenAI's own security documentation calls Codex Security Cloud a research preview. Both statements are true at once, and the difference is exactly the kind of gap a careful reader should notice.
+
+**The Decisions API** handles real-time decision-making over a specific set of user-defined questions with finite, pre-defined answers. You supply context as text or images and get answers you can route on — classify content, route a request, or pick an agent's next action. It is in limited preview, with a broad release planned in the coming days.
+
+**The Agents API with computer use** lets developers build agents that interact with software to complete tasks, and brings Codex's multi-agent capabilities, tool search, tool calling, and context compaction into your own application, with OpenAI running the underlying infrastructure. Available through the API and in Codex and ChatGPT Work on Pro 500 and Enterprise.
+
+**Bedrock Managed Agents, powered by OpenAI** was built with Amazon to take the core capabilities of the Agents API, add customization, and run natively in AWS with integration to AWS resources.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/1cBe7tOXtMsCsZ2VsArwwf/26ac4ca0df3963cae833a494a0f181a7/CODEX_SECURITY_CLOUD.png?w=3840&q=90&fm=webp" alt="Official Codex Security Cloud findings dashboard: tab bar with Findings selected, a Pipeline funnel from Discovered to Done, and a Needs attention table with Priority, Finding, Owner, Status and Due columns" caption="The Codex Security Cloud findings dashboard from OpenAI's recap. Values in the screenshot are redacted placeholder bars. (Image: OpenAI)" /%}
+
+## Plugins and Customization
+
+Four items, all available to every plan, and together the ecosystem half of the keynote.
+
+**Plugin extensions** open the platform OpenAI uses to build ChatGPT features so developers can create their own experiences inside ChatGPT. An extension gives a plugin a home in the sidebar, supports interactive panels for working alongside the conversation, and lets you create viewers for the file types your product supports.
+
+**Improved plugin creation, submission, and discovery** covers Plugin Creator to help build a plugin, a redesigned submission flow with clearer feedback, and improved ranking and recommendations in the directory and in conversations. Permission stays explicit: users still choose which plugins to use and approve the access each one receives.
+
+**Sites can host plugins**, so a workspace can embed supported ChatGPT plugins into the Sites it builds and give teammates the same app with their own connected data and permissions. Available to Business, Enterprise, Healthcare, and Edu.
+
+**MCP events for plugin automations** supports the proposed MCP Events specification, which lets a plugin start an automation when something happens in a connected app. OpenAI's example is asking ChatGPT to watch for new tasks on a project board and, when one arrives, read the linked documents and draft a plan while you are away.
+
+## People and AI Working Together
+
+Seven collaboration features, mostly aimed at Business and Enterprise workspaces, and this is the group where the "agents as teammates" framing becomes concrete.
+
+**ChatGPT Space** creates a dedicated space where teammates, ChatGPT, and your dot build on shared knowledge, with ChatGPT keeping the space organized from your instructions. Available to Pro, Business, and Enterprise on desktop and web; finding, reading, and sharing pages also work on mobile. Mobile creation and editing are coming soon.
+
+**Pages** is a new document type built for human and agent collaboration. Anything you can do in ChatGPT you can do on a page — write, research, generate charts, create images, visualize information — and you can create one in a conversation and invite the team to contribute. Pro, Business, and Enterprise.
+
+**Collaborative slides** are coming in the coming weeks for Pro, Business, and Enterprise: interactive slides from a conversation or a template, multiple teammates and agents editing at once, comments, presenting in ChatGPT, and export to PowerPoint or Google Slides with formatting intact.
+
+**Create teams and share tasks** brings colleagues together to share pages, slides, plugins, and spreadsheets, and to delegate recurring work such as weekly project updates to team tasks that run on a schedule or in response to events like a new email or Slack message. Business and Enterprise.
+
+**@ChatGPT in Slack and Microsoft Teams** lets you mention @ChatGPT in a channel, thread, or DM. It can use tools connected by your admin or your own tools under your permissions, and teammates can refine results in the same conversation without holding an individual ChatGPT license. Business and Enterprise.
+
+**The Meetings plugin** takes notes and saves personalized summaries with action items into ChatGPT Space, privately or shared with the team. OpenAI states audio is deleted once notes are ready and cannot be accessed or replayed. Beta in the ChatGPT desktop app on macOS for Pro and Business, with Enterprise coming soon.
+
+**Shareable profiles** let people showcase Sites and plugins others can find and reuse, with shared skills discovery limited to the workspace. Business and Enterprise.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/2NDk63u0I7A78LBKQmFGyg/3b2a9e859d667067d49828fd999c3d49/image__2_.png?w=3840&q=90&fm=webp" alt="Official ChatGPT Space artwork: an array of floating interface windows in a starry field" caption="ChatGPT Space, one of seven collaboration releases, is available on Pro, Business, and Enterprise on desktop and web. (Image: OpenAI)" /%}
+
+## Subscription and Marketplace
+
+Three items change how a ChatGPT plan works outside ChatGPT.
+
+**Sign in with ChatGPT** lets you use your allowance across 16 partners including Cognition's Devin, Notion, Vercel, T3, OpenClaw, and Dactyl, with control over how much each partner can use, and eligible OpenAI usage counting toward your plan limits. You can also sign into a range of tools with your ChatGPT account to connect plugins faster. Identity is available globally; plan usage applies to Plus and Pro users in participating tools.
+
+**A new Pro tier.** Pro 500 is $500 per month, carries the highest included usage at 25 times the ChatGPT Plus allowance, and includes Ultrafast. Pro 200 subscriptions were also reopened at $200 per month, with a lower usage allowance for new subscriptions that are not eligible for grandfathering. Existing Pro 200 subscribers who qualify keep their previous allowance through October 29, 2026.
+
+**The OpenAI Marketplace** lets eligible enterprise customers apply part of an existing OpenAI commitment toward approved partner software. The first 32 partners include Adobe and Figma for creative work, plus Sierra, Decagon, Hubspot, and Salesforce.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/vLMMtGVk0E5bPSShgIGGc/c20e4f7d8ccd7be497ba594e50a983b8/PRO_500_.png?w=3840&q=90&fm=webp" alt="Official Pro 500 title art: the words Pro 500 with Ultrafast in white sans-serif type that disperses into particles over a starfield" caption="Pro 500 is the only Pro tier that includes Ultrafast. (Image: OpenAI)" /%}
+
+## Also Today: Safety Cases for Frontier Training
+
+DevDay was not OpenAI's only publication that day. Earlier on September 29, OpenAI published "Towards safety cases for frontier AI training", a policy document that is separate from the DevDay announcements and belongs in any honest account of the day. It is a 26th news item and a 0th DevDay item.
+
+The core claim is that structured safety documentation should be required before continuing a frontier reinforcement-learning training run, ideally rising to the level of "safety cases" as used in other safety-critical industries. OpenAI is explicit that this is directional: it treats safety cases as a north star it is building toward and acknowledges the difficulty of matching the rigor of aviation or nuclear power.
+
+The published guidelines fall into three groups. Technical safeguards cover alignment training, containment, and monitoring — automated and manual dataset reviews to stop reward hacks being reinforced, backtesting alignment evals against previous incidents, tracking eval awareness, immutable transcripts of RL runs, and a rule that automated graders should not see the chain of thought so models cannot evolve to evade chain-of-thought monitors. Operational guidelines cover pre-mortem dissents written by another team, senior leadership approvals with veto power, named accountability, pause runbooks for invalidated safety cases, internal oversight visibility, auditor access, escalation paths that can page executives, fail-closed technical controls, and rollback ability. Incident investigation guidance covers periodic internal updates, root-causing training dynamics, operational and cultural postmortems, and detection methods that do not hill-climb on information derived from the incident itself.
+
+The status is the important part: OpenAI states these are recommendations currently being implemented and expects the practices to evolve over the coming weeks. Treat it as a stated policy direction with named mechanisms, not as a completed audit regime.
+
+{% x id="2104815409522483470" /%}
+
+## What Is Live Today, Preview, or Coming
+
+This is the table to check before planning work. The gap between shipping today and being announced for later is where most summaries go wrong, so each row keeps OpenAI's own wording where it is specific.
+
+| # | Announcement | Status | What the first-party source says |
+|---:|---|---|---|
+| 1 | dots | Rolling out now | Pro and Business Premium in eligible markets; Enterprise/Edu/Healthcare beta off by default |
+| 2 | GPT-6.1 Sol | Available now | ChatGPT Work and Codex on Plus/Pro/Business/Enterprise/Edu, plus API as `gpt-6.1-sol`; not in Chat |
+| 3 | GPT-6 Astra Ultrafast | Available now | API for all users at low rate limits; Codex and ChatGPT Work on Pro 500 and Enterprise/Edu |
+| 4 | GPT-6.1 Sol Ultrafast | Coming soon | "In the coming days"; no fixed date |
+| 5 | Private Intelligence | Preview | Zero Data Retention with Private Safety Processing now; Private Inference in the fall |
+| 6 | Codex in the cloud | Available now | Plus, Pro, Business, Healthcare, Education, Enterprise |
+| 7 | Codex CLI refresh | Available now | All plans |
+| 8 | Code Review | Available now | All plans |
+| 9 | Codex Security Cloud | Available now (research preview per docs) | Recap: Pro, Business, Enterprise, Edu on desktop and web |
+| 10 | Decisions API | Limited preview | Broad release planned in the coming days |
+| 11 | Agents API computer use | Available now | API, plus Codex and ChatGPT Work on Pro 500 and Enterprise |
+| 12 | Bedrock Managed Agents | Available now | Runs natively in AWS |
+| 13 | Plugin extensions | Available now | All plans |
+| 14 | Improved plugin creation/submission/discovery | Available now | All plans; users still approve access |
+| 15 | Sites can host plugins | Available now | Business, Enterprise, Healthcare, Edu |
+| 16 | MCP events for automations | Available now | Proposed MCP Events specification |
+| 17 | ChatGPT Space | Available now | Pro, Business, Enterprise on desktop/web; read and share on mobile |
+| 18 | Pages | Available now | Pro, Business, Enterprise |
+| 19 | Collaborative slides | Coming weeks | Pro, Business, Enterprise |
+| 20 | Create teams and share tasks | Available now | Business, Enterprise |
+| 21 | @ChatGPT in Slack and Microsoft Teams | Available now | Business, Enterprise |
+| 22 | Meetings plugin | Beta | macOS desktop app, Pro and Business; Enterprise coming soon |
+| 23 | Shareable profiles | Available now | Business, Enterprise |
+| 24 | Sign in with ChatGPT | Available now | Identity global; plan usage for Plus and Pro in participating tools |
+| 25 | Pro 500 plus reopened Pro 200 | Available now | $500/month includes Ultrafast and 25x Plus allowance; Pro 200 $200 with a lower allowance for new non-grandfathered subscriptions |
+
+Marketplace sits inside group five as an enterprise application rather than a self-serve tier: eligible enterprise customers apply part of an existing commitment toward approved partner software. It is counted in the 25 with the subscription group, and it is not a feature you can switch on from a pricing page.
+
+## How the Load-Bearing Claims Grade
+
+A 25-item release produces a lot of claims, and they are not all the same kind of claim. The table below separates what is mechanically checkable against a first-party page from what is a vendor-reported number and from what is genuinely unverified on day one.
+
+| Claim | Grade | Evidence and the fine print |
+|---|---|---|
+| 25 named announcements across five groups | Verified | Counted directly from the recap page's own item list; OpenAI's headline is the looser "more than 20" |
+| dots are powered by GPT-6 Astra with their own cloud computer and access to 4,000+ apps | Vendor-stated | "4,000+" is OpenAI's plugin-ecosystem count, not 4,000 audited integrations |
+| Proactive research is restricted to read-only tools | Vendor-stated, design-level | OpenAI states the limits are enforced in code: no sending messages, no changing connected-app content, no browser or desktop control |
+| GPT-6.1 Sol standard API pricing is $2 / $0.10 cached / $10 per million tokens | Verified against the launch page and the model card image | The cached rate is 95% below standard input; the launch page and the pricing card agree |
+| GPT-6.1 Sol is not available in Chat | Verified | Both the launch page and the recap agree; availability is ChatGPT Work, Codex, and the API |
+| Ultrafast is up to 8x faster (300 tokens/s) in Codex and up to 6x in the API | Vendor-reported | "Up to"; OpenAI's Codex speed documentation states the comparison measures token generation speed, not billing rates or task completion time |
+| Pro 500 includes 25x the ChatGPT Plus allowance and includes Ultrafast | Vendor-stated | The absolute allowance is not published; the multiplier is relative to Plus |
+| Codex Security Cloud includes Daybreak Blue model access by default | Verified | Stated in both the recap and the @OpenAI launch post; no standalone Daybreak Blue model list is published |
+| Codex Security Cloud "available now" vs "research preview" | Contradiction, both stated | The recap gives plan availability; the security docs call it a research preview |
+| Benchmark results for GPT-6.1 Sol (DeepSWE v1.1, AutomationBench, OSWorld 2.0, Terminal-Bench Science 0.1) | Vendor-reported, no independent reproduction | Every figure comes from OpenAI's launch page or its own accounts; no third-party harness run exists in the source set |
+| Sign in with ChatGPT covers 16 partners | Vendor-stated | Named partners appear on the recap; the per-partner allowance controls are described but not enumerated |
+| Safety cases guidance is "in the process of being implemented" | Vendor-stated policy direction | OpenAI's own wording; not an audit regime and not a DevDay item |
+
+Two grades are worth calling out because they are where a summary is most likely to mislead. The first is Codex Security Cloud, where the recap and the product documentation describe maturity differently; a planner should use the stricter reading. The second is the benchmark block, which is vendor-reported throughout — reading it as independently established would be a factual error, not a stylistic one.
+
+## What This Changes for an Agent-Skill Stack
+
+A registry of installable agent skills is downstream of all of this, and four of the items change what is worth writing into a skill.
+
+The Agents API gaining computer use and Codex's multi-agent behaviour means a skill that used to orchestrate sub-processes locally can now delegate to hosted agents. Tool search and context compaction are the two capabilities that matter most in a long skill: they are the difference between a skill that degrades after twenty tool calls and one that keeps a useful summary of its own state. If you build skills around explicit control flow, [autonomous-agent-patterns](/skills/autonomous-agent-patterns) and [computer-use-agents](/skills/computer-use-agents) are the closest registry analogues to what the API now offers natively.
+
+Codex Security Cloud changes the shape of a security skill rather than replacing it. Because it validates findings in an isolated container and produces ranked output with remediation guidance, the human-side work shifts to triage and threat-model editing. The registry pages that matter here are [security-best-practices](/skills/security-best-practices) for the code-level rules a scanner will keep re-reporting, and [threat-mitigation-mapping](/skills/threat-mitigation-mapping) for the mapping step you now maintain by hand in the plugin's Monitoring settings.
+
+The permission model behind dots is the most reusable idea in the release. Read-only background work, a separate review gate for consequential actions, explicit confirmations for irreversible steps, and handoffs for the sensitive ones — that is a design pattern you can copy into any skill that takes actions in someone else's account. [memory-management](/skills/memory-management) covers the context half of the problem, and [code-review](/skills/code-review) is the registry entry that maps most directly onto the Code Review and Codex CLI review flows.
+
+Ultrafast and the tier changes are a budgeting problem: a faster tier multiplies the token rate on your included allowance, so a skill that fans out subagents can now burn a plan faster per wall-clock minute even at unchanged per-token cost. [ai-cost-optimizer](/skills/ai-cost-optimizer) and [cloud-cost-management](/skills/cloud-cost-management) are the registry entries for that conversation.
+
+If Skills as a concept are new to you, start with [What Are Agent Skills?](/blog/what-are-agent-skills) and then read [We Must Pace the Frontier](/blog/we-must-pace-the-frontier-explained) for why the safety-policy half of this day matters to tooling decisions. Four deep dives cover the flagship releases in detail: [GPT-6.1 Sol for agent workloads](/blog/gpt-6-1-sol-agent-workloads), [dots permissions and workflows](/blog/openai-dots-permissions-and-workflows), [Codex Security Cloud workflows](/blog/codex-security-cloud-agent-workflows), and [Ultrafast and Pro tier cost planning](/blog/ultrafast-and-pro-tiers-cost-planning).
+
+## Open Questions After DevDay
+
+A few things a careful reader will notice are missing from the official material. Listing them is more useful than guessing an answer.
+
+- **No fixed dates for the "coming soon" items.** GPT-6.1 Sol Ultrafast is "in the coming days", the Decisions API broad release is "planned in the coming days", collaborative slides are "in the coming weeks", and Private Inference is a fall preview. None carries a date.
+- **No published Daybreak Blue model list.** Codex Security Cloud includes access to cyber-capable models through Daybreak Blue, but as of the access date there is no standalone Daybreak Blue page or model inventory at the URLs probed.
+- **No dollar figures beyond the Pro tiers and Sol token rates.** Business Premium, Enterprise, and Edu pricing for dots is not published; the framing is "first dot included at no extra cost."
+- **No absolute allowance for Pro 500.** It is described as 25 times the ChatGPT Plus allowance, which is relative. The absolute number sits behind the pricing page, which returns HTTP 403 to non-browser clients.
+- **No context window or knowledge cutoff for GPT-6.1 Sol** in the launch material, unlike the GPT-6 Astra launch which published both.
+- **No independent benchmark reproduction yet.** Every performance number in this roundup and its deep dives is OpenAI-reported as of launch day. There is no third-party harness run of DeepSWE v1.1, AutomationBench, OSWorld 2.0, or Terminal-Bench Science 0.1 against GPT-6.1 Sol in the source set, so treat the numbers as vendor-reported rather than verified.
+
+That last point is not a criticism of OpenAI specifically. It is simply what is true on day one, and it is the difference between "OpenAI measured this" and "this was independently measured".
+
+## What to Do Next
+
+- **If you ship a model-backed feature**, evaluate GPT-6.1 Sol on cost per completed task rather than cost per token. The $0.10 per million cached input rate is the lever, and it only pays off on workloads that resend a large stable prefix. Then look at the Agents API computer-use addition if you are currently hand-rolling browser or desktop automation.
+- **If you maintain coding-agent skills**, the Codex CLI refresh is the item to test the same day: `/agents`, session resume, and worktrees change how a skill that delegates work should be written.
+- **If you are a security team**, pilot Codex Security Cloud on two repositories, edit the generated threat model, and measure the validated-finding rate before broadening. The documentation is explicit that it complements SAST and does not replace human review.
+- **If you pay for ChatGPT**, the decision is Pro 500 versus staying put. Pro 500 is the only Pro tier with Ultrafast and the highest allowance. If you are on Pro 200, confirm whether you are inside the grandfathering window before changing anything, because the included allowance through October 29, 2026 is a benefit a new subscription does not carry.
+- **If you build inside ChatGPT**, plugin extensions have the longest runway. The question to answer is whether your product is better as a panel in the sidebar next to the conversation than as a separate destination.
+
+## FAQ
+
+**How many announcements did OpenAI make at DevDay 2026?**
+OpenAI's own framing is "more than 20 major announcements". Its recap organizes them into five groups containing 25 named items, which this article reproduces in OpenAI's own grouping.
+
+**What was the biggest announcement?**
+By source depth and product surface, dots and GPT-6.1 Sol were the two tentpole releases, with Ultrafast and Pro 500 close behind. OpenAI leads the recap with dots under a "whole new way to work with AI" framing.
+
+**Did OpenAI release a new frontier model?**
+No new frontier generation. GPT-6.1 Sol is an upgrade to GPT-6 Sol positioned below the existing GPT-6 Astra, at one-fifth of Astra's standard input and output token prices.
+
+**Is the Agents API computer use the same thing as Codex's agent behaviour?**
+OpenAI says the Agents API now brings Codex's multi-agent capabilities, tool search, tool calling, and context compaction into your application, with OpenAI running the infrastructure. It is the hosted version of behaviour Codex already had.
+
+**Was there a safety announcement at DevDay 2026?**
+Not inside the DevDay announcements. "Towards safety cases for frontier AI training" was published earlier the same day as a separate policy document covering technical safeguards, operational guidelines, and incident investigation. OpenAI states the practices are in the process of being implemented.
+
+**What is not available yet?**
+GPT-6.1 Sol Ultrafast is coming in the coming days. The Decisions API is in limited preview with a broad release planned in the coming days. Collaborative slides arrive in the coming weeks. Private Inference is a fall preview. Specialist dots are enterprise pilots.
+
+**Does anything here cost extra on an existing plan?**
+Pro 500 is a new $500 per month plan. Your first dot is included at no additional cost on Pro and Business Premium. Codex Security Cloud, the Codex CLI refresh, Code Review, and all four plugin features are listed as available to their plans without a separate charge.
+
+## Sources
+
+Checked September 29, 2026.
+
+**OpenAI — primary**
+
+- [DevDay 2026 Recap](https://openai.com/index/devday-2026-recap/) — the 25-item announcement manifest, per-item availability lines, official section images. Page metadata publish time: Tue, 29 Sep 2026 12:05:48 GMT.
+- [Introducing dots](https://openai.com/index/introducing-dots/)
+- [How we build safety, security, and privacy into dots](https://openai.com/index/how-we-build-safety-security-and-privacy-into-dots/)
+- [Introducing GPT-6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol)
+- [Towards safety cases for frontier AI training](https://openai.com/index/towards-safety-cases-for-frontier-ai-training/)
+- [Ultrafast mode in the API](https://developers.openai.com/api/docs/guides/ultrafast-mode)
+- [Codex Security Cloud setup](https://learn.chatgpt.com/docs/security/setup)
+- [Codex cloud](https://learn.chatgpt.com/docs/cloud)
+- [Plugin extensions](https://developers.openai.com/plugins/build/extensions)
+- [MCP events for plugin automations](https://developers.openai.com/plugins/build/mcp-events)
+- [Agents API computer use](https://developers.openai.com/api/docs/guides/agents-api/tools/computer-use)
+- [ChatGPT Space feature page](https://chatgpt.com/features/space/)
+- [About ChatGPT Pro tiers](https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers)
+- [Sign in with ChatGPT / Marketplace help article](https://help.openai.com/en/articles/20001542)
+- [@OpenAI on X](https://x.com/OpenAI) — September 29, 2026 announcement timeline (17 posts)
+- [@OpenAIDevs on X](https://x.com/OpenAIDevs) — developer-facing posts and benchmark charts
+
+**Third-party**
+
+- [Amazon Web Services — Bedrock Managed Agents, powered by OpenAI](https://aws.amazon.com/bedrock/managed-agents-openai/)
+
+{% callout type="info" %}
+Accessing `openai.com` and `chatgpt.com/pricing` from a non-browser client returns HTTP 403 because of bot management, so the OpenAI pages above were read through a text-extraction reader that returns the published page text. `learn.chatgpt.com` and `developers.openai.com` served directly. No figure in this article is quoted from a bot-blocked pricing page.
+{% /callout %}
