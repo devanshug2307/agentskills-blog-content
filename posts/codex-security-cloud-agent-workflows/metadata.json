@@ -1,0 +1,19 @@
+{
+  "title": "Codex Security Cloud: the four-stage pipeline and its limits",
+  "slug": "codex-security-cloud-agent-workflows",
+  "category": "Guides",
+  "description": "How Codex Security Cloud scans GitHub repos: the threat model, validation sandbox, remediation flow, and the limits OpenAI states itself.",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Codex Security Cloud",
+    "Daybreak Blue",
+    "OpenAI security",
+    "SAST",
+    "threat model",
+    "auto-validation",
+    "code scanning"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/codex-security-cloud-agent-workflows/hero.png"
+}
