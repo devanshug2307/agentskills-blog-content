@@ -1,0 +1,191 @@
+GPT-6.1 Sol is the September 29, 2026 upgrade to GPT-6 Sol, and OpenAI's pitch is a specific trade rather than a new ceiling: near-GPT-6-Astra performance on agentic coding, computer use, and professional work at one-fifth of Astra's standard input and output token prices, with cached input at $0.10 per million tokens. Standard API pricing is $2 per million input tokens and $10 per million output tokens. The model is live in ChatGPT Work, Codex, and the API as `gpt-6.1-sol`, and it is not in Chat.
+
+For an agent builder the useful question is narrower than "is it better". It is: **which of my workloads does a cheaper near-frontier model actually improve, and which ones does caching change more than the headline price does?** This article works through the published numbers, their exact configurations, and the arithmetic that decides the answer. Every performance figure below is OpenAI-reported; there is no independent reproduction of any of these benchmarks against GPT-6.1 Sol in the source set as of September 29, 2026, and that absence is stated rather than glossed.
+
+{% x id="2104986129686741046" /%}
+
+## What Actually Changed
+
+Three models matter here, and they sit at different points on the price-performance curve:
+
+**GPT-6 Astra** is the frontier model. OpenAI's own guidance is to choose Astra "when maximizing quality matters most."
+
+**GPT-6.1 Sol** is the upgrade to GPT-6 Sol. OpenAI frames it as near-Astra intelligence for a fifth of the price, and specifically names agentic coding, computer use, and professional work as the axes where it closes most of the gap. On the vendor's own guidance it is the model for "complex work you want to run more often."
+
+**GPT-6 Luna** remains the cheap, fast option for high-volume simple work.
+
+OpenAI also states that GPT-6.1 Sol is an upgrade over GPT-6 Sol in its alignment evaluations, closer to Astra, and that it was not observed attempting to bypass an automated safety reviewer — matching Astra and GPT-6 Sol. Those claims are vendor-reported and come with the explicit caveat that the evaluations deliberately test challenging situations and do not measure failure rates in typical use.
+
+The most consequential change for anyone running long agent loops is not the score improvement. It is the cached input rate. OpenAI states that $0.10 per million cached input tokens is 95% below standard input pricing and 50% below GPT-6 Sol's cached input pricing. Working backwards from the second claim, GPT-6 Sol's cached input was $0.20 per million tokens. That derivation is arithmetic from OpenAI's stated percentage, not a separately published figure.
+
+## The Pricing Table That Decides the Workload
+
+The three-model pricing card OpenAI published with the launch gives the full picture. Prices are per million tokens.
+
+| Model | Input | Cached input | Output | OpenAI's positioning |
+|---|---:|---:|---:|---|
+| GPT-6 Astra | $10.00 | $1.00 | $50.00 | "Our most intelligent model for the best results." |
+| GPT-6.1 Sol | $2.00 | $0.10 | $10.00 | "Near-Astra intelligence for a fifth of the price." |
+| GPT-6 Luna | $0.10 | $0.01 | $0.50 | "Fast and efficient everyday work at scale." |
+
+Read as a set, the card says something a single headline number hides. Sol's input price is one-fifth of Astra's and its output price is one-fifth of Astra's, which is exactly what "a fifth of the price" means for the two rates OpenAI named. But its cached input price is one-tenth of Astra's, not one-fifth. The discount is steeper on the cached side than on either standard rate, and that is where an agent loop with a stable prefix gains the most.
+
+{% figure src="https://pbs.twimg.com/media/HTZoiPrbUAA57JC.jpg" alt="Official OpenAI pricing card comparing GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna with input, output and cached input prices per million tokens" caption="OpenAI's three-model pricing card from the launch day. GPT-6.1 Sol is highlighted in the centre panel. (Image: OpenAI, via @OpenAI on X)" /%}
+
+## The Benchmarks and Their Exact Configurations
+
+Benchmark tables usually collapse the one detail that determines whether a number is comparable. The table below keeps the configuration and the caveat in the same row, because several of these results depend on reasoning-effort settings that differ between the models being compared.
+
+| Benchmark | What it measures | GPT-6.1 Sol result | Comparator and configuration | Caveat |
+|---|---|---|---|---|
+| DeepSWE v1.1 | Complex software-engineering tasks in real codebases | 75.2% at high reasoning effort | Surpasses GPT-6 Sol's best score of 68.8% at maximum effort; ~76% lower cost per task. Launch page states it matches Astra at roughly one-fifth of the cost | The two Sol figures are at different effort settings (high vs maximum); not a like-for-like effort comparison |
+| GDP.pdf | Answering professional questions over complex PDFs, including tables, charts, diagrams, and fine print | Higher than Opus 5.5 with fallbacks at less than half the cost per task across tested settings; approaches Astra at roughly one-fifth the cost per task | Benchmark run by a third party (Surge HQ), across ten professional domains | Domain mix is chosen by the benchmark author; no per-domain breakdown published in the launch material |
+| AutomationBench 1.0.6 | Whether agents complete multi-step business workflows, 47 tools | 31.7% at medium reasoning effort | +2.2 points above Opus 5.5 at medium effort at roughly a third of the cost; +4.8 points over GPT-6 Sol at the same setting | OpenAI notes the Claude Fable 5.1 datapoint understates that model's real cost because it omits fallbacks, which occurred on roughly 40% of tasks |
+| OSWorld 2.0 (offline set) | Long-horizon computer-use workflows | 71.4% at maximum reasoning effort | Astra 73.5% at maximum effort; within 2.1 points at roughly one-seventh of Astra's cost per task, and 7 points above GPT-6 Sol at less than half the cost | Partial reward on the offline set, v2026.08.08 release |
+| Terminal-Bench Science 0.1 | Scientific workflows: data analysis, simulation, theorem proving | More than doubles GPT-6 Sol's score at maximum effort at less than half the cost per task; $5.47 average cost per task | Opus 5.5 $23.21 per task; Astra $23.80 per task. Astra still holds the highest score among tested models at 68.1% | OpenAI explicitly recommends Astra for the most difficult scientific research tasks |
+| Factuality on difficult prompts | Share of answers containing at least one factual error | 11.4% to 7.7% at low reasoning effort, a reduction of about 32% | Within 1.9 percentage points of Astra across tested settings at less than one-fifth the cost per task | Evaluated on de-identified conversations where users had flagged an earlier model's error; OpenAI states these are not representative of typical usage |
+| Transparency about a broken search tool | Whether the agent tells the user the tool failed instead of guessing | Fails to disclose in 2.1% of cases at maximum effort | GPT-6 Sol 4.9%; Astra 1.5%; GPT-6 Luna 28.7% | Tasks are selected to elicit failures |
+| Computer-use safety stress test | Misaligned outcome rate, lower is better | 4.3% | Astra 2.4%; GPT-6 Sol 17.4%; GPT-6 Luna 13.7% | Deliberately adversarial evaluation, not a typical-use failure rate |
+
+Two rows deserve expansion because they are where a casual reading goes wrong.
+
+The DeepSWE comparison pits Sol at **high** reasoning effort against GPT-6 Sol at **maximum** effort. The 6.4-point gap (75.2% versus 68.8%) is real, but it is not a statement about what happens when both models run at the same effort. OpenAI's phrasing — that Sol eclipses GPT-6 Sol's best score "at a lower reasoning effort and cost" — is the accurate version of the claim.
+
+The AutomationBench row carries a footnote that matters for cost comparisons. OpenAI reports that the Claude Fable 5.1 datapoint on that chart understates the competitor's actual cost because it omits the cost of fallbacks, which occurred on roughly 40% of tasks. The direction of that disclosure is against OpenAI's own interest, which makes it worth taking at face value: the Fable 5.1 point on the published chart is not a fair like-for-like cost.
+
+{% figure src="https://pbs.twimg.com/media/HTZwCmmbEAArj5K.png" alt="OpenAI chart titled DeepSWE plotting score against cost per task for GPT-6.1 Sol, GPT-6 Sol and GPT-6 Astra" caption="DeepSWE v1.1 as OpenAI published it: score on the vertical axis, cost per task on the horizontal. GPT-6.1 Sol reaches its peak at a fraction of Astra's cost per task. No point-level labels are printed, so exact values come from the launch text. (Image: OpenAI, via @OpenAIDevs on X)" /%}
+
+{% figure src="https://pbs.twimg.com/media/HTZpQgZaoAAnqNr.png" alt="Bar chart titled Computer-use safety stress test, lower is better, showing misaligned outcome rate for GPT-6 Astra at 2.4 percent, GPT-6.1 Sol at 4.3 percent, GPT-6 Sol at 17.4 percent and GPT-6 Luna at 13.7 percent" caption="The computer-use safety stress test is adversarial by construction: GPT-6.1 Sol sits between Astra and GPT-6 Sol on misaligned outcome rate, and OpenAI notes the evaluation does not measure typical-use failure rates. (Image: OpenAI, via @OpenAI on X)" /%}
+
+## Where Cached Input Changes the Maths
+
+This is the part of the launch that no benchmark table captures, and for an agent it is the part that decides the bill.
+
+Take a representative long-running agent loop. It resends a 50,000-token stable prefix — system prompt, tool schemas, repository context, style rules — on each of 40 model calls, and produces 1,500 output tokens per call. That is 2,000,000 input tokens and 60,000 output tokens per run.
+
+Using only the published per-million rates above, the totals are:
+
+| Scenario | GPT-6.1 Sol | GPT-6 Astra | Astra / Sol |
+|---|---:|---:|---:|
+| Every input token billed at the standard rate | $4.60 | $23.00 | 5.00x |
+| Prefix served from cache at the cached input rate | $0.80 | $5.00 | 6.25x |
+
+This arithmetic is mine, not OpenAI's, and it rests on two assumptions worth stating plainly: the prefix is genuinely cacheable and stable across calls, and the workload is dominated by that prefix rather than by fresh input. Change either assumption and the gap narrows toward the 5x standard-rate ratio. Nothing here is a benchmark result; it is a cost model built from published prices.
+
+{% callout type="info" %}
+The practical lever is prefix stability, not model choice. A skill that rewrites its system prompt, tool list, or repository summary on every turn destroys the cache and pays the standard $2 per million input rate. A skill that keeps those blocks byte-identical and appends only the new turn captures the $0.10 rate. That is the difference between $4.60 and $0.80 on the model loop above.
+{% /callout %}
+
+## Alignment and Deployment Notes
+
+OpenAI's deployment section is short and specific, and it is worth reading alongside the capability claims because the two use different measurement bases.
+
+The transparency evaluation tests whether an agent tells the user that its search tool is broken instead of guessing. GPT-6.1 Sol fails to disclose in 2.1% of cases, against 4.9% for GPT-6 Sol and 1.5% for Astra. The evaluation is set to maximum reasoning effort and the tasks are selected to elicit failures, so the number is a stress result rather than an expected error rate.
+
+The computer-use safety stress test records misaligned outcome rates of 2.4% for Astra, 4.3% for GPT-6.1 Sol, 17.4% for GPT-6 Sol, and 13.7% for GPT-6 Luna. Lower is better on that chart, and the ordering is the useful part: Sol is much better than the model it replaces and slightly behind the frontier model, on an evaluation that OpenAI describes as deliberately challenging.
+
+OpenAI also states it observed no attempts by GPT-6.1 Sol to bypass an automated safety reviewer, matching both Astra and GPT-6 Sol. The full detail is in the GPT-6.1 Sol system card addendum, which the launch page links.
+
+None of this is independently verified. It is the vendor's own evaluation of its own model, published as required of a deployment of this kind, and it should be read as such.
+
+## Which Agent-Skill Workloads Fit
+
+Three workload shapes follow from the numbers, and each maps onto existing registry entries.
+
+**Long-context coding loops with a stable prefix.** This is the best-supported case. DeepSWE measures software engineering in real codebases, the cached input rate is the steepest discount in the table, and the failure modes of a cheaper model show up as retries rather than as silently wrong output. Registry entries built for this shape include [codex](/skills/codex) for the Codex-side workflow and [coding-agent](/skills/coding-agent) for the general delegate-and-review pattern.
+
+**Multi-step tool workflows where a wrong action is recoverable.** AutomationBench measures exactly this, and a 31.7% score at medium effort is not a number that justifies unattended execution on irreversible steps. The registry analogue for the human-in-the-loop half is [code-review](/skills/code-review), because the review step is what catches an agent's confident-but-wrong change before it merges.
+
+**Computer-use and desktop automation.** OSWorld 2.0's offline set is the benchmark here, and Sol's 71.4% at maximum effort against Astra's 73.5% is the narrowest gap in the table. If your workload is clicking through applications, Sol is close to frontier at roughly one-seventh the cost per task in OpenAI's measurement. [computer-use-agents](/skills/computer-use-agents) covers the control pattern.
+
+Two workload shapes do not fit well. Work that is already cheap on Luna should stay on Luna; there is no reason to move a classification pass up a price tier. And work where a single wrong answer is expensive — the kind of task OpenAI itself routes to Astra on Terminal-Bench Science — should keep the frontier model.
+
+For measuring your own workload rather than trusting the launch tables, [benchmark-harness](/skills/benchmark-harness) and [evaluating-llms-harness](/skills/evaluating-llms-harness) are the registry entries for building a repeatable comparison, and [ai-cost-optimizer](/skills/ai-cost-optimizer) is the one for turning the result into a budget.
+
+{% x id="2104993067942219873" /%}
+
+## Testing Sol Against Your Own Repository
+
+A vendor benchmark tells you which model won on someone else's task set. It does not tell you whether Sol completes your refactor at a lower cost per finished task, which is the only number that changes a budget. The test below is designed to be run in an afternoon without building new infrastructure.
+
+**Pick ten tasks you already completed.** Use real merged changes rather than synthetic prompts, because the benchmark that matters most here — software engineering in a real codebase — is exactly the kind of work where repository-specific context dominates model quality. Ten is enough to see a direction; it is not enough to publish a percentage, and it should not be described as one.
+
+**Run each task twice with a fixed configuration.** Once on GPT-6.1 Sol and once on whatever model you use today. Hold the harness constant: same prompts, same tool set, same reasoning-effort setting per model, same repository revision. The one thing worth varying deliberately is the prefix layout, because that is where the cached-input rate lives.
+
+**Record four numbers per task, not one.** Whether the task completed, the wall-clock time, the total tokens split into cached input, uncached input, and output, and the human minutes spent reviewing the result. Cost per completed task is the sum of token cost and review time valued at your own rate; a model that is cheaper per token but produces changes you rewrite is more expensive in practice.
+
+**Verify the cache actually engaged.** This is the step that is skipped most often. If your bill shows input tokens at the standard rate rather than the cached rate, the prefix is changing between calls and the discount is not applying. Log the request body hash on consecutive turns: if it changes, something in the prefix is being regenerated, and that is a fixable bug in the skill rather than a property of the model.
+
+**Keep a holdout of tasks you expect Sol to fail.** Include two or three that need the frontier model — the kind of hard single-shot reasoning or scientific workflow that OpenAI itself routes to Astra. A comparison that only contains tasks the cheap model can solve produces a result that will not survive contact with production.
+
+**Repeat the run when you change the skill, not when you change the model.** The interesting variable in an agent stack is usually the prompt and tool design around the model, so pin the model and iterate on the skill until the completion rate stabilises, then swap models once. That ordering removes model choice as a confound in your own results.
+
+For an existing agent-skill install, the migration is small. Point the skill's model identifier at `gpt-6.1-sol`, keep the frontier model as the escalation target for tasks the skill marks as high-risk, and re-baseline your token accounting so cached and uncached input are tracked separately. If your skill has a fixed system prompt and tool list, expect the change to be a straightforward cost reduction; if it rebuilds context on every turn, expect the price to stay close to the $2 standard rate until you fix the prefix.
+
+## What the Launch Material Does Not Say
+
+Four gaps are worth naming, because each one changes a planning decision.
+
+**No context window or knowledge cutoff.** The GPT-6 Astra launch published both. The GPT-6.1 Sol launch page does not state either, so any summary that quotes a context window for Sol is inventing it.
+
+**No independent reproduction.** Every number above is from OpenAI's launch page or OpenAI's own accounts. As of the access date there is no third-party harness run of DeepSWE v1.1, AutomationBench, or OSWorld 2.0 against GPT-6.1 Sol in the source set. Where an independent number would normally appear, this article says there is not one.
+
+**No GPT-6.1 Sol Ultrafast date.** The launch page says Ultrafast for Sol arrives "in the coming days" with up to 8x faster token generation in Codex compared to standard speed. No date is given.
+
+**No absolute Pro-tier allowance.** Pro 500 is described as 25 times the ChatGPT Plus allowance, which is a relative figure. If you are budgeting against an absolute token number, the published material does not provide one.
+
+There is also a cost-side question the launch material does not answer: whether the cached rate applies across the whole agent trace or only to a declared prefix. OpenAI's statement is about cached input generally, and the practical answer depends on how the request is structured, so it is worth measuring on your own traffic rather than assuming the best case.
+
+## Cost Planning Summary
+
+If you take one thing from this release, take the shape of the discount rather than any single score. GPT-6.1 Sol is one-fifth of Astra on standard input and output, and one-tenth on cached input. The model is a strict improvement over GPT-6 Sol on every published axis. It is not a replacement for Astra on tasks where a wrong answer is expensive, and OpenAI says so itself in the Terminal-Bench Science recommendation.
+
+The practical sequence: keep Astra for the hardest single-shot decisions, move high-volume coding and tool loops with stable prefixes to Sol, leave trivial classification on Luna, and measure your own completion rate before committing a budget. The cached-input lever is the one to engineer deliberately, because it is worth more than the headline price cut on any workload whose prefix does not change.
+
+Sol does not exist in isolation, and two other pieces of the same release bear directly on this decision. The [DevDay 2026 roundup for agent builders](/blog/openai-devday-2026-recap-agent-builders) covers the Agents API computer-use addition that lets a skill delegate to hosted agents, and [Ultrafast and Pro tier cost planning](/blog/ultrafast-and-pro-tiers-cost-planning) covers the speed tier that changes cost per wall-clock minute rather than cost per token. If you are new to how these agent workflows are packaged and installed, start with [What Are Agent Skills?](/blog/what-are-agent-skills).
+
+## FAQ
+
+**How much does GPT-6.1 Sol cost?**
+$2 per million input tokens, $0.10 per million cached input tokens, and $10 per million output tokens. The cached rate is stated as 95% below standard input pricing and 50% below GPT-6 Sol's cached input pricing.
+
+**Is GPT-6.1 Sol better than GPT-6 Astra?**
+No. OpenAI positions it as near-Astra, not above it, and recommends Astra for the most difficult work — including scientific research tasks on Terminal-Bench Science 0.1, where Astra holds the highest score among the models tested at 68.1%.
+
+**Is GPT-6.1 Sol better than GPT-6 Sol?**
+Yes on every published axis: higher DeepSWE score, higher AutomationBench score, higher OSWorld 2.0 result, lower factual error rate, and better alignment evaluations. It is also cheaper than Sol and Astra at every published rate.
+
+**Where is GPT-6.1 Sol available?**
+In ChatGPT Work and Codex for Plus, Pro, Business, Enterprise, and Edu users, and through the API as `gpt-6.1-sol`. It is not yet available in Chat.
+
+**Were these benchmarks independently verified?**
+No. Every result in this article is OpenAI-reported. No third-party harness run of DeepSWE v1.1, AutomationBench 1.0.6, OSWorld 2.0, or Terminal-Bench Science 0.1 against GPT-6.1 Sol appears in the source set as of September 29, 2026.
+
+**Does the cached input price apply automatically?**
+OpenAI describes the $0.10 rate as cached input pricing and states the discount relative to standard input. Whether a given request qualifies depends on how the prefix is structured, so the cost model in this article is a calculation from published rates under a stated assumption, not a guarantee.
+
+**What is Ultrafast for GPT-6.1 Sol?**
+A faster service tier for the model described as coming in the coming days, with up to 8x faster token generation compared to standard speed in Codex. No date was published.
+
+## Sources
+
+Checked September 29, 2026.
+
+**OpenAI — primary**
+
+- [Introducing GPT-6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol) — capability claims, benchmark names, pricing, availability, alignment summary
+- [DevDay 2026 Recap](https://openai.com/index/devday-2026-recap/) — Sol positioning and official launch art
+- [GPT-6.1 Sol system card addendum (PDF)](https://cdn.openai.com/pdf/38e3efcf-545e-44cd-99ec-2b7eb395f4cc/oai_GPT_6_1_Sol.pdf) — linked from the launch page
+- [@OpenAI on X](https://x.com/OpenAI) — launch thread, pricing card image, computer-use safety stress test chart
+- [@OpenAIDevs on X](https://x.com/OpenAIDevs) — DeepSWE v1.1, AutomationBench and OSWorld 2.0 figures, factuality chart
+- [Codex speed documentation](https://learn.chatgpt.com/docs/agent-configuration/speed) — defines what the Ultrafast speed comparison measures
+
+**Benchmark owners (referenced by OpenAI, not run for this article)**
+
+- [Surge HQ — GDP.pdf](https://surgehq.ai/benchmarks/gdp-pdf)
+- [Zapier — AutomationBench](https://zapier.com/benchmarks)
+- [OSWorld 2.0](https://osworld-v2.xlang.ai/)
+
+{% callout type="warning" %}
+No performance figure in this article was independently reproduced. DeepSWE v1.1, AutomationBench, OSWorld 2.0, Terminal-Bench Science 0.1, and the factuality and alignment evaluations are all vendor-reported, and several compare models at different reasoning-effort settings. The cost tables are this article's own arithmetic from OpenAI's published per-million-token prices and are labelled as such wherever they appear.
+{% /callout %}

@@ -1,0 +1,20 @@
+{
+  "title": "GPT-6.1 Sol for coding agents: benchmarks, pricing, and fit",
+  "slug": "gpt-6-1-sol-agent-workloads",
+  "category": "Deep Dives",
+  "description": "GPT-6.1 Sol pricing, what the benchmark configurations actually say, where cached input changes the maths, and which agent workloads fit.",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GPT-6.1 Sol",
+    "GPT-6 Astra",
+    "OpenAI pricing",
+    "cached input",
+    "DeepSWE",
+    "AutomationBench",
+    "OSWorld 2.0",
+    "coding agents"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gpt-6-1-sol-agent-workloads/hero.png"
+}
