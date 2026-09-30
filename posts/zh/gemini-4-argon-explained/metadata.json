@@ -15,5 +15,6 @@
     "网络安全防御",
     "Gemini API"
   ],
-  "draft": false
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gemini-4-argon-explained/hero.png"
 }
