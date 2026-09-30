@@ -1,0 +1,20 @@
+{
+  "title": "Gemini 4 Argon: Google's frontier model, explained",
+  "slug": "gemini-4-argon-explained",
+  "category": "Changelog Watch",
+  "description": "Google DeepMind's Gemini 4 Argon: the 1M-token output limit, the vendor-reported benchmarks, Fairwind access, introductory pricing, and what developers can plan for.",
+  "publishedDate": "2026-09-30",
+  "author": "Agent Skills",
+  "keywords": [
+    "Gemini 4 Argon",
+    "Google DeepMind",
+    "1M token output",
+    "Fairwind Program",
+    "DeepSWE v1.1",
+    "CWE-bench",
+    "cybersecurity defense",
+    "Gemini API"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gemini-4-argon-explained/hero.png"
+}

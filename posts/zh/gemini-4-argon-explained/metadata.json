@@ -1,0 +1,19 @@
+{
+  "title": "Gemini 4 Argon：Google 新前沿模型全解析",
+  "slug": "gemini-4-argon-explained",
+  "category": "Changelog Watch",
+  "description": "Google DeepMind 的 Gemini 4 Argon：1M token 输出上限、厂商自报基准、Fairwind 访问路径、入门定价，以及开发者现在可以做的准备。",
+  "publishedDate": "2026-09-30",
+  "author": "Agent Skills",
+  "keywords": [
+    "Gemini 4 Argon",
+    "Google DeepMind",
+    "1M token 输出",
+    "Fairwind Program",
+    "DeepSWE v1.1",
+    "CWE-bench",
+    "网络安全防御",
+    "Gemini API"
+  ],
+  "draft": false
+}
