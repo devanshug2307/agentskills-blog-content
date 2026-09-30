@@ -1,0 +1,19 @@
+{
+  "title": "OpenAI dots：权限模型与可以交接的工作",
+  "slug": "openai-dots-permissions-and-workflows",
+  "category": "Guides",
+  "description": "OpenAI dots 的运作方式：Auto-review、Custom Rules、只读的后台研究、dot 交接回来的步骤，以及哪些工作适合委派。",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "OpenAI dots",
+    "GPT-6 Astra",
+    "Auto-review",
+    "Custom Rules",
+    "常驻智能体",
+    "智能体权限",
+    "主动研究"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/openai-dots-permissions-and-workflows/hero.png"
+}

@@ -1,0 +1,234 @@
+Ultrafast 是 OpenAI 最快的服务档位：GPT-6 Astra Ultrafast 在 Codex 中生成 token 的速度比 Standard 最高快 8 倍，OpenAI 给出的数字是每秒 300 个 token，在 API 中最高快 6 倍。GPT-6 Astra Ultrafast 今天已在 Codex、ChatGPT Work 和 API 中上线。GPT-6.1 Sol Ultrafast 将在未来几天到来，在 Codex 中生成速度最高快 8 倍。同期，OpenAI 推出了每月 $500 的 Pro 500，并重新开放了每月 $200 的 Pro 200。
+
+定价这件事正是多数摘要出错的地方，因为 OpenAI 公布了两套不同的倍数，它们适用于不同的东西。一套描述速度。另一套描述 Ultrafast 以多快的速度消耗你套餐内的用量额度。只凭第一个数字去做规划决策，大约会错一个数量级。本指南把两者分开，推导出它们合在一起的含义，并给出档位对比和请求形态。
+
+下文每个金额都来自 OpenAI 自己的帮助中心或文档。凡未公布的数字，本文如实说明，而不去估算。
+
+{% x id="2104993966043320759" /%}
+
+## Ultrafast 是什么，又不是什么
+
+Ultrafast 是一个服务档位，不是一个模型。在 API 上，你把 `model` 设为 `gpt-6-astra`，把 `service_tier` 设为 `ultrafast`。在 Codex 和 ChatGPT Work 中，它是你选择的一个选项，在 Pro 套餐上它会出现在模型选择器里。
+
+最重要的定义性提醒写在 OpenAI 自己的文档里：8 倍这个数字比较的是 token 生成速度，明确不是计费率，也不是整体任务完成时间。这个区分在两个方向上都很重要。token 生成是任务中模型产出输出的那部分；它不包含工具执行、仓库索引、测试运行、网络往返，也不包含人花在审查上的时间。因此，一个工具体量很大的任务，端到端并不会快 8 倍。
+
+还有两条限制写在文档里、且容易漏看。Ultrafast 不向要求推理在美国境外驻留的工作区提供，而仅凭工作区所在地并不能确定资格。此外，其他自助套餐在发布时没有 Ultrafast 访问权限，即便购买了 credits 也不行。
+
+## 两个倍数，以及它们合在一起的含义
+
+OpenAI 为 GPT-6 Astra 上的 Ultrafast 给出了两套彼此独立的数字，把它们当成一个数字来读是最常见的规划错误。
+
+**速度：** 在 Codex 中，token 生成比 Standard 最高快 8 倍。
+
+**计费：** 套餐内限额按 Standard 费率的 8 倍消耗；购买的 credits 和企业按量付费（pay-as-you-go）用量按 Standard 费率的 6 倍计费。OpenAI 加上了与速度数字相同的提醒：这些倍数并不描述速度提升。
+
+两套计费路径之间的区别才是有意思的部分，因为对同一个 token，6 倍与 8 倍并不是同一个价格：
+
+| 路径 | 相对 Standard 费率的倍数 | 每个 Ultrafast token 的相对成本 |
+|---|---:|---:|
+| 套餐内用量额度 | 8x | 100% |
+| 购买的 credits 或企业按量付费 | 6x | 75% |
+
+这张表就是 OpenAI 自己的倍数，仅此而已。但结论值得说白：**当同一个 Ultrafast token 由购买的 credits 支付时，它比从套餐内额度里扣掉便宜 25%。** 这不是折扣活动或促销；它是从两个已公布的倍数中直接得出的结果，而且与「套餐内用量是消费套餐最便宜的方式」这一常见直觉正好相反。
+
+现在把速度倍数与额度倍数合起来看，真正重要的数字就藏在这里。
+
+| 量 | Ultrafast 相对 Standard |
+|---|---:|
+| 每秒生成的 token | 8x |
+| 每墙钟秒消耗的套餐内额度 | 64x |
+| 每个 token 消耗的套餐内额度 | 8x |
+| 持续使用下套餐内额度耗尽所需时间 | 1/64 |
+
+这套算术是我的，由 OpenAI 公布的 8 倍速度和 8 倍额度数字推导而来，并非厂商的说法。认真对待它会改变 Ultrafast 值得怎么用。你并不是用同样的额度买到更多工作，而是在以一种很陡的汇率用额度换墙钟时间。持续跑 Ultrafast 时，每生成一秒消耗套餐内额度的速度大约是 Standard 的 64 倍，因为它产出的 token 是 8 倍，而每个 token 又消耗 8 倍额度。套餐额度买到的其实是差不多同样多的**时间**，而不是同样多的**产出**。
+
+{% callout type="tip" %}
+实际结论：Ultrafast 很适合延迟是约束的短时爆发——一次交互式会话、一个演示、一轮限时调试。它很不适合长时间无人值守的运行，因为一个跑在 Ultrafast 上的后台作业，会把它在 Standard 速度下原本可以摊到数周的套餐额度迅速耗尽。
+{% /callout %}
+
+## 同样的产出，八倍的额度
+
+上面的燃烧速率框架是思考持续会话的正确方式，但最清晰的规划表述是关于产出量的，因为那才是一份预算实际买到的东西。
+
+取一个单位已生成的输出——模型写出的同样数量的 token。在 Standard 速度下，它消耗一个单位套餐额度、用时一个单位。在 Ultrafast 速度下，它消耗 8 个单位额度、用掉八分之一的时间。token 本身没有任何变化，变的只是额度与墙钟之间的汇率。
+
+| 度量 | Standard | Ultrafast | 比值 |
+|---|---:|---:|---:|
+| 产出的 token | 1 单位 | 1 单位 | 相同 |
+| 消耗的套餐内额度 | 1 单位 | 8 单位 | 8x |
+| 用时 | 1 单位 | 1/8 单位 | 0.125x |
+| 每生成一秒消耗的额度 | 1 单位 | 64 单位 | 64x |
+
+把最后两行合起来读，这笔交换就变得明确了。你付出的是八倍额度，把工作压缩到八分之一的时间。对一个正等着响应的人来说，这是一笔合理的交换；对一个还有好几个小时可用的定时任务来说，则很不划算。
+
+它也意味着，合适的预算单位不是 token，而是**真正重要的墙钟分钟数**。一个把整条夜间流水线都切到 Ultrafast 的团队，并没有买到它需要的速度；它买到了自己并不在等的速度，并为此付出了八倍额度。而只把交互式审查那一步切过去的团队，买到的是人真正能感受到的延迟，代价还被限制在负载的一小部分里。
+
+## 倍数上的细则
+
+这两个头条数字之下藏着六个细节，每一个都曾打破过某人的心智模型。
+
+**购买的 credits 不会在 Pro 100 或 Pro 200 上解锁 Ultrafast。** 在 Pro 套餐中，Ultrafast 仅在 Pro 500 上可用。发布时，在 Pro 100 或 Pro 200 上购买 credits 并不能解锁它。
+
+**在 Pro 500 上，Ultrafast 优先使用套餐内用量。** 只有在该额度用完之后，才会从你的 credit 余额中扣取。
+
+**企业工作区默认关闭 Ultrafast。** 工作区所有者可通过工作区权限为选定的用户或整个工作区启用访问，现有的每用户支出控制会作用于符合条件的 Ultrafast 用量。
+
+**在企业版上，计费仍受工作区协议约束。** 符合条件的企业工作区使用基于 credit 或基于美元用量的协议，符合条件的 Edu 套餐使用 credits。依赖速率限制而非按量计费的旧版企业套餐不受支持。
+
+**ChatGPT Work 与 Codex 共享用量。** 两者使用相同的定价、credits 和用量限额，因此一个 Codex 任务和一个 ChatGPT Work 任务会从同一个池子里扣。
+
+**API key 会完全改变计费模型。** 使用 API key 时，Codex 改用 API token 定价，ChatGPT 的 credit 倍数不再适用。如果你在混用订阅工作和 API 工作，那是两份独立的预算。
+
+## API 中的 Ultrafast
+
+API 这条路径有已公布的请求配置和速率限制，因此是两者中更容易据以规划的一条。
+
+在每个 `response.create` 事件上把模型设为 `gpt-6-astra`、服务档位设为 `ultrafast`。OpenAI 强烈建议对需要快速连续发起大量工具调用的智能体应用使用 WebSockets，因为如果没有持久连接，网络开销会削减延迟收益。文档明确说明了原因：频繁调用工具的智能体循环，正是那种单请求开销相对生成时间而言很大的负载。
+
+GPT-6 Astra 的 Ultrafast 以较低的速率限制向所有 API 用户提供。公布的默认每分钟 token 限制为：
+
+| API 用量层级 | Ultrafast 每分钟 token |
+|---|---:|
+| 层级 1–3 | 500,000 |
+| 层级 4 | 1,000,000 |
+| 层级 5 | 5,000,000 |
+
+与 OpenAI 账户团队协作的组织可以申请更高的速率限制或其他模型的预览访问。一个 cURL 请求就足以开始：
+
+```bash
+curl https://api.openai.com/v1/responses \
+  -H "Authorization: Bearer ***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-6-astra",
+    "input": "Explain why the sky is blue in one sentence.",
+    "service_tier": "ultrafast"
+  }'
+```
+
+在设计方案之前，有两条 API 约束值得内化。Ultrafast 仅支持美国数据驻留和全球处理，不支持欧盟或其他非美国区域的处理端点。另外 OpenAI 指向一张单独的 Ultrafast 定价表，涵盖输入、缓存输入、缓存写入和输出费率——该表的数值未在本文复现，因为未被取回，而编造它们会比省略更糟。
+
+{% x id="2104993967985381673" /%}
+
+## 三档 Pro 套餐
+
+OpenAI 的帮助中心明确公布了 Pro 套餐系列，包括哪一档包含 Ultrafast。
+
+| 套餐 | 月费 | Ultrafast | 包含的用量 | 备注 |
+|---|---:|---|---|---|
+| Pro 100 | $100 | 不包含 | 基础档 | 发布时无任何通往 Ultrafast 的路径，购买 credits 也不行 |
+| Pro 200 | $200 | 不包含 | 多于 Pro 100 | 已为新订阅重新开放，非保留用户的额度更低 |
+| Pro 500 | $500 | 包含 | 三档中最高，被描述为 ChatGPT Plus 额度的 25 倍 | Ultrafast 优先用套餐用量，之后用 credits |
+
+帮助中心里的三条澄清能避免代价高昂的错误。
+
+**保留原额度并不会升级套餐。** 如果你的 Pro 200 订阅在资格截止日当天或之前七天处于有效状态，那么在订阅有效期间，你可以保留此前的套餐内用量额度直到 2026 年 10 月 29 日。你的价格仍是每月 $200，OpenAI 直接说明保留额度不会把你升级为 Pro 500，也不会加上 Ultrafast。10 月 29 日之后，订阅将以相同价格转为较低的套餐内额度。
+
+**已失效的订阅仍可能符合资格。** 如果你的 Pro 200 订阅在资格截止日之前七天内失效，你可以重新订阅，仍能获得此前的额度直到 2026 年 10 月 29 日。不符合保留资格的新订阅者则获得更新后的额度。
+
+**取消并非立即生效。** 安排取消会保留访问权限直到当前计费周期结束，而且取消可以在该周期结束前撤销。如果你正在评估中途、打算回退，这一点很重要。
+
+还有一条相关日期应写进任何规划文档：GPT-5.5 将于 2026 年 10 月 14 日在所有套餐上从 ChatGPT、ChatGPT Work 和 Codex 退役。OpenAI API 不受影响。如果你的某个工作流锁定在 GPT-5.5 上，迁移窗口是接下来两周，而不是接下来两个季度。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/vLMMtGVk0E5bPSShgIGGc/c20e4f7d8ccd7be497ba594e50a983b8/PRO_500_.png?w=3840&q=90&fm=webp" alt="官方 Pro 500 with Ultrafast 视觉图：白色无衬线字体在深色星空上散成粒子" caption="在所有 Pro 套餐中，Pro 500 是唯一包含 Ultrafast 的档位；Pro 100 和 Pro 200 在发布时即便购买 credits 也拿不到。 （图片：OpenAI）" /%}
+
+## 作为对照的 Fast 模式
+
+Ultrafast 是最快的档位，但它并不是唯一的调速手段，而更便宜的那个容易被忽略。
+
+Fast 模式会加速受支持的模型，包括 GPT-6.1 Sol、GPT-6 Astra、GPT-6 Sol 和 GPT-6 Luna（在可用之处）。对 GPT-5.6 和 GPT-5.5，文档所载的速度提升是 1.5 倍。在 CLI 中用 `/fast` 切换，`/statusline` 显示当前状态；你可以在 `config.toml` 中用 `service_tier = "fast"` 加 `[features].fast_mode = true` 固化一个默认值。
+
+其计费结构以更低的倍数镜像 Ultrafast：套餐内限额按 Standard 费率的 2.5 倍消耗，购买的 credits 和企业按量付费用量按 Standard 费率的 2 倍计费。同样的关系成立，只是价差更小：
+
+| 档位 | 速度 | 套餐内额度倍数 | Credit 倍数 | Credits 相对套餐内 |
+|---|---|---:|---:|---:|
+| Fast 模式 | GPT-5.6/5.5 上最高 1.5 倍；更新模型在可用之处有加速 | 2.5x | 2x | 每 token 便宜 20% |
+| Ultrafast（GPT-6 Astra） | Codex 中最高 8 倍，API 中最高 6 倍 | 8x | 6x | 每 token 便宜 25% |
+
+Fast 模式在 ChatGPT 桌面应用、Codex CLI 和 IDE 扩展中，当你用 ChatGPT 登录时可用。它也支持 GPT-6.1 Sol——OpenAI 表示 Sol 在可用之处支持 Standard 和 Fast，访问取决于套餐、客户端、工作区设置和推送情况——这使它成为专门针对 Sol 工作的更便宜的速度选项，至少在 Sol Ultrafast 发布之前如此。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/qmAcSMFnLpnOnn8Xt1YHr/ef836426217602062b06315391747162/Ultrafast_in_the_API.png?w=3840&q=90&fm=webp" alt="官方 Ultrafast 标题视觉图，配超空间星空背景，副标题为 Available in ChatGPT, Codex, and API" caption="OpenAI 的 Ultrafast 视觉图点出了它可用的三个界面。API 将其暴露为把 service_tier 设为 ultrafast。 （图片：OpenAI）" /%}
+
+## 技能作者应当改变什么
+
+如果你维护智能体技能，档位变化带来三个具体决策。
+
+**决定哪些步骤配得上速度、哪些配得上额度。** 一个扇出为并行子智能体的技能是 Ultrafast 的最坏情况，因为每条并发分支都会放大额度燃烧速率。合理的切分是把探索、检索和批量编辑留在 Standard 或 Fast，把 Ultrafast 留给有人在等待的交互式步骤。[ai-cost-optimizer](/skills/ai-cost-optimizer) 和 [cloud-cost-management](/skills/cloud-cost-management) 是把这种切分转化为预算的注册表条目，[budget-optimizer](/skills/budget-optimizer) 覆盖预测一侧。
+
+**把额度和 token 当作两个不同的量来追踪。** 上述 64 倍的墙钟燃烧速率在 token 仪表盘里是看不见的，因为它是计费倍数的属性，而不是生成的属性。一个只记录 token 却不记录额度消耗的技能，无法解释为什么套餐在一下午就被掏空。
+
+**在技能里选档位，而不是靠人记住。** 如果某个工作流受益于 Ultrafast，把 `service_tier` 编码进技能，就消除了「人记得去切 `/fast`」带来的方差。[codex](/skills/codex) 和 [coding-agent](/skills/coding-agent) 是最接近 Codex 侧配置的注册表条目，而 Codex 速度文档是确切设置名称的权威参考。
+
+## 决策表
+
+| 你的情况 | 建议 | 原因 |
+|---|---|---|
+| 在 Pro 100 或 Pro 200 上，延迟重要但预算撑不到 $500 | 保持不变，不要指望买 credits 就能用上 Ultrafast | 发布时 credits 无法在 Pro 100 或 Pro 200 上解锁 Ultrafast |
+| 在 Pro 200 上且符合保留资格 | 不要在 2026 年 10 月 29 日之前取消 | 此前的额度以相同价格延续到该日期，其他都不变 |
+| 在 Pro 200 上且订阅在宽限窗口内失效 | 想要此前的额度就在截止日前重新订阅 | 帮助中心称截止日前七天内失效的订阅仍可能符合资格 |
+| 交互式工作需要 Ultrafast | Pro 500，或符合条件的企业／Edu 工作区 | 在所有 Pro 套餐中，Ultrafast 仅在 Pro 500 上包含 |
+| 运行长时间无人值守作业 | Standard 或 Fast，而不是 Ultrafast | 持续 Ultrafast 每墙钟秒消耗套餐内额度的速度大约是 64 倍 |
+| 在 API 上构建 | 用 WebSockets 设置 `service_tier: ultrafast`，并通过账户团队申请更高限制 | API 默认处于低速率限制；持久连接能保住延迟收益 |
+
+## 没有公布的内容
+
+有三个空白值得点出，免得你用假设把它们填上。
+
+**没有绝对额度数字。** Pro 500 被描述为 ChatGPT Plus 额度的 25 倍。那是一个相对数字，而绝对 token 数量藏在一张对非浏览器客户端返回 HTTP 403 的定价页后面。
+
+**本文未取回 API Ultrafast 费率卡。** OpenAI 链接了一张专用于 Ultrafast 的定价表，涵盖输入、缓存输入、缓存写入和输出。那些数值未在此复现；上文的倍数和请求配置是文档所述、且经过核对的内容。
+
+**没有公布任务级加速的测量。** 8 倍和 6 倍是 token 生成速度。OpenAI 表示该比较不是整体任务完成时间，此次发布也没有随附任何关于 Ultrafast 下端到端任务延迟的一手基准。资料来源中同样没有对 Ultrafast 的独立测量，因此任何端到端加速的说法都缺乏依据。
+
+{% x id="2104993969486930015" /%}
+
+## 规划小结
+
+把三个数字分开来看，决策就变得简单。Ultrafast 生成 token 最高快 8 倍。它每 token 消耗套餐内额度的速度是 Standard 费率的 8 倍，在持续使用下每墙钟秒的燃烧量叠加到大约 64 倍。购买的 credits 按 6 倍而非 8 倍计费，使每个 Ultrafast token 比套餐内额度路径便宜 25%。
+
+由这三个事实可得：把 Ultrafast 用于延迟关键的短时爆发，把长时间运行的工作留在 Standard 或 Fast，并在改动订阅之前、于 2026 年 10 月 29 日之前核对你 Pro 200 的保留资格。如果你规划的是预算而非一次会话，最快的档位通常是错误的杠杆；在 GPT-6.1 Sol 上以每百万缓存输入 token $0.10 维持一个稳定的缓存前缀，每一美元的回报都高于速度。
+
+两篇姊妹文章覆盖同一预算的另一面。[面向智能体开发者的 DevDay 2026 回顾](/zh/blog/openai-devday-2026-recap-agent-builders) 列出了全部 25 项公告及其可用性状态，[面向编程智能体的 GPT-6.1 Sol](/zh/blog/gpt-6-1-sol-agent-workloads) 则推演了这个档位选择所依托的每 token 成本模型。至于智能体工作流最初如何打包和安装，见[什么是智能体技能？](/blog/what-are-agent-skills)。
+
+## 常见问题
+
+**什么是 Ultrafast？**
+OpenAI 的高级速度档位。GPT-6 Astra Ultrafast 在 Codex 中生成 token 比 Standard 最高快 8 倍，给出的数字是每秒 300 个 token，在 API 中最高快 6 倍。它在 Codex、ChatGPT Work 和 API 中可用。
+
+**Ultrafast 多少钱？**
+计费以倍数而非单一费率表示：在 GPT-6 Astra 上，套餐内限额按 Standard 费率的 8 倍消耗，购买的 credits 或企业按量付费用量按 6 倍计费。OpenAI 为 API 单独公布了一张涵盖输入、缓存输入、缓存写入和输出费率的 Ultrafast 定价表。
+
+**Ultrafast 会让我的任务快 8 倍吗？**
+不会。OpenAI 表示该比较衡量的是 token 生成速度，而非整体任务完成时间，因此工具执行、环境搭建和审查时间都在 8 倍这个数字之外。
+
+**哪些套餐包含 Ultrafast？**
+在所有 Pro 套餐中只有 Pro 500。它在符合条件的企业和 Edu 套餐上也于 Codex 和 ChatGPT Work 中可用，默认关闭，需工作区所有者启用。其他自助套餐在发布时没有访问权限，即便购买了 credits。
+
+**我该为了 Ultrafast 去买 credits 吗？**
+在 Pro 500 上，Ultrafast 优先使用套餐内用量，只有在该额度耗尽后才使用 credits。由于 credits 按 6 倍、套餐内按 8 倍计费，同一个 Ultrafast token 由 credits 支付比由套餐内额度支付便宜 25%。而在 Pro 100 或 Pro 200 上购买 credits 根本不会解锁 Ultrafast。
+
+**我的 Pro 200 订阅会怎样？**
+如果它在资格截止日当天或之前七天处于有效状态，那么在订阅有效期间，你可以保留此前的套餐内用量额度直到 2026 年 10 月 29 日，价格同为 $200。该日期之后，它以相同价格转为较低的套餐内额度。保留额度不会加上 Ultrafast，也不会升级套餐。
+
+**Ultrafast 在所有地方都可用吗？**
+不是。它仅支持美国数据驻留和全球处理，不支持欧盟或其他非美国区域的处理端点。要求推理在美国境外驻留的工作区不符合资格，仅凭工作区所在地也不能确定资格。
+
+**Fast 模式是什么，和它有何不同？**
+Fast 模式是更便宜的速度档位：套餐内限额按 Standard 费率的 2.5 倍消耗、credits 按 2 倍，文档所载速度提升为 GPT-5.6 和 GPT-5.5 的 1.5 倍，更新模型在可用之处有加速。它也支持 GPT-6.1 Sol，而 Ultrafast 目前还不支持。
+
+## 资料来源
+
+核对于 2026 年 9 月 29 日。
+
+**OpenAI —— 一手来源**
+
+- [Codex 速度文档](https://learn.chatgpt.com/docs/agent-configuration/speed) —— Ultrafast 与 Fast 模式的速度声明、8x/6x 与 2.5x/2x 倍数、企业要求，以及 GPT-5.5 退役日期
+- [API 中的 Ultrafast 模式](https://developers.openai.com/api/docs/guides/ultrafast-mode) —— 请求配置、WebSocket 建议、速率限制、数据驻留，以及 API 定价表链接
+- [关于 ChatGPT Pro 档位](https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers) —— 三档 Pro 套餐、Ultrafast 包含情况表、保留资格与 credits
+- [DevDay 2026 Recap](https://openai.com/index/devday-2026-recap/) —— Pro 500 发布框架与官方视觉素材
+- [在 ChatGPT 中使用 Credits 实现灵活用量](https://help.openai.com/en/articles/12642688) —— credit 购买所支持的功能与费率
+- [@OpenAI on X](https://x.com/OpenAI) —— 上方嵌入的 Ultrafast、Pro 500 与 Pro 200 公告帖
+
+{% callout type="warning" %}
+Pro 500 被描述为 ChatGPT Plus 额度的 25 倍，这是一个相对数字；没有公布绝对 token 额度。本文未取回 API Ultrafast 费率卡，其数值被有意省略。本指南中的 64 倍额度燃烧数字，是本文根据 OpenAI 公布的 8 倍速度和 8 倍额度倍数自行计算的算术结果，并非厂商说法，且资料来源中不存在对 Ultrafast 下任务级加速的独立测量。
+{% /callout %}

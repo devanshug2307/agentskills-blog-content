@@ -1,0 +1,20 @@
+{
+  "title": "GPT-6.1 Sol 面向编程智能体：基准、定价与适用场景",
+  "slug": "gpt-6-1-sol-agent-workloads",
+  "category": "Deep Dives",
+  "description": "GPT-6.1 Sol 的定价、基准配置究竟说明了什么、缓存输入如何改变成本公式、哪些智能体负载适合迁移到它，以及发布材料没有说明的四个空白。",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GPT-6.1 Sol",
+    "GPT-6 Astra",
+    "OpenAI 定价",
+    "缓存输入",
+    "DeepSWE",
+    "AutomationBench",
+    "OSWorld 2.0",
+    "编程智能体"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gpt-6-1-sol-agent-workloads/hero.png"
+}

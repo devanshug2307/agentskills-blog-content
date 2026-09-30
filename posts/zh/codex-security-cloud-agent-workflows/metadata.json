@@ -1,0 +1,19 @@
+{
+  "title": "Codex Security Cloud：四阶段流水线及其边界",
+  "slug": "codex-security-cloud-agent-workflows",
+  "category": "Guides",
+  "description": "Codex Security Cloud 如何扫描 GitHub 仓库：威胁模型、验证沙箱、修复流程，以及 OpenAI 自己声明的各项限制。",
+  "publishedDate": "2026-09-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Codex Security Cloud",
+    "Daybreak Blue",
+    "OpenAI 安全",
+    "SAST",
+    "威胁模型",
+    "自动验证",
+    "代码扫描"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/codex-security-cloud-agent-workflows/hero.png"
+}

@@ -1,0 +1,249 @@
+2026 年 9 月 29 日，OpenAI 借 DevDay 发布了一批改变「智能体可以被信任独自做什么」的更新：拥有自己云电脑的常驻智能体、更便宜的准前沿模型、高级速度档位、能扫描整个仓库的安全智能体，以及让第三方产品入驻 ChatGPT 的插件平台。OpenAI 自己的回顾把它描述为「我们迄今最大的一届，在 ChatGPT、Codex、我们的模型，以及全新的 AI 协作方式上带来了 20 多项重大公告」。按 OpenAI 自己的列举方式，那是**横跨五个分组的 25 个具名条目**，而本文会逐一走完全部 25 项，并给出对构建或采购智能体工具的人真正重要的可用性状态。
+
+对这么大的一篇汇编来说，取材范围的说明很重要。下文一切都可追溯至一手来源：官方回顾、dots 与 GPT-6.1 Sol 的发布页、OpenAI 的产品文档、AWS 的 Bedrock Managed Agents 页面，以及 OpenAI 自己账号的帖子。没有使用任何媒体报道、泄密或第三方摘要作为证据。当回顾与文档对成熟度的描述不一致时，两种读法都会呈现，而不是挑选更好听的那一个。
+
+{% x id="2104984508454121795" /%}
+
+## DevDay 2026 是一场怎样的活动
+
+主题演讲围绕两个理念展开。第一个是承担持续性责任、而不是一次回答一个问题的智能体；OpenAI 为此用的词是「常驻」（always-on）。第二个是把 ChatGPT 开放为一个共享界面，让人、智能体和开发者构建的体验在同一份材料上协作——回顾给出的潜在受众合计为每周 12 亿（1.2 billion）用户。
+
+随后 OpenAI 把公告分成五个部分：新的工作方式、用 Codex 与 API 构建、用插件定制 ChatGPT、人与 AI 协同工作，以及在 ChatGPT 订阅上做更多事。这里忠实复现这些分组，因为它们是 OpenAI 自己的分类法，使每一行都能对照源页面核查，而不是对照某份摘要。
+
+有一个结构性细节值得先说明，因为多数二手计数在两个方向上都会弄错。回顾在这五个分组中**包含 25 个具名条目**。OpenAI 自己的标题数字是「20 多项」。另外，同日更早发布的一份安全政策文件《Towards safety cases for frontier AI training》并不是 DevDay 公告，不计入这 25 项；下文为它单列一节。
+
+## 四项旗舰发布
+
+有四项承载的产品面足够大，值得各自深入，其中三项是本次公布中影响最大的。
+
+**dots。** 由 GPT-6 Astra 驱动的常驻智能体，各自拥有云电脑。它们通过 OpenAI 的插件生态触达 4,000 多个应用，随时间从反馈中学习，并可在桌面端、网页端和移动端的 ChatGPT 中访问，也可通过 Slack 和 Teams，短信渠道被描述为「即将推出」。正在符合条件的市场向 Pro 和 Business Premium 推出；Enterprise、Edu 和 Healthcare 可在工作区管理员启用后试用 beta，默认关闭。在这些套餐上，你的第一个 dot 免费包含。
+
+发布材料中有两个权限细节，决定了一个 dot 能否被部署进真实工作流。后台工作——OpenAI 称之为主动研究（proactive research）——在代码层面被限制为只读工具：它不能发送消息、不能更改已连接应用中的内容、也不能控制浏览器或桌面。而后果重大的操作会经过 Auto-review，这是一个独立的安全系统，会在计划步骤运行之前对照你的指示、Custom Rules 和安全要求加以检查。修改密码或在账户之间转账不是 dot 会完成的事——它把这些步骤交回给你。
+
+**GPT-6.1 Sol。** GPT-6 Sol 的升级版，在智能体编程、计算机操作和专业工作上几乎追平 GPT-6 Astra 的智能水平，标准输入与输出 token 价格却只有 Astra 的五分之一。标准 API 定价为每百万输入 token $2、每百万缓存输入 token $0.10、每百万输出 token $10。在 Plus、Pro、Business、Enterprise 和 Edu 套餐的 ChatGPT Work 与 Codex 中可用，也可通过 API，标识为 `gpt-6.1-sol`。它不在 Chat 中。
+
+**Ultrafast。** 一个高级服务档位，生成 token 的速度比标准速度最高快 8 倍——OpenAI 给出的数字是 Codex 中每秒 300 个 token、API 中最高 6 倍。GPT-6 Astra Ultrafast 已在 API、以及 Pro 500 和符合条件的企业与 Edu 套餐的 Codex 与 ChatGPT Work 中上线。GPT-6.1 Sol Ultrafast 被描述为将在未来几天到来，无具体日期。
+
+**Private Intelligence。** 企业级数据保护控制：Zero Data Retention with Private Safety Processing，它能在不让 OpenAI 人员访问底层内容的情况下启用自动化安全审查；另有 Private Inference 的预览，被描述为把机密计算与严格、可验证的控制结合起来，将于秋季到来。访问需要销售洽谈，而非自助开通。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/5vzL2YrAB3qCUlFgZxXSp9/b06b6f54eab9abd97c3a41da31001f4e/GPT.6.1-_Sol.png?w=3840&q=90&fm=webp" alt="官方 GPT-6.1 Sol 标题视觉图：深色星空背景上的白色字标" caption="来自 OpenAI DevDay 2026 回顾的 GPT-6.1 Sol 官方发布视觉图。 （图片：OpenAI）" /%}
+
+## Codex 与 API
+
+这一组落地了七项面向开发者的内容，对已经在跑 Codex 的人来说，这是本次发布最密集的部分。
+
+**云端 Codex** 可以在电脑上、从手机远程，或从任何设备在云端运行 Codex，并带有可复用的开发环境，为团队提供包含已批准设置和权限的共享配置。在 Plus、Pro、Business、Healthcare、Education 和 Enterprise 上可用。
+
+**焕新的 Codex CLI** 增加了语音驱动地启动和引导任务、用于委派与跟踪多个任务的新 `/agents` 视图、改进的提示编辑、会话恢复、worktrees，以及更清爽的终端 UI。所有套餐可用。
+
+**Code Review** 登陆 ChatGPT 桌面应用：阅读摘要、浏览 diff，并在向 GitHub PR 或 GitLab MR 发表评论之前，就潜在问题询问 Codex。自动审查让 Codex 在你离开时在云端做第一遍检查。所有套餐。
+
+**Codex Security Cloud** 按需或按计划扫描整个 GitHub 仓库、持续审查新提交、调查发现项、对其去重，并在云端准备修复。通过 Daybreak Blue 提供的具备网络攻防能力的模型访问权限默认包含在内，无需另行申请 Daybreak Blue。回顾把可用性列为桌面端和网页端的 Pro、Business、Enterprise 和 Edu；OpenAI 自己的安全文档则称 Codex Security Cloud 为研究预览。两句话同时成立，而这个差异正是细心的读者应当注意到的落差。
+
+**Decisions API** 针对一组特定的用户自定义问题、在有限且预定义的答案上处理实时决策。你以文本或图像提供上下文，得到可据以路由的答案——对内容分类、路由一个请求，或挑选智能体的下一步动作。它处于有限预览，计划在未来几天广泛发布。
+
+**带计算机操作的 Agents API** 让开发者构建能与软件交互以完成任务的智能体，并把 Codex 的多智能体能力、工具搜索、工具调用和上下文压缩带入你自己的应用，底层基础设施由 OpenAI 运行。可通过 API，并在 Pro 500 和 Enterprise 的 Codex 与 ChatGPT Work 中可用。
+
+**Bedrock Managed Agents, powered by OpenAI** 与 Amazon 共同打造，取 Agents API 的核心能力、加上定制化，并在 AWS 中原生运行，与 AWS 资源集成。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/1cBe7tOXtMsCsZ2VsArwwf/26ac4ca0df3963cae833a494a0f181a7/CODEX_SECURITY_CLOUD.png?w=3840&q=90&fm=webp" alt="官方 Codex Security Cloud 发现项仪表盘：标签栏选中 Findings，一条从 Discovered 到 Done 的 Pipeline 漏斗，以及一张含 Priority、Finding、Owner、Status 和 Due 列的 Needs attention 表格" caption="来自 OpenAI 回顾的 Codex Security Cloud 发现项仪表盘。截图中的取值是打码的占位条。 （图片：OpenAI）" /%}
+
+## 插件与定制
+
+四项内容，全部对所有套餐可用，合起来构成主题演讲生态的一半。
+
+**插件扩展（Plugin extensions）** 开放了 OpenAI 用来构建 ChatGPT 功能的平台，让开发者可以在 ChatGPT 内创建自己的体验。扩展为插件在侧边栏提供一个位置，支持与对话并排工作的交互式面板，并让你为产品支持的文件类型创建查看器。
+
+**改进的插件创建、提交与发现** 涵盖 Plugin Creator（帮助构建插件）、重新设计且反馈更清晰的提交流程，以及目录和对话中改进后的排名与推荐。权限保持显式：用户仍然选择使用哪些插件，并批准每一个插件获得的访问权限。
+
+**Sites 可以承载插件**，因此工作区可以把受支持的 ChatGPT 插件嵌入它构建的 Sites 中，让队友在各自已连接的数据和权限下使用同一个应用。Business、Enterprise、Healthcare 和 Edu 可用。
+
+**面向插件自动化的 MCP events** 支持拟议中的 MCP Events 规范，让插件在已连接应用中发生某件事时启动一个自动化。OpenAI 的示例是：让 ChatGPT 留意项目看板上的新任务，并在任务到来时，在你离开期间读取关联文档并起草计划。
+
+## 人与 AI 协同工作
+
+七项协作功能，主要面向 Business 和 Enterprise 工作区，也是「智能体即队友」这一框架变得具体的一组。
+
+**ChatGPT Space** 创建一个专属空间，让队友、ChatGPT 和你的 dot 基于共享知识协作，并由 ChatGPT 按你的指示保持空间井井有条。桌面端和网页端的 Pro、Business 和 Enterprise 可用；在移动端，查找、阅读和分享页面也可用。移动端的创建与编辑即将推出。
+
+**Pages** 是一种为人与智能体协作而生的新文档类型。你在 ChatGPT 里能做的任何事都能在页面上做——写作、研究、生成图表、创建图像、可视化信息——并且你可以在一次对话中创建页面，并邀请团队共同参与。Pro、Business 和 Enterprise。
+
+**协作幻灯片（Collaborative slides）** 将在未来几周面向 Pro、Business 和 Enterprise 推出：从一次对话或模板生成交互式幻灯片，多名队友和智能体同时编辑，评论，在 ChatGPT 中放映，以及导出到 PowerPoint 或 Google Slides 且格式保持不变。
+
+**创建团队并共享任务（Create teams and share tasks）** 把同事聚在一起共享页面、幻灯片、插件和电子表格，并把诸如每周项目更新之类的重复性工作委派给团队任务，按计划运行或响应新邮件、Slack 消息等事件。Business 和 Enterprise。
+
+**Slack 与 Microsoft Teams 中的 @ChatGPT** 让你在频道、话题或私聊里 @ 提及 ChatGPT。它可以调用管理员连接的工具，或在你权限下调用你自己的工具，队友也能在同一对话中细化结果，而无需各自持有 ChatGPT 许可证。Business 和 Enterprise。
+
+**Meetings 插件** 负责记笔记，并把带行动项的个性化摘要保存到 ChatGPT Space，可私密或与团队共享。OpenAI 表示，笔记就绪后音频即被删除，无法被访问或重放。在 macOS 的 ChatGPT 桌面应用中针对 Pro 和 Business 处于 beta，Enterprise 即将推出。
+
+**可分享档案（Shareable profiles）** 让人们展示他人可以找到并复用的 Sites 和插件，且共享的技能发现仅限于工作区。Business 和 Enterprise。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/2NDk63u0I7A78LBKQmFGyg/3b2a9e859d667067d49828fd999c3d49/image__2_.png?w=3840&q=90&fm=webp" alt="官方 ChatGPT Space 视觉图：星空背景中悬浮着一组界面窗口" caption="ChatGPT Space 是七项协作发布之一，在桌面端和网页端面向 Pro、Business 和 Enterprise 提供。 （图片：OpenAI）" /%}
+
+## 订阅与市场
+
+三项内容改变了 ChatGPT 套餐在 ChatGPT 之外如何运作。
+
+**Sign in with ChatGPT** 让你在包括 Cognition 的 Devin、Notion、Vercel、T3、OpenClaw 和 Dactyl 在内的 16 个合作方那里使用你的额度，并能控制每个合作方可用的量，符合条件的 OpenAI 用量会计入你的套餐限额。你也可以用 ChatGPT 账户登录一系列工具，以更快地连接插件。身份认证全球可用；套餐用量适用于参与工具中的 Plus 和 Pro 用户。
+
+**一个新的 Pro 档位。** Pro 500 每月 $500，拥有最高的包含用量——ChatGPT Plus 额度的 25 倍——并包含 Ultrafast。Pro 200 订阅也以每月 $200 重新开放，对于不符合保留资格的新订阅，用量额度更低。符合条件的现有 Pro 200 订阅者可将其此前的额度保留到 2026 年 10 月 29 日。
+
+**OpenAI Marketplace** 让符合条件的企业客户把现有 OpenAI 承诺额的一部分用于已获批的合作方软件。首批 32 个合作方包括用于创意工作的 Adobe 和 Figma，以及 Sierra、Decagon、Hubspot 和 Salesforce。
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/vLMMtGVk0E5bPSShgIGGc/c20e4f7d8ccd7be497ba594e50a983b8/PRO_500_.png?w=3840&q=90&fm=webp" alt="官方 Pro 500 标题视觉图：白色无衬线字体写着 Pro 500 with Ultrafast，并在星空上散成粒子" caption="在所有 Pro 档位中，Pro 500 是唯一包含 Ultrafast 的。 （图片：OpenAI）" /%}
+
+## 同日还有：前沿训练的安全案例
+
+DevDay 并非 OpenAI 当天的唯一发布。9 月 29 日更早时，OpenAI 发布了《Towards safety cases for frontier AI training》，一份独立于 DevDay 公告的政策文件，属于对这一天任何诚实记述的一部分。它是第 26 条新闻、第 0 项 DevDay 内容。
+
+其核心主张是：在继续一次前沿强化学习训练运行之前，应当要求结构化的安全文档，理想情况下要达到其他安全关键行业所用的「安全案例」（safety cases）级别。OpenAI 明确表示这是方向性的：它把安全案例视为正在朝之努力的北极星，并承认要达到航空或核电那样的严谨程度是困难的。
+
+公布的准则分为三组。技术保障涵盖对齐训练、遏制与监控——用自动和人工的数据集审查来阻止奖励黑客（reward hack）被强化、把对齐评估与既往事件做回测、跟踪评估意识、记录 RL 运行的不可篡改记录，以及一条规则：自动评分器不应看到思维链，以免模型进化到规避思维链监控。运营准则涵盖由另一团队撰写的预演（pre-mortem）异议、拥有否决权的高层批准、具名问责、安全案例被推翻时的暂停 runbook、内部监督可见性、审计员访问、可呼叫高管的上报路径、失败即关闭（fail-closed）的技术控制，以及回滚能力。事件调查指引涵盖定期内部更新、对训练动态做根因分析、运营与文化层面的复盘，以及不基于事件本身衍生信息做「爬山式优化」的检测方法。
+
+状态才是关键：OpenAI 表示这些是正在实施中的建议，并预计相关实践将在未来几周演进。应把它视为带有具名机制的政策方向声明，而非已完成的审计制度。
+
+{% x id="2104815409522483470" /%}
+
+## 哪些已上线、预览，或即将到来
+
+这是规划工作前要核对的表。今天已发布与为将来公布之间的落差，正是多数摘要出错之处，因此每一行在具体之处都保留 OpenAI 自己的措辞。
+
+| # | 公告 | 状态 | 一手来源怎么说 |
+|---:|---|---|---|
+| 1 | dots | 正在推出 | 符合条件的市场的 Pro 与 Business Premium；Enterprise/Edu/Healthcare beta 默认关闭 |
+| 2 | GPT-6.1 Sol | 现已可用 | Plus/Pro/Business/Enterprise/Edu 的 ChatGPT Work 与 Codex，另可通过 API 使用 `gpt-6.1-sol`；不在 Chat 中 |
+| 3 | GPT-6 Astra Ultrafast | 现已可用 | API 以较低速率限制向所有用户提供；Codex 与 ChatGPT Work 在 Pro 500 和 Enterprise/Edu 上提供 |
+| 4 | GPT-6.1 Sol Ultrafast | 即将推出 | 「未来几天」；无固定日期 |
+| 5 | Private Intelligence | 预览 | Zero Data Retention with Private Safety Processing 现已可用；Private Inference 在秋季 |
+| 6 | 云端 Codex | 现已可用 | Plus、Pro、Business、Healthcare、Education、Enterprise |
+| 7 | Codex CLI 焕新 | 现已可用 | 所有套餐 |
+| 8 | Code Review | 现已可用 | 所有套餐 |
+| 9 | Codex Security Cloud | 现已可用（按文档为研究预览） | 回顾：桌面端和网页端的 Pro、Business、Enterprise、Edu |
+| 10 | Decisions API | 有限预览 | 计划在未来几天广泛发布 |
+| 11 | Agents API 计算机操作 | 现已可用 | API，另在 Pro 500 和 Enterprise 的 Codex 与 ChatGPT Work 中 |
+| 12 | Bedrock Managed Agents | 现已可用 | 在 AWS 中原生运行 |
+| 13 | 插件扩展 | 现已可用 | 所有套餐 |
+| 14 | 改进的插件创建/提交/发现 | 现已可用 | 所有套餐；用户仍会批准访问 |
+| 15 | Sites 可承载插件 | 现已可用 | Business、Enterprise、Healthcare、Edu |
+| 16 | 面向自动化的 MCP events | 现已可用 | 拟议中的 MCP Events 规范 |
+| 17 | ChatGPT Space | 现已可用 | 桌面/网页端的 Pro、Business、Enterprise；移动端可阅读和分享 |
+| 18 | Pages | 现已可用 | Pro、Business、Enterprise |
+| 19 | 协作幻灯片 | 未来几周 | Pro、Business、Enterprise |
+| 20 | 创建团队并共享任务 | 现已可用 | Business、Enterprise |
+| 21 | Slack 与 Microsoft Teams 中的 @ChatGPT | 现已可用 | Business、Enterprise |
+| 22 | Meetings 插件 | Beta | macOS 桌面应用，Pro 与 Business；Enterprise 即将推出 |
+| 23 | 可分享档案 | 现已可用 | Business、Enterprise |
+| 24 | Sign in with ChatGPT | 现已可用 | 身份认证全球可用；参与工具中面向 Plus 和 Pro 的套餐用量 |
+| 25 | Pro 500 及重新开放的 Pro 200 | 现已可用 | $500/月包含 Ultrafast 与 25 倍 Plus 额度；Pro 200 为 $200，新订阅且不符合保留资格者的额度更低 |
+
+Marketplace 作为一项企业应用、而非自助档位，位于第五组之内：符合条件的企业客户把现有承诺额的一部分用于已获批的合作方软件。它算在订阅组的这 25 项里，且不是你能在定价页上直接打开的功能。
+
+## 关键说法如何分级
+
+一次 25 项的发布会产生大量说法，而它们并非同一种说法。下表把「可对照一手页面机械核查的」、与「厂商自报数字」、以及与「首日确实未经核验的」区分开来。
+
+| 说法 | 分级 | 证据与细节说明 |
+|---|---|---|
+| 五个分组中共 25 项具名公告 | 已核实 | 直接依据回顾页自身的条目清单清点；OpenAI 的标题是更宽松的「20 多项」 |
+| dots 由 GPT-6 Astra 驱动，拥有自己的云电脑并触达 4,000+ 应用 | 厂商声明 | 「4,000+」是 OpenAI 的插件生态数量，不是 4,000 个经过审计的集成 |
+| 主动研究被限制为只读工具 | 厂商声明，设计层面 | OpenAI 称这些限制由代码强制执行：不能发送消息、不能更改已连接应用内容、不能控制浏览器或桌面 |
+| GPT-6.1 Sol 的标准 API 定价为每百万 token $2 / 缓存 $0.10 / 输出 $10 | 依据发布页与模型卡图片核实 | 缓存费率比标准输入低 95%；发布页与价格卡一致 |
+| GPT-6.1 Sol 在 Chat 中不可用 | 已核实 | 发布页与回顾均一致；可用处为 ChatGPT Work、Codex 和 API |
+| Ultrafast 在 Codex 中最高快 8 倍（300 token/秒），API 中最高 6 倍 | 厂商自报 | 「最高」；OpenAI 的 Codex 速度文档指出该比较衡量的是 token 生成速度，而非计费率或任务完成时间 |
+| Pro 500 含 25 倍 ChatGPT Plus 额度且包含 Ultrafast | 厂商声明 | 未公布绝对额度；该倍数是相对 Plus 的 |
+| Codex Security Cloud 默认包含 Daybreak Blue 模型访问 | 已核实 | 回顾与 @OpenAI 发布帖均有陈述；未公布独立的 Daybreak Blue 模型清单 |
+| Codex Security Cloud 「现已可用」vs「研究预览」 | 矛盾，两者皆被陈述 | 回顾给出套餐可用性；安全文档称其为研究预览 |
+| GPT-6.1 Sol 的基准结果（DeepSWE v1.1、AutomationBench、OSWorld 2.0、Terminal-Bench Science 0.1） | 厂商自报，无独立复现 | 每个数字都来自 OpenAI 的发布页或其自家账号；资料来源中不存在第三方测试框架运行 |
+| Sign in with ChatGPT 覆盖 16 个合作方 | 厂商声明 | 回顾中出现了具名合作方；每合作方的额度控制有描述但未逐一列举 |
+| 安全案例准则「正在实施过程中」 | 厂商声明的政策方向 | OpenAI 自家的措辞；不是审计制度，也不是 DevDay 条目 |
+
+有两个分级值得点出，因为它们是摘要最可能误导之处。第一个是 Codex Security Cloud，回顾与产品文档对成熟度的描述不同；规划者应采用更严格的解读。第二个是基准那一段，通篇都是厂商自报——把它读作已独立确立的，会是事实错误，而不是风格问题。
+
+## 这对智能体技能栈意味着什么
+
+一个可安装智能体技能的注册表，是上述一切的下游，其中有四项改变了值得写进技能的内容。
+
+Agents API 获得计算机操作能力、以及 Codex 的多智能体行为，意味着一个过去在本地编排子流程的技能，如今可以委派给托管智能体。工具搜索和上下文压缩，在长技能中最重要：它们决定了技能是在二十次工具调用之后退化，还是能持续保有自身状态的有用摘要。如果你围绕显式控制流构建技能，[autonomous-agent-patterns](/skills/autonomous-agent-patterns) 和 [computer-use-agents](/skills/computer-use-agents) 是 API 如今原生提供的能力在注册表中最接近的对应项。
+
+Codex Security Cloud 改变的是安全技能的形状，而非取代它。因为它会在隔离容器中验证发现项、并产出带修复建议的排序输出，人类一侧的工作就转移到分诊和威胁模型编辑上。这里重要的注册表页面是 [security-best-practices](/skills/security-best-practices)，对应那些在代码库中被修复之前扫描器会反复报告的代码级规则；以及 [threat-mitigation-mapping](/skills/threat-mitigation-mapping)，对应当今要在插件的 Monitoring settings 中手工维护的映射步骤。
+
+dots 背后的权限模型是本次发布中最可复用的想法。只读的后台工作、对后果重大操作设一道独立审查关卡、对不可逆步骤明确确认、对敏感步骤做交接——这是一套你可以复制进任何会在他人账户中执行操作的技能的设计模式。[memory-management](/skills/memory-management) 覆盖问题的上下文那一半，[code-review](/skills/code-review) 则是与 Code Review 及 Codex CLI 审查流程最直接对应的注册表条目。
+
+Ultrafast 与档位变化是一个预算问题：更快的档位会成倍消耗你套餐内额度上的 token 速率，因此一个扇出子智能体的技能，如今即便单 token 成本不变，也能更快地按墙钟分钟燃烧套餐。[ai-cost-optimizer](/skills/ai-cost-optimizer) 和 [cloud-cost-management](/skills/cloud-cost-management) 就是这场讨论对应的注册表条目。
+
+如果「Skills」这个概念对你还陌生，请从[什么是智能体技能？](/blog/what-are-agent-skills)开始，然后读[We Must Pace the Frontier](/blog/we-must-pace-the-frontier-explained)，了解这一天的安全政策那一半为何与工具决策相关。四篇深度文章详述了旗舰发布：[面向智能体负载的 GPT-6.1 Sol](/zh/blog/gpt-6-1-sol-agent-workloads)、[dots 的权限与工作流](/zh/blog/openai-dots-permissions-and-workflows)、[Codex Security Cloud 工作流](/zh/blog/codex-security-cloud-agent-workflows)，以及 [Ultrafast 与 Pro 档位成本规划](/zh/blog/ultrafast-and-pro-tiers-cost-planning)。
+
+## DevDay 之后的未解问题
+
+细心的读者会注意到官方材料里缺了几件事。把它们列出来比猜一个答案更有用。
+
+- **「即将推出」的条目没有固定日期。** GPT-6.1 Sol Ultrafast 是「未来几天」，Decisions API 的广泛发布是「计划在未来几天」，协作幻灯片是「未来几周」，Private Inference 是秋季预览。都没有日期。
+- **没有公布 Daybreak Blue 模型清单。** Codex Security Cloud 包含通过 Daybreak Blue 提供的具备网络攻防能力的模型访问，但截至访问日期，在探查过的 URL 上没有独立的 Daybreak Blue 页面或模型清单。
+- **除 Pro 档位与 Sol 的 token 费率外没有金额数字。** dots 的 Business Premium、Enterprise 和 Edu 定价未公布；说法是「首个 dot 免费包含」。
+- **Pro 500 没有绝对额度。** 它被描述为 ChatGPT Plus 额度的 25 倍，属于相对数字。绝对数值藏在对非浏览器客户端返回 HTTP 403 的定价页后面。
+- **发布材料中没有 GPT-6.1 Sol 的上下文窗口或知识截止日期**，这与公布了这两项的 GPT-6 Astra 发布不同。
+- **尚无独立的基准复现。** 本文及其深度文章中的每个性能数字，在发布日都是 OpenAI 自报的。资料来源中不存在针对 GPT-6.1 Sol 的 DeepSWE v1.1、AutomationBench、OSWorld 2.0 或 Terminal-Bench Science 0.1 第三方测试框架运行，因此应把这些数字视为厂商自报，而非已验证。
+
+最后一点并非专门针对 OpenAI 的批评。它只是首日的事实，也正是「OpenAI 测量了它」与「它被独立测量过」之间的区别。
+
+## 接下来做什么
+
+- **如果你要交付一个由模型支撑的功能**，请按「单次完成任务成本」而非「单 token 成本」来评估 GPT-6.1 Sol。每百万缓存输入 $0.10 是那个杠杆，而它只在会重发大块稳定前缀的负载上才有回报。然后，如果你目前在手写浏览器或桌面自动化，就看看 Agents API 的计算机操作新增能力。
+- **如果你维护编程智能体技能**，Codex CLI 焕新是当天就该测试的条目：`/agents`、会话恢复和 worktrees 会改变一个委派工作的技能应当怎么写。
+- **如果你是安全团队**，请先在两个仓库上试点 Codex Security Cloud、编辑生成的威胁模型，并在扩大范围前测量已验证发现项的命中率。文档明确说明它补充 SAST，且不替代人工审查。
+- **如果你为 ChatGPT 付费**，决策是 Pro 500 还是保持现状。Pro 500 是唯一带 Ultrafast、且额度最高的 Pro 档位。如果你在 Pro 200 上，请在改动任何东西之前确认自己是否处于保留资格窗口内，因为截至 2026 年 10 月 29 日的包含额度是一项新订阅不具备的权益。
+- **如果你在 ChatGPT 内构建**，插件扩展的跑道最长。要回答的问题是：你的产品作为对话旁边的侧边栏面板，是否优于作为一个独立目的地。
+
+## 常见问题
+
+**OpenAI 在 DevDay 2026 上做了多少项公告？**
+OpenAI 自己的说法是「20 多项重大公告」。它的回顾把它们组织成五个分组、共 25 个具名条目，本文按 OpenAI 自己的分组复现。
+
+**最大的公告是什么？**
+从来源深度和产品面来看，dots 和 GPT-6.1 Sol 是两大台柱，Ultrafast 和 Pro 500 紧随其后。OpenAI 在回顾中以「与 AI 协作的全新方式」为框架，把 dots 放在最前面。
+
+**OpenAI 发布了新的前沿模型吗？**
+没有新的前沿代际。GPT-6.1 Sol 是 GPT-6 Sol 的升级，定位在现有 GPT-6 Astra 之下，标准输入与输出 token 价格是 Astra 的五分之一。
+
+**Agents API 的计算机操作和 Codex 的智能体行为是同一回事吗？**
+OpenAI 称 Agents API 如今把 Codex 的多智能体能力、工具搜索、工具调用和上下文压缩带入你的应用，底层基础设施由 OpenAI 运行。它是 Codex 已具备行为的托管版本。
+
+**DevDay 2026 有安全方面的公告吗？**
+不在 DevDay 公告之内。《Towards safety cases for frontier AI training》同日更早作为一份独立政策文件发布，涵盖技术保障、运营准则和事件调查。OpenAI 表示相关实践正在实施过程中。
+
+**哪些尚未可用？**
+GPT-6.1 Sol Ultrafast 将在未来几天到来。Decisions API 处于有限预览，计划在未来几天广泛发布。协作幻灯片在未来几周到来。Private Inference 是秋季预览。专家 dot 是企业试点。
+
+**这里有需要为现有套餐额外付费的吗？**
+Pro 500 是每月 $500 的新套餐。在 Pro 和 Business Premium 上，你的第一个 dot 免费包含。Codex Security Cloud、Codex CLI 焕新、Code Review 以及全部四项插件功能，都列为在其所属套餐内可用、无需单独付费。
+
+## 资料来源
+
+核对于 2026 年 9 月 29 日。
+
+**OpenAI —— 一手来源**
+
+- [DevDay 2026 Recap](https://openai.com/index/devday-2026-recap/) —— 25 项公告清单、逐项可用性说明、官方分区图片。页面元数据发布时间：Tue, 29 Sep 2026 12:05:48 GMT。
+- [Introducing dots](https://openai.com/index/introducing-dots/)
+- [How we build safety, security, and privacy into dots](https://openai.com/index/how-we-build-safety-security-and-privacy-into-dots/)
+- [Introducing GPT-6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol)
+- [Towards safety cases for frontier AI training](https://openai.com/index/towards-safety-cases-for-frontier-ai-training/)
+- [Ultrafast mode in the API](https://developers.openai.com/api/docs/guides/ultrafast-mode)
+- [Codex Security Cloud setup](https://learn.chatgpt.com/docs/security/setup)
+- [Codex cloud](https://learn.chatgpt.com/docs/cloud)
+- [Plugin extensions](https://developers.openai.com/plugins/build/extensions)
+- [MCP events for plugin automations](https://developers.openai.com/plugins/build/mcp-events)
+- [Agents API computer use](https://developers.openai.com/api/docs/guides/agents-api/tools/computer-use)
+- [ChatGPT Space feature page](https://chatgpt.com/features/space/)
+- [About ChatGPT Pro tiers](https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers)
+- [Sign in with ChatGPT / Marketplace help article](https://help.openai.com/en/articles/20001542)
+- [@OpenAI on X](https://x.com/OpenAI) —— 2026 年 9 月 29 日公告时间线（17 条帖子）
+- [@OpenAIDevs on X](https://x.com/OpenAIDevs) —— 面向开发者的帖子与基准图表
+
+**第三方**
+
+- [Amazon Web Services — Bedrock Managed Agents, powered by OpenAI](https://aws.amazon.com/bedrock/managed-agents-openai/)
+
+{% callout type="info" %}
+从非浏览器客户端访问 `openai.com` 和 `chatgpt.com/pricing` 会因机器人管理返回 HTTP 403，因此上文的 OpenAI 页面是通过一个返回已发布页面文本的文本提取阅读器读取的。`learn.chatgpt.com` 和 `developers.openai.com` 可直接访问。本文没有任何数字引自被机器人拦截的定价页。
+{% /callout %}
