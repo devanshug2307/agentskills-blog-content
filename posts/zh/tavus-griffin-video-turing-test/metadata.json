@@ -1,0 +1,20 @@
+{
+  "title": "Tavus Griffin：首个通过视频图灵测试的模型",
+  "slug": "tavus-griffin-video-turing-test",
+  "category": "Deep Dives",
+  "description": "Tavus Griffin 是首个 Human Interaction Model，也是首个通过视频图灵测试的模型：48% 的实时通话者以为它是真人，并在 NVIDIA VideoFDB 上排名第一。",
+  "publishedDate": "2026-10-02",
+  "author": "Agent Skills",
+  "keywords": [
+    "Tavus Griffin",
+    "Human Interaction Model",
+    "视频图灵测试",
+    "全双工 AI 视频",
+    "NVIDIA VideoFDB",
+    "Griffin-Lite",
+    "实时数字人",
+    "Tavus"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/tavus-griffin-video-turing-test/hero.png"
+}

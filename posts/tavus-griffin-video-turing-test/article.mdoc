@@ -1,0 +1,261 @@
+# Tavus Griffin: the first model to pass the video Turing test
+
+On October 1, 2026, Tavus introduced **Griffin**, which it calls the first **Human Interaction Model (HIM)** — a single system that watches you, listens to you, decides when and how to respond, and generates a talking human on video in real time. The headline result is a live study in which **26 of 54 participants (48%) believed, after a one-minute video call, that their partner was a real person**; on Tavus's previous stack, 1 of 41 (2.4%) did. Tavus says that makes Griffin the first model to pass a real-time video Turing test.
+
+The catch is as important as the claim: **Griffin-Lite, the version that was tested, is a research preview open only to selected trusted testers.** It is not on the Tavus platform, it has no public model ID, no endpoint, no pricing, and no model card. This article separates what Tavus has stated, what the independent NVIDIA benchmark actually shows, and what you still cannot buy.
+
+{% callout type="tip" %}
+The one-line version: Griffin is the first AI video model strong enough that roughly half of a live, blind sample mistook it for a person. It is also a research preview with no public access — so the practical takeaway is to understand the capability and the safety argument, not to plan an integration.
+{% /callout %}
+
+## What Tavus announced
+
+Tavus is a San Francisco company that sells conversational video — "PALs", AI you talk to face to face — built on three models it already ships: **Phoenix** (real-time face rendering), **Raven** (perception) and **Sparrow** (turn-taking). Griffin collapses those separate jobs into one full-duplex, video-to-video model. Tavus's own description is precise about the distinction: earlier systems "worked as a relay, often called a cascade", where one model transcribes speech, another replies, and others turn the reply back into a voice and a face, "every handoff add[ing] delay and throw[ing] away information the next system never sees, like your tone of voice or what's on camera."
+
+The launch arrived as a nine-post thread from the [@tavus](https://x.com/tavus) account at 16:59 UTC on October 1, 2026, and it is unusually candid about the release strategy: because Griffin "can be mistaken for a real person", Tavus says it "requires safety considerations before it can be released publicly." The first post states the claim directly.
+
+{% x id="2105704169009246248" /%}
+
+Two more Tavus posts frame the product thesis rather than the benchmark. One describes the goal of machines that "meet us where we are", with examples — a tutor who notices a student is lost, an elderly-care companion — that describe long, open-ended conversation rather than a scripted avatar. The other acknowledges the reflexive comparison the result invites. Tavus's Head of Research [Ioannis Patras](https://x.com/tavus) is credited on the research post alongside co-founder and CEO [Hassaan Raza](https://x.com/tavus); the official page is signed by both.
+
+Read the thread as a whole and three facts are unambiguous: the model exists, it is called Griffin, and access is gated behind a safety review. Everything else — benchmarks, capabilities, the Turing-test study — comes from Tavus about Tavus, with one important exception: the NVIDIA benchmark, which we treat separately below.
+
+## Inside the launch video
+
+The lead tweet carries a 108-second video, and it is worth watching before reading any of the numbers, because it sets the register of the whole launch. In it, a man on a video call is talking to a woman on the other end of the call. She has shoulder-length brown hair and a plain-light background; the call shows a small picture-in-picture of him. Over the clip the camera cuts between his screen, his face, and a wider shot of two colleagues watching the call and laughing. On-screen subtitles carry the conversation: "Have you thought any more about", "you know, show them what it looks like", "Do you think they'll believe", "It's like the line between", "of the simulation". The final frame is the Tavus wordmark and the line "the human computing company."
+
+That last caption is the whole argument in miniature. The woman in the call — the AI persona — gestures while she talks, smiles at the right moments, and holds eye contact; the humans watching react with laughter and disbelief. Nothing in the frame announces that she is generated, which is exactly the point Tavus is making and exactly the point its critics are making too.
+
+The thread then walks through five short demonstrations, each with its own clip. They are the clearest public evidence of what "full duplex" means in practice.
+
+The first is a game of Simon Says, played by two Tavus researchers. To play, Griffin has to listen for the phrase "Simon says", watch their hands, and move its own hand — all at once. Tavus's description emphasizes that it "generates the whole frame, not just a face."
+
+{% x id="2105704311330390313" /%}
+
+The demonstrations continue with a story told over Griffin, a coaching session where a person solves a Rubik's cube while Griffin watches the cube in their hands, and a soldering task where Griffin tracks time and speaks up when the next step is due rather than when the person goes quiet. Each clip is under a minute and each is captioned by Tavus. These are vendor-produced demonstrations, so treat them as capability illustrations rather than independent tests — but the specific behaviors they show (object awareness, timing, interruption) are the ones the benchmarks below try to measure.
+
+{% x id="2105704783185375402" /%}
+
+{% figure src="https://customer-89oi2uqhvws3g49x.cloudflarestream.com/981c8d153d47c1edd73e0bc6504731f7/thumbnails/thumbnail.jpg" alt="A split-screen video call: a man holds up a largely solved Rubik's cube on one side while the generated Tavus persona watches on the other." caption="An official Tavus demo still: Griffin coaching a person through a Rubik's cube, reacting to what it sees in their hands rather than to words alone. (Image: Tavus, from the Griffin page.)" /%}
+
+## What "full-duplex" actually means
+
+Full duplex is the technical core of the claim, and it is worth defining carefully because it is often used loosely.
+
+A conventional AI voice or video agent is **turn-based**: it waits for you to stop speaking, then transcribes, then reasons, then speaks. That is a walkie-talkie conversation. Human conversation is not like that. People backchannel ("mm-hm") while the other person is still talking, laugh half a beat early, interrupt, and read silence as either thinking or an invitation to continue.
+
+Griffin is built to run these behaviors continuously. Tavus describes it deciding "at regular sub-second intervals" whether to stay quiet, signal with a nod or expression, backchannel, or take the turn — using what it hears *and* what it sees, rather than treating a pause as the end of a turn. The official page summarizes the loop as "listen, decide, act", reassessing the conversation several times a second while it is listening and while it is speaking.
+
+Four consequences follow from that architecture, and they are the ones the demos are built to show:
+
+- It can say "mm-hm" while you are still talking, instead of waiting for dead air.
+- It can answer without the awkward silence a cascade adds at the handoff.
+- It stops the moment you cut in, rather than finishing its sentence.
+- It can react to something it sees — an object held up, a facial expression — as part of the reply.
+
+Tavus's own diagram carries a disclaimer worth repeating: "The timing in this diagram is illustrative and was not measured from a real session." That honesty is useful, because the benchmark scores below are the numbers that were actually measured.
+
+## How Griffin works under the hood
+
+Tavus splits Griffin into two engines, and the split explains why the system can react mid-sentence.
+
+**1. Continuous conversational modeling.** This engine ingests the person's audio and video and emits "expressive controls" — timing, stance, expression, gesture — while it keeps perceiving. Tavus stresses that perception "never stops while the PAL speaks", so a decision made in the middle of a sentence (a pause, a glance away, a smile) shows up in the voice and face within the same mini-turn.
+
+**2. Audio-visual generation.** This converts those controls into speech and video together. It has two parts.
+
+On the **speech** side, Griffin uses a fast autoregressive diffusion transformer conditioning on an encoded "speaker prefix". Tavus says it can clone a voice from **about 10 seconds of audio**, and it emits audio packets "as small as 10 ms". Underneath sits **Tavec**, a convolutional autoencoder that maps 48 kHz audio into a compact continuous latent — 40 values per frame, 100 frames per second, and no codebooks — with a fully causal decoder so audio can stream the instant a frame exists.
+
+On the **video** side, the design goal was a generator that responds quickly to streaming controls, handles controls that change fast, and holds quality over long generations. Tavus distilled a large, bidirectional, many-step diffusion model into a few-step autoregressive generator in three stages — distribution-matching distillation, then a conversion to autoregressive generation with teacher forcing, then Self-Forcing training so long rollouts do not drift. The result "generates 720p video in 320 ms chunks in real time, one latent at a time", where one latent is eight frames at 25 fps. The VAE compresses time eightfold, which is what keeps the token count low enough to run live.
+
+The single most decision-relevant consequence is latency. Tavus reports a "true audio-to-video latency" — time from a piece of audio arriving to the video showing its effect — of **0.43 seconds on H100 GPUs**, which it describes as half the next-fastest published method. That figure is the reason a nod can land in time to feel like a nod rather than a delayed imitation.
+
+## The video Turing test, explained
+
+This is the study that produced the 48% headline, and its methodology matters more than the number.
+
+Participants were recruited through an independent research platform and told they would be "matched with another participant for a one-minute video call about what they were looking forward to this year". Their partner was in fact a PAL running Griffin-Lite, generating her face, voice and responses live. Only at the end of the survey were they asked whether it had crossed their mind that their partner might not be a real person — and every participant was then told it was an AI. The comparison run used the same protocol against Tavus's previous stack (Phoenix-4.5 with Sparrow-2 and Raven-1).
+
+| Study detail | Griffin-Lite | Phoenix-4.5 (previous) |
+|---|---|---|
+| Participants | 54 | 41 |
+| Believed partner was a real person | 26 (48%) | 1 (2.4%) |
+| Confidence, "said real" | 79% | — |
+| Confidence, "said AI" | 81% | — |
+| Suspected within | first 20 seconds | — |
+| Rated "seeming natural" (of 7) | 5.4 | — |
+| Rated "seeming trustworthy" (of 7) | 5.6 | — |
+| Rated "would enjoy talking again" (of 7) | 5.8 | — |
+| Rated "flowed naturally" (of 7) | 4.9 | — |
+
+Two details are more important than the pass rate. First, **both groups were confident**: those who said "real" averaged 79% confidence and those who said "AI" averaged 81%, which is what a study wants — nobody was guessing. Second, **more than half of participants said the possibility never crossed their mind during the call**, and nearly all of that group went on to say their partner was real; those who did get suspicious tended to do so **within the first 20 seconds.** That last line is the least comfortable result in the report and the one that should shape how you read the safety section.
+
+The study also has real limits, and they are the ones a skeptical reader should hold onto. It was **small (n=54)**, **short (one minute)**, and **run by Tavus**. Participants were told they were meeting another participant, which primes them to expect a human, and there was no comparison group that spoke to a real person, so there is no baseline rate for how often an actual human would have been judged real under the same protocol. A one-minute call is not a customer-support session, a tutoring hour, or a job interview.
+
+## The NVIDIA VideoFDB benchmark
+
+The strongest external evidence in the launch is the **VideoFDB** benchmark, built and scored by NVIDIA (with David AI), who released it as the first benchmark for full-duplex audio-visual conversation. It is scored 0–5 by a language-model judge against 237 human-annotated clips drawn from real video calls, across two separate tracks with their own rubrics and leaderboards.
+
+Tavus says NVIDIA conducted the evaluation independently in **September 2026** using its own judge. That independence is the reason to lead with these numbers rather than with Tavus's own Turing study.
+
+**Generation track** — does the model produce the right behavior, scoring its own speech and video together:
+
+| System | Generation score (0–5) |
+|---|---|
+| Human ground truth | 3.92 |
+| **Griffin-Lite** | **3.83** |
+| Gemini 2.5 + Anam (next best) | 2.80 |
+
+**Perception track** — does the model understand the moment, using audio and video:
+
+| System | Perception score (0–5) |
+|---|---|
+| Human ground truth | 4.20 |
+| **Griffin-Lite** | **3.73** |
+| MiniCPM-o 4.5 (strongest reported baseline, audio-only) | 3.44 |
+| Gemini 2.5 Flash Native | 3.17 |
+| OpenAI gpt-realtime | 2.97 |
+
+Griffin-Lite also scored the highest **takeover-rate alignment** — a measure of how closely its timing decisions match the reference conversations — at **62.8% on generation and 73.8% on perception**.
+
+Three qualifications belong next to those tables, and they come from the benchmark itself as much as from Tavus.
+
+First, **the gap to human is real and specific**: 0.09 on generation and 0.47 on perception. Tavus frames the generation gap as being "more than 12x closer to human performance than any other system evaluated", which is a true statement about relative proximity — but 0.09 below human is not the same as human, and a language-model judge is not a person.
+
+Second, **the perception comparison is not like for like.** The strongest baseline, MiniCPM-o 4.5, is scored in its **audio-only** configuration, while Griffin reads video too. NVIDIA's own paper finds that audio-visual models often fail to beat their audio-only counterparts on exactly these natural-dialogue clips — so part of what Griffin's perception lead measures is the value of having eyes at a moment when rivals do not.
+
+Third, **a benchmark run is not a deployment.** NVIDIA's protocol gives every system the same task and the same judge; it says nothing about the ninth hour of a call, or what happens when two people talk over each other for a full minute. The benchmark is the best available evidence — not a product result.
+
+{% x id="2105704437478281436" /%}
+
+## Latency, visual quality and lip sync
+
+For the video generator on its own, Tavus compared Griffin-Lite against four published streaming diffusion models in an audio-to-video setting: each model gets speech and a reference image and must produce the talking face.
+
+| Measure | Griffin-Lite | Result |
+|---|---|---|
+| Audio-to-video latency (H100) | 0.43 s average | Half the next-fastest method |
+| Perceptual quality (DOVER) | 1st of 5 | Best |
+| Distribution fidelity (FID) | 1st of 5 | Best |
+| Talking-head eval (THEval) | 1st of 5 | Clearly best |
+| Lip-sync confidence (LSE-C) | 7.27 | 2nd of 5 |
+
+The LSE-C row is worth reading closely, because Tavus flags its own caveat: LSE-C "rewards pronounced mouth movement, including movement past the point where it looks natural, which THEval accounts for." In other words, the metric that Griffin places second on is one that can be gamed by exaggerated mouth motion — and it was the community's most common visual criticism of the launch (see below). These quality numbers, unlike the VideoFDB tracks, are Tavus's own measurements against baselines it selected.
+
+## Safety: why Griffin-Lite is not released
+
+Tavus is explicit that the same properties that make a HIM a good interface also make it a good deception tool. The official page states: "The same properties that make Human Interaction Models powerful interfaces for natural communications between human and machine allow them to deceive a human into believing it is not AI." It adds that "further alignment and safety procedures are required for safe release", that Tavus is "working on safe disclosure features", and that it is working "with organizations tackling AI safety."
+
+The release decision follows from that. **Griffin-Lite is available only to select trusted testers as a research preview and will not be available for customer use at this time.** Access is by request form. Tavus says it anticipates "releasing Griffin very soon after these safety concerns are addressed", and that Griffin "isn't on the Tavus platform yet" — it will come "once we've worked out how to release it safely."
+
+{% x id="2105704984914559441" /%}
+
+Given that nearly half of a live sample could not tell, and that the ones who could mostly worked it out inside twenty seconds, a disclosure mechanism that survives a casual conversation is not a nice-to-have. The honest summary is that Tavus describes a responsible staged rollout, and the documents that would let an outsider audit that claim — a model card, a capability-threshold assessment, a misuse evaluation — had not been published as of the day of the announcement.
+
+## Community reaction
+
+The launch drew an unusually large response — the lead post alone had roughly 29,500 likes, 3,200 reposts and 11.8 million views within about a day — and the replies split into three recognizable camps. These are **community reactions, not verified facts**, and they are included because they show where the pressure points are. Handle names are given as they appear on X.
+
+**The skeptics questioned the study, loudly.** The most-liked critical reply disputed the 48% outright: ["There's 0 chance 48% of people believed they were talking to a human. Unless you biased the population by asking people who are 70+ years old. That shit was easy to spot in the first half a micro second. Mouth moving a damn Annoying Orange video"](https://x.com/tavus/status/2105754934021144945) (@willjciolino). A separate thread argued the result is effectively chance: ["48% is basically a coin flip. past this point the only reliable way to know you're talking to an AI is if it tells you, so disclosure stops being optional"](https://x.com/tavus/status/2105709991089078436) (@Acezhang01).
+
+**The caution camp read it as a threshold being crossed.** One reply: ["Going from under 3% to 48% in one jump is the part that gets me, even though it's the company's own test. A live video call was the last thing most of us still trusted to prove there's a real person on the other end, and that's going to need a replacement"](https://x.com/tavus/status/2105752511546098042) (@WorldianAI). Another, among the most-liked replies on the thread at over 1,300 likes, went further: ["i think we should prolly pass a law making this illegal. im ok with realtime cartoon characters though"](https://x.com/tavus/status/2105725607095251451) (@mayfer).
+
+**The impressed camp focused on the leap.** ["i honestly couldn't believe i wasn't talking to real human when i tried it, this is truly HIM :)"](https://x.com/tavus/status/2105707888933253260) (@heyorvian) and ["It gave me chills, it looks too real. Wow"](https://x.com/tavus/status/2105717898031562933) (@mihuq).
+
+Across camps, one technical criticism recurred: **the mouth and lip sync.** ["The mouth movements are quite weird. It's cool though, worst it'll ever be. I don't agree it looks real though. Close but not quite."](https://x.com/tavus/status/2105735044145033386) (@LLMJunky, ~730 likes). A more measured version: ["still a bit of work to do on the lips movements and latency overall but seems crazy good! gg"](https://x.com/tavus/status/2105748946597327196) (@kusailatalit). Notably, this is the same dimension where the benchmark shows Griffin second on LSE-C lip sync rather than first — the crowd and the metric agree.
+
+The jokes are part of the record too — ["Can I bring Griffin to the bars with me to crush beers after work?"](https://x.com/tavus/status/2105722761565942205) (@litcapital) and a widely shared riff on the "Her" color scheme — and so is the dystopia framing: ["Science fiction unfolding in front of our eyes. Or dystopia. Not sure."](https://x.com/tavus/status/2105739026917384607) (@tedbjorling). Tavus replied in-voice to many of these, which is where the "Griffin Lite :) ... see how we're improving on Griffin Lite" teaser came from — a signal that a more capable version is already in progress.
+
+What the community reaction does **not** provide is independent validation. No reply, quote, or discussion found for this article reproduced the study or ran the benchmark. The only independent score in the whole launch remains NVIDIA's.
+
+## Availability and pricing
+
+Availability is the constraint that matters most today, and it is simple: **there is no way to buy or call Griffin.** There is no model ID, no endpoint, no rate limit, no SLA, no region list, and no published price. Tavus points anyone who wants to build today at the models "150,000 developers and businesses already use" — Phoenix, Raven and Sparrow — which are the predecessors, not Griffin.
+
+For context, Tavus's existing **Conversational Video Interface** platform has a published, if cluttered, price list on [tavus.io/pricing](https://www.tavus.io/pricing) (checked October 2, 2026). The developer tiers shown include a free tier with 25 minutes of conversational video and a Starter tier at $59/month with 100 minutes and $0.37/min overage; the same page also displays a second set of plan blocks (including a $22 Starter, $397 Growth and $975 Business) that overlap with the first. **None of these plans include Griffin.** Treat any figure quoted for Griffin itself as invented — Tavus has published none.
+
+| Option | What you get | Griffin included? |
+|---|---|---|
+| Griffin-Lite (research preview) | Selected trusted testers only, by request form | This is Griffin |
+| Tavus Free (developer) | 25 min conversational video, 5 min video generation, 25 stock replicas | No |
+| Tavus Starter ($59/mo) | 100 min conversational video, 3 custom replicas/month | No |
+| Tavus Growth ($397/mo) | 1,250 min conversational video, 100+ stock replicas | No |
+| Tavus Enterprise | Custom, white-label, SLAs | No |
+
+## Limitations and open questions
+
+Five gaps are worth stating plainly, because they are what stand between the launch and any real deployment decision.
+
+1. **The Turing study is small and company-run.** n=54, one-minute calls, no independent replication, no real-human comparison arm. The 48% is a striking signal, not a settled population estimate.
+2. **The perception lead is partly an artifact of comparison.** Griffin sees video; its strongest baseline was scored audio-only. NVIDIA's own paper notes that seeing is not the same as using what you see.
+3. **Long-session behavior is unverified.** Tavus says the generator was trained so long rollouts do not drift, but it has published no results for sessions longer than a minute. Customer conversations, tutoring sessions and interviews run for 10 to 60 minutes.
+4. **The safety documents are missing.** No model card, no capability-threshold assessment, and no misuse evaluation were public at launch.
+
+{% figure src="https://customer-89oi2uqhvws3g49x.cloudflarestream.com/3f57f34e9c26a055ffd2b79b74170294/thumbnails/thumbnail.jpg" alt="An official Tavus Griffin demo still showing a split-screen video call between a person and the generated persona in a bright office." caption="An official demo still from the Griffin page: a live, face-to-face call where the persona listens, watches and responds in real time. Even the demo clips are vendor-produced and were not independently scored. (Image: Tavus.)" /%}
+
+5. **Pricing and access are undefined.** There is nothing to evaluate on cost, latency at scale, or reliability, because none of it has been offered.
+
+## What this means for agent builders
+
+Set aside the access question and the launch still changes how you should think about real-time agents.
+
+**Timing is now the differentiator, not fidelity.** The most useful number in the release is not the 48% — it is the fact that a benchmark now exists (VideoFDB) that scores *when* an agent acts, not just what it says. Turn-taking, backchannels and interruption handling are measurable, and the field — including frontier real-time models — scores well below human on them. If you are building voice or video agents, that is the dimension to instrument.
+
+**Full-duplex is architecture, not a feature flag.** You cannot bolt continuous backchanneling onto a cascade of transcribe → LLM → synthesize. Griffin's headline behaviors follow from generating speech and video from the same control signal in one loop. If your product depends on interruption or nonverbal cues, a cascade will structurally limit you.
+
+**Design for the ladder, not the launch.** Tavus's own replies telegraph a "Griffin Lite" and a bigger model behind it, and the platform's existing stack (Phoenix/Raven/Sparrow) is where anything shippable lives today. The practical move is to keep building on the documented models and to track the appearance of a Griffin row on the Tavus platform — not to wait for it.
+
+**Treat disclosure as a product requirement.** Every serious participant in this space — Tavus included — now says disclosure tooling has to come before release. If your agent can be mistaken for a person, the studiable failure mode is not "did it fool the user", it is "could the user reliably find out".
+
+## FAQ
+
+### What is Tavus Griffin?
+
+Griffin is Tavus's first Human Interaction Model (HIM): a full-duplex, video-to-video system that perceives a person's audio and video, decides when and how to respond, and generates speech and video at the same time. Tavus calls it the first model to pass a real-time video Turing test.
+
+### Did Griffin really pass the Turing test?
+
+In Tavus's own live study, 26 of 54 participants (48%) believed a Griffin-Lite persona was a real person after a one-minute video call, against 1 of 41 (2.4%) on Tavus's previous stack. It is a real, striking result, but it comes from a small, short, company-run study with no independent replication and no real-human comparison arm.
+
+### What did NVIDIA's benchmark actually measure?
+
+NVIDIA's VideoFDB is the first benchmark for full-duplex audio-visual conversation, scored 0–5 by a language-model judge across 237 real call clips. It has two tracks. Griffin-Lite scored 3.83 on generation (human 3.92) and 3.73 on perception (human 4.20), first on both against the published baselines.
+
+### Can I use Griffin today?
+
+No. Griffin-Lite is a research preview for selected trusted testers, reached through a request form. It is not on the Tavus platform, has no public model ID, no endpoint, and no pricing, and Tavus says it will not be available for customer use at this time.
+
+### How much does Griffin cost?
+
+Tavus has published no price for Griffin, and any figure you see quoted for it is invented. Tavus's existing Conversational Video Interface platform is priced separately on tavus.io/pricing and does not include Griffin.
+
+### What is a "Human Interaction Model"?
+
+Tavus defines a HIM as "a new class of model designed to understand and generate face-to-face real-time human interaction." In practice it means one system that listens while it talks, reads expressions and pauses, and generates the whole video frame — rather than chaining separate speech, language and avatar models.
+
+### Is Griffin full-duplex?
+
+Yes. Griffin assesses the conversation at regular sub-second intervals and can backchannel, nod, or take the turn while the other person is still speaking, using both audio and video — rather than waiting for the user to stop.
+
+### Why is Griffin not released yet?
+
+Because the same realism that makes it a good interface also makes it deceptive. Tavus says further alignment and safety procedures, including "safe disclosure features", are required before release, and that it is working with AI-safety organizations.
+
+### What is the criticism of the launch?
+
+The most common community criticism is the mouth and lip-sync quality — the same dimension where the benchmark ranks Griffin second on LSE-C rather than first. Reviewers also questioned the study's small sample and Tavus-run methodology, and several argued a model this convincing needs mandated disclosure.
+
+### How is Griffin different from Phoenix, Raven and Sparrow?
+
+Phoenix, Raven and Sparrow are Tavus's existing separation-of-labor models — face rendering, perception and turn-taking — chained in a cascade. Griffin folds perception, conversational decision-making and generation into one real-time video-to-video system. The existing three are what you can build on today.
+
+## Sources
+
+Sources checked October 1–2, 2026.
+
+- [Griffin: The First Human Interaction Model — Tavus](https://www.tavus.io/griffin) (official product and research page; all capability, study and benchmark claims)
+- [VideoFDB: Evaluating Full-Duplex Vision-Speech Capabilities in Conversational Agents — NVIDIA](https://research.nvidia.com/labs/amri/projects/video-fdb/) and the [preprint](https://arxiv.org/html/2605.30256v2) (benchmark definition, baselines, human references)
+- [Tavus on X — launch thread](https://x.com/tavus/status/2105704169009246248) (lead post and the nine-post thread, quoted embeds above)
+- [Plans and Pricing — Tavus](https://www.tavus.io/pricing) (existing platform tiers; checked to confirm Griffin is not listed)
+- Community replies on the launch thread, linked inline above; quoted as attributed reactions, not as verified facts.
+
+For the wider setting, see our [Gemini 4 Argon guide](/blog/gemini-4-argon-explained) for how frontier-model launches stage access, and the [OpenAI DevDay 2026 recap](/blog/openai-devday-2026-recap-agent-builders) for how agent product lines ship in waves. If you build real-time agents, the registry has practical starting points in [AI avatar video](/skills/ai-avatar-video) and [HeyGen best practices](/skills/heygen-best-practices), and the [agent skill categories](/skills/categories) are a good map of where conversational and perception tooling live. Teams wiring memory and perception together should also look at [agent memory MCP](/skills/agent-memory-mcp), and the [TypeSafe Jev deep dive](/blog/typesafe-jev) is a useful contrast in how honestly a launch's claims can be graded.
