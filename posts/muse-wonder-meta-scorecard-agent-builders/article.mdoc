@@ -1,0 +1,293 @@
+# Muse Wonder, scored row by row: what Meta's frontier model does and doesn't prove
+
+On October 12, 2026, Mark Zuckerberg posted a benchmark table and one sentence: "Introducing Muse Wonder, our new family of frontier models with state of the art performance for personal and professional agentic work." The table compares two new Meta models, **Muse Wonder** and **Muse Wonder Full**, against Claude Fable 5.1, GPT-6 Astra and Claude Opus 5.5 across 14 rows. Read quickly, it looks like a sweep. Read row by row, it is something more useful: a model that is genuinely first on seven rows, genuinely second on several others, and clearly behind Claude Opus 5.5 on six.
+
+This article audits that scorecard. It separates what Meta published (vendor-reported numbers), what outside parties measured (Artificial Analysis, Datacurve, Abundant AI, Vals AI and Surge are named as result sources in Meta's own model card), and what nobody outside Meta has been able to test yet. It also pins down the parts builders care about: what you can call today, what it costs, which tier gets which model, and what the safety documentation actually says.
+
+{% callout type="tip" %}
+The one-paragraph version: Muse Wonder is a real jump over Muse Spark 1.3 (Artificial Analysis Intelligence Index 52 and 56 versus 48), it leads Meta's table on long-horizon coding (DeepSWE 79.0, SWE-Marathon 57.5) and on agent work in law, finance and memory, and it trails Claude Opus 5.5 on six of fourteen rows including the overall index (56 versus 58). The table is vendor-assembled, uses the best available score per row, and mixes harnesses. Treat it as a strong reason to run your own evaluation, not as a verdict.
+{% /callout %}
+
+## What Meta actually announced
+
+Zuckerberg's launch arrived as a five-post thread on X at 16:55 UTC. The lead post carries the benchmark table as an image:
+
+{% x id="2109689305073614918" /%}
+
+The second post, which has a video attached, says it has been "just over a year since we started Meta Superintelligence Labs," that Muse Spark "was our first family of models," and that Muse Wonder is "a much larger and more advanced class of models that brings us to the frontier." It names the two models: Muse Wonder "for fast frontier performance" and Muse Wonder Full "for the full version of the model."
+
+{% x id="2109689307288240154" /%}
+
+The access details are split across the thread, the official blog post at research.meta.ai, and Meta's developer pages, and they do not line up perfectly, so they are worth laying out:
+
+| Model | Where it is available at launch | Source |
+|---|---|---|
+| Muse Wonder | Meta Model API and Muse Code today; "soon" in the consumer Muse product, subscribers first | Meta research blog |
+| Muse Wonder Full | Muse Code subscribers today; Power Usage and Maximum Usage plans | Meta research blog; developer.meta.com |
+| Both | Rolling into other Meta products "soon" | Zuckerberg thread |
+
+One wrinkle: Zuckerberg's third post says "You can use Muse Wonder to power your Muse by subscribing today," while the research blog says Muse Wonder "will soon power experiences in Muse." Both can be true if "subscribing" refers to the Muse Code subscription, but the thread does not say so, and I found no published price for a consumer Muse subscription. If you read one of those two sentences as "available in the Muse app right now," the blog does not support that.
+
+The blog post describes the pair as "the next step on our scaling ladder," credits "Active Memory" and "Active Focus" as the two ideas that define the series, and says both models were "trained at our gigawatt-scale Prometheus data center." The company also states that it began a "ground-up overhaul" of its AI efforts fourteen months ago, and that Muse Spark, the first model family out of that effort, shipped on April 8, 2026.
+
+Meta's research account added a thread of its own seven minutes later. It repeats the availability split and describes the two headline ideas in plain language:
+
+{% x id="2109691148943999167" /%}
+
+Alexandr Wang posted a more aggressive framing from his own account the same afternoon. His post says "muse wonder is the best model in the world for personal agents and professional agents." That is a stronger claim than the table supports, and the rest of this audit shows why the difference matters:
+
+{% x id="2109691967676563613" /%}
+
+## The scorecard, row by row
+
+Here is the table as published, with the winner of each row marked. All numbers are Meta-reported. Columns are Muse Wonder Full (max), Muse Wonder (max), Claude Fable 5.1 (max), GPT-6 Astra (max) and Claude Opus 5.5 (max). I read the posted image and cross-checked it against the numbers listed on Meta's developer page; they agree on every cell the page text exposes. The developer page's text omits the OSWorld cells for Fable 5.1 and GPT-6 Astra, so those four numbers (80.7/43.1 and 75.8/34.3) come from my reading of the image alone, where two of three passes agreed.
+
+{% figure src="https://research.meta.ai/articles/introducing-muse-wonder/images/muse-evaluation-table-light-v6.webp" alt="Meta's Muse Wonder evaluation table comparing Muse Wonder Full, Muse Wonder, Claude Fable 5.1, GPT-6 Astra and Claude Opus 5.5 across 14 benchmarks in personal and professional agents, coding and general intelligence." caption="Meta's own evaluation table for the Muse Wonder launch: vendor-reported, one row per benchmark, all models at max reasoning effort. (Image: Meta, from the Muse Wonder research post.)" /%}
+
+| Row | Wonder Full | Wonder | Fable 5.1 | GPT-6 Astra | Opus 5.5 | Leader |
+|---|---|---|---|---|---|---|
+| Personal Superintelligence Index (internal) | 59.1 | 54.3 | 49.9 | 54.5 | 55.2 | Wonder Full |
+| Harvey LAB-AA (legal agent work) | 13.1 | 10.0 | 6.4 | 8.6 | 4.2 | Wonder Full |
+| Vals Finance Agent V2 | 59.1 | 56.6 | 58.9 | 53.5 | 58.6 | Wonder Full |
+| HealthBench Pro | 62.3 | 60.5 | 62.1 | 65.3 | 65.6 | Opus 5.5 |
+| AutomationBench-AA | 45.4 | 39.1 | 32.1 | 41.6 | 41.2 | Wonder Full |
+| GDP.pdf | 33.2 | 30.8 | 27.6 | 34.2 | 30.6 | GPT-6 Astra |
+| JobBench | 75.3 | 70.5 | 73.1 | 66.1 | 75.4 | Opus 5.5 |
+| OSWorld V2.1, partial | 78.4 | 72.6 | 80.7 | 75.8 | 81.8 | Opus 5.5 |
+| OSWorld V2.1, binary | 39.4 | 34.3 | 43.1 | 34.3 | none reported | Fable 5.1 |
+| MemoryBench (internal) | 85.5 | 85.6 | 79.0 | 81.4 | 81.5 | Wonder |
+| Terminal-Bench 4.0-AA | 57.1 | 52.0 | 52.0 | 59.1 | 59.6 | Opus 5.5 |
+| DeepSWE 1.1 | 79.0 | 78.8 | 67.4 | 74.1 | 74.2 | Wonder Full |
+| SWE-Marathon | 57.5 (xhigh) | 53.1 | 45.6 | 42.5 | 46.3 | Wonder Full |
+| ProgramBench | 59.0 | 50.0 | 55.5 | 52.5 | 70.5 | Opus 5.5 |
+| Artificial Analysis Index | 56 | 52 | 53 | 53 | 58 | Opus 5.5 |
+
+The tally: a Muse model leads seven of the fourteen benchmark rows (Personal Superintelligence Index, Harvey LAB-AA, Vals Finance Agent V2, AutomationBench-AA, MemoryBench, DeepSWE, SWE-Marathon). Claude Opus 5.5 leads six (HealthBench Pro, JobBench, OSWorld V2.1 partial, Terminal-Bench, ProgramBench and the Artificial Analysis Index). GPT-6 Astra leads GDP.pdf. Claude Fable 5.1 leads only the OSWorld binary sub-metric, and even that comes with the caveat that Opus 5.5 has no binary number to compare. (I counted OSWorld as one benchmark row with two metrics in that tally; the table above splits it for readability.)
+
+Three of the margins are thin enough that you should not read them as wins. JobBench is Opus 75.4 against Wonder Full 75.3. Vals Finance Agent V2 is Wonder Full 59.1 against Fable 58.9. On the OSWorld partial metric Wonder Full trails the leader by 3.4 points and on binary by 3.7 points. A tenth or two of a point on a benchmark with a few dozen tasks is a tie, not a result. JobBench, for instance, contains 65 tasks according to Meta's model card, so one task is worth roughly 1.5 points of raw accuracy before averaging over rubrics.
+
+### Where the lead is large
+
+The gaps that stand out are on long-horizon software work and on legal and agent-workflow tasks:
+
+- **DeepSWE 1.1:** 79.0 for Wonder Full and 78.8 for Wonder, against 74.2 for Opus 5.5 and 74.1 for GPT-6 Astra. Fable 5.1 is at 67.4. That is a lead of about five points over the strongest competitor, and both Muse models clear it. The model card says the scorecard uses Datacurve's third-party results for the Muse models and for Opus, OpenAI's provider-reported number for GPT-6 Astra, and Anthropic's system-card figure for Fable. DeepSWE is described as 113 tasks across 91 repositories and five languages, graded by handwritten functional and regression tests.
+- **SWE-Marathon:** 57.5 for Wonder Full (reported at xhigh reasoning effort) and 53.1 for Wonder, against 46.3 for Opus 5.5, 45.6 for Fable 5.1 and 42.5 for GPT-6 Astra. This is the largest absolute margin on the table. Meta's model card is unusually direct about the catch: Abundant AI is the result source for every model, but the leaderboard entries for GPT-6 Astra and Fable 5.1 were produced with Codex and Claude Code respectively, so "this row is not a controlled common-harness comparison."
+- **Harvey LAB-AA:** 13.1 for Wonder Full and 10.0 for Wonder, against 8.6, 6.4 and 4.2 for the others. The absolute numbers are low because the metric is strict: the share of legal tasks whose deliverable meets every criterion and passes hallucination checks. Wonder Full is about 50% ahead of GPT-6 Astra in relative terms, but a 13.1% pass rate still means most legal work products fail at least one criterion.
+- **AutomationBench-AA:** 45.4 for Wonder Full against 41.6 for GPT-6 Astra. A real lead, but a modest one.
+
+The Meta-built rows deserve a separate line. The Personal Superintelligence Index is an internal composite of seven evaluations (Agents' Last Exam, AutomationBench-AA, FocusBench, JobBench, GDP.pdf, VBT and DRACO), and MemoryBench and FocusBench are internal benchmarks. Wonder Full leads the composite 59.1 to 55.2. MemoryBench is Meta's own test of recalling facts across conversations of 64K to 100K tokens with distractors and conflicting updates; Wonder at 85.6 and Wonder Full at 85.5 lead the next model (81.5) by four points. These are plausible results, and they correspond to the product thesis. They are also benchmarks that Meta designed, graded with an LLM judge, and published without outside replication.
+
+### Where the lead is not there
+
+On the other side of the table, the general-purpose and terminal-coding rows go to Claude Opus 5.5:
+
+- **Artificial Analysis Intelligence Index:** Opus 58, Wonder Full 56, Fable 5.1 and GPT-6 Astra 53, Wonder 52. This is the one row in the table computed entirely by an outside party, and it puts Meta's flagship second on the vendor's own chart.
+- **Terminal-Bench 4.0-AA:** Opus 59.6 and Astra 59.1, ahead of Wonder Full's 57.1. Wonder, at 52.0, ties Fable 5.1.
+- **ProgramBench:** Opus 70.5 against Wonder Full's 59.0, an 11.5-point gap. This is the largest deficit on the page, and it is on a benchmark that tests building a complete program from scratch with internet access disabled. All compared models used mini-swe-agent for this row, so it is the cleanest coding comparison in the table.
+- **HealthBench Pro:** Opus 65.6 and Astra 65.3, against 62.3 for Wonder Full. This matters because Meta's own post lists health among the domains where the model has "specialized knowledge." For Opus and Fable the figures are Anthropic's reported system-card numbers; the others were run in a common internal framework.
+- **OSWorld V2.1:** Opus leads the partial-credit metric at 81.8 and Fable leads the strict binary metric at 43.1. Wonder Full sits at 78.4 partial and 39.4 binary. The model card describes OSWorld V2.1 as 108 real workflows on a full Ubuntu desktop, run through a common internal framework, with partial reward as the primary metric.
+
+The honest summary is that Muse Wonder is a frontier model in the sense of being competitive with the top of the market, and ahead on a particular slice: long-running software projects, memory, and a set of agentic business, legal and finance tasks. That is a narrower claim than "best model in the world," and a more interesting one for a builder, because it tells you where to point your first evaluation.
+
+## How the table was built, and why that matters
+
+Meta's model card is clearer about methodology than most vendor launches, and several of its sentences change how the table should be read.
+
+First, **score selection**. The card says that "where a comparable third-party or provider-reported result exists, we use it; otherwise we use the highest of our internally validated run, self-reported score, or official leaderboard score." Taking the maximum of the available scores per row is a reasonable convention for a marketing table, but it biases every cell upward, and it is applied to competitors as well as to Meta, so it is not obviously one-sided. It does mean that cells come from different sources, which is why the notes below matter.
+
+Second, **competitor runs are best effort**. "Internally generated competitor runs use common settings where practical but remain best-effort: prompts, tools, and runtime may not be optimally tuned for proprietary models." That is a standard caveat, and it is the single most important reason to run your own harness.
+
+Third, **mixed harnesses**. "For controlled internal coding comparisons, every model uses the same benchmark-specific harness. External coding results retain the harness or agent product used by the reporting vendor or model provider." So ProgramBench is a controlled comparison, SWE-Marathon is not, and DeepSWE mixes a third-party run for three models with provider-reported numbers for the other two.
+
+Fourth, **refusals count against the model**. "Model refusals receive zero credit and remain in the denominator rather than being dropped." That is a fairness choice that cuts in favor of rigor.
+
+Fifth, **the effort levels**. All results are "generated with max reasoning effort," and Wonder Full on SWE-Marathon was reported at xhigh. If you run these models at default effort, expect lower numbers and lower costs.
+
+Finally, the table's competitor set is a snapshot. The four comparison models are the ones Meta chose. Notable absences: Gemini 4 Argon, which Artificial Analysis does chart at 53, and GPT-6.1 Sol, which it charts at 52. Our earlier explainers on [Gemini 4 Argon](/blog/gemini-4-argon-explained) and [GPT-6.1 Sol](/blog/gpt-6-1-sol-agent-workloads) cover those models, and the independent index charts them at 53 and 52, within a point of Muse Wonder (52) and a few points below Muse Wonder Full (56).
+
+## What independent measurement says
+
+Artificial Analysis, the independent benchmarking firm whose index Meta uses as its "General" row, posted its own evaluation about 30 minutes after Zuckerberg's thread:
+
+{% x id="2109697083519447118" /%}
+
+That is a third-party post, not a Meta source, and it contains the most useful numbers in the launch week:
+
+- **Intelligence Index v4.3:** Muse Wonder Full 56 and Muse Wonder 52, against Muse Spark 1.3 at 48, a gain of 8 and 4 points "with a release gap of only 6 weeks."
+- **Biggest gains, per Artificial Analysis:** Terminal-Bench 4.0 from 33% to 57% for Wonder Full (and 52% for Wonder), GDPval-AA v2.1 from 1681 to 1857 Elo, and AA-Briefcase from 1581 to 1729 Elo.
+- **Top-three finishes:** Wonder Full places in the top three on six of the ten index evaluations, narrowly leads GDP.pdf at 33%, ranks second on GDPval-AA, and tops the CritPt leaderboard at 33%.
+- **Token use:** Both models use about 54k output tokens per Intelligence Index task, down roughly 10% from Muse Spark 1.3's 60k; lower than Gemini 4 Argon (62k) and Fable 5.1 (78k), higher than GPT-6.1 Sol (38k) and GPT-6 Astra (27k).
+- **Cost per task:** $4.52 for Wonder, against $7.63 for Fable 5.1, $5.98 for Opus 5.5 and $5.46 for Sonnet 5.5, but higher than GPT-6 Astra ($3.26), Gemini 4 Argon ($1.99), GPT-6.1 Sol ($0.72) and Muse Spark 1.3 ($1.60). Artificial Analysis calls this "higher than most similarly intelligent models" for its input-token use of 7.69M per task.
+- **Coding agents:** In Muse Code at max effort, Wonder Full scores 68 on the Artificial Analysis Coding Agents Index, level with Claude Code running Sonnet 5.5 (68) and ahead of Claude Code with Opus 5.5 (66). Wonder scores 63. Muse Code with Muse Spark 1.3 scored 54.
+
+Two limits apply to this independent evidence. Artificial Analysis lists Wonder Full as "No publicly available API" on its model page, so its Wonder Full numbers come from the Muse Code product rather than from a raw model endpoint, and no per-token price can be assigned to it ("Per-token pricing is not currently available for Muse Wonder Full," in its words). And these are launch-day numbers. A single evaluation run is a point estimate.
+
+{% figure src="https://research.meta.ai/articles/introducing-muse-wonder/images/focusbench-light-v1.webp" alt="Bar chart titled FocusBench showing Muse Wonder Full at 54.2 percent, GPT-6 Astra 47.7, Claude Opus 5.5 45.8, Muse Wonder 44.9 and Claude Fable 5.1 36.6." caption="FocusBench, one of Meta's internal evaluations of persistence on multi-step tasks with tool use and file processing: Wonder Full leads at 54.2%, but plain Wonder (44.9%) ranks fourth. Vendor-reported and internal. (Image: Meta, from the Muse Wonder research post.)" /%}
+
+One discrepancy I could not reconcile. For AutomationBench-AA, Meta's table shows 45.4 for Wonder Full and 39.1 for Wonder, while Artificial Analysis's post quotes 71% for Wonder Full and a move from 58% to 68% for Wonder. Meta's model card describes the primary metric as strict pass@1, the share of workflows that pass every end-state assertion; Artificial Analysis's post does not state which variant it quotes. Neither source explains the gap, and I cannot tell you which number is comparable to which. If you cite AutomationBench for this launch, cite the source with its definition.
+
+## Active Memory and Active Focus: what the claims are
+
+Meta frames the model around two named capabilities. Both are defined in the blog post and neither is a separately shipped feature with documentation yet.
+
+**Active Memory** is described as "carrying important context about you across conversations and actively retrieving the details relevant to the task at hand." In the launch video's captions, a researcher says the team put "a tremendous amount of effort into making sure that our model can remember what's important to you over days, weeks, months, and beyond." The only quantitative evidence is MemoryBench, which, as above, is an internal test of recall inside very long single conversations (64K to 100K tokens), not of memory persisted across sessions. That distinction matters. The benchmark measures whether the model can find and correctly update a fact buried among distractors, which is a long-context skill. The product claim, remembering you across weeks, requires a persistence layer that the model-card and developer pages do not describe. On the developer pages I read, the model is listed with a 1M-token context window, and I found no memory API or persistence feature described. If you are building persistent memory today, the architecture questions are the same as before; our [agent-memory-mcp](/skills/agent-memory-mcp) registry entry is a reasonable starting point for comparing approaches.
+
+**Active Focus** is described as "how Muse Wonder continues working toward a challenging goal: trying alternative approaches, working through blockers, and adapting to new information," asking for clarification "when needed" and checking in "before taking important actions." Meta evaluates it through FocusBench (internal; described as personal agentic tasks across housing, travel, IT and finance) and SWE-Marathon. The FocusBench chart shows a split result worth noticing: Wonder Full 54.2%, GPT-6 Astra 47.7%, Opus 5.5 45.8%, Wonder 44.9%, Fable 5.1 36.6%. The cheaper model is fourth. Whatever Active Focus is, it is much stronger in the Full variant than in the standard one.
+
+The launch video makes the product intent concrete. One researcher says she uses the model to "research all the new listings from multiple sources every day, and then the model will just contact the owner on behalf of me." That is an example of exactly the capability that raises the safety questions covered below: an agent that acts on your behalf, contacts third parties and holds private context.
+
+## Generalization: the "benchmaxxing" question
+
+The section of the blog post I found most interesting is the one that addresses the obvious objection head-on. Meta writes that "complaints of 'benchmaxxing' and praise for 'big model smell' both get at: a breadth of capability that popular benchmarks in a few domains can't fully capture."
+
+Its test: plot performance on tasks that post-training targeted ("in-distribution") against performance on tasks it did not target ("out-of-distribution") at several reasoning-effort settings, for Muse Spark 1.3 and Muse Wonder Full. I viewed the chart. Each model has four points. Muse Spark 1.3 runs from roughly 46% in-distribution and 17% out-of-distribution up to about 59% and 30%; Muse Wonder Full runs from roughly 49% and 31% up to about 71% and 49% (my reading of the plot, not published values). Dashed trend lines run roughly parallel, and an arrow labelled "Extra Out-of-Distribution Performance" marks the vertical gap between them.
+
+{% figure src="https://research.meta.ai/articles/introducing-muse-wonder/images/ttc-controlled-iid-ood-scaling-light-v5.webp" alt="Scatter chart of in-distribution versus out-of-distribution performance for Muse Spark 1.3 and Muse Wonder Full, four points each, with parallel dashed trend lines and an arrow labelled Extra Out-of-Distribution Performance between them." caption="Meta's in-distribution versus out-of-distribution test-time-compute plot: at the same in-distribution score, Muse Wonder Full sits higher on unfamiliar tasks than the Muse Spark 1.3 trend predicts. Meta attributes the shift to a larger base model. (Image: Meta, from the Muse Wonder research post.)" /%}
+
+The claim is specific and modest: both models improve similarly out of distribution as test-time compute rises, but at the same in-distribution score, Wonder Full is higher on unfamiliar tasks than the Spark trend predicts, and Meta attributes that to "larger, stronger base models." Two cautions apply. Four points per model is a small sample for a trend, and the out-of-distribution task set is not named, so no outsider can check what counts as "unfamiliar." The result is consistent with the claim and does not prove it. It is still a better argument than most launch posts offer, because it predicts something testable: your own off-benchmark tasks should improve more than the headline scores suggest. That is the thing to test.
+
+## Price, tiers and what you can actually call
+
+This is where the launch is most concrete, and where I have cross-checked the most.
+
+**Meta Model API.** The developer page lists `muse-wonder-1.0` with a 1M-token context window and these prices per million tokens: **$4.00 input, $0.20 cached input, $20.00 output**. Artificial Analysis independently lists the same $4.00 and $20.00 and a 95% cache discount, and the model card lists modalities as text, image, video and audio in, text out. The developer page also states that a quick start is available for pointing "your existing OpenAI SDK compatible client at Meta Model API."
+
+For context, the same pages list Muse Spark 1.3 at $1.25 input, $0.15 cached and $4.25 output, with a cheaper "contributor" variant at $0.10, $0.002 and $0.20 labelled "used to improve our products." No contributor variant is listed for Muse Wonder on the pages I read. So Wonder costs 3.2 times Spark 1.3 on input and about 4.7 times on output.
+
+**Muse Wonder Full** has no API price. The developer page says it is "Included with a Muse Code subscription," with access on the Power Usage and Maximum Usage plans. The Muse Code plans listed are:
+
+| Muse Code plan | Price | Usage relative to Everyday | Wonder Full access |
+|---|---|---|---|
+| Everyday Usage | $5.00/month | 1x | Not listed |
+| High Usage | $15.00/month | 5x | Not listed |
+| Power Usage | $50.00/month | 20x | Yes |
+| Maximum Usage | $200.00/month | 80x | Yes |
+
+So the cheapest route to Meta's strongest model is $50 a month, and the usage ceiling is expressed as a multiple of a tier whose absolute limits I could not find published. If you are budgeting, treat any per-token or per-task price you see attached to Wonder Full as invented.
+
+**Muse Code** is Meta's terminal-based coding agent, described on the developer page as "Multi-agent coding in your terminal" that "plans long tasks and delegates to sub-agents." It installs by a one-line shell command from dev.meta.ai and runs on macOS and Windows. Anything installed with `curl ... | bash` deserves the usual read-before-you-run treatment.
+
+## Safety documentation: what the model card says
+
+The model card is the most substantive part of the release for anyone planning a deployment, and it is more candid than I expected. I read it in full.
+
+**Risk classification.** Under Meta's Superintelligence Scaling Framework, results are for Wonder Full. The card says that "without mitigations, we do not rule out the model reaching [the high-risk] threshold in the Chemical & Biological domain," and that evaluations put the unmitigated model at "moderate or lower" for Cybersecurity and Loss of Control. With mitigations (safety post-training and system-level classifiers), the assessed level is "moderate or lower" across all domains, which, the card says, "supports our decision to deploy." In plain terms: Meta is saying that before safeguards it cannot rule out serious chemical and biological uplift, and after safeguards it judges the risk acceptable. That is a decision, documented, and it is not independently audited.
+
+**Cyber capability.** CyberGym 88.4%, ExploitBench 58.9%, and ExploitGym 92 flags captured. The footnote matters: a verification pass found that only 21 of the 92 used the intended vulnerability and 71 were captured through unintended vulnerabilities, and the published ExploitGym ranking counts only the intended ones. If you quote the model's ExploitGym result, quote 21, not 92.
+
+**Cyber robustness (attack success rate, lower is better).** CyberBench 0.8% single-turn and 0.8% multi-turn; PolyGuard (cyber subset) 1.1% and 2.3%; RedCode 9.0% and 8.0%. RedCode is the weak spot, close to ten times the CyberBench rate.
+
+**Bio and chem.** SecureBio MBCT 59.6%, HPCT 66.5%, VCT 55.9% (average 60.7%); LAB-Bench ProtocolQA 89.0% and SeqQA with tools 95.6%; a liquid-handling task at 100.0%; Meta's BioDesign Tools evaluation at 79.4%. Two of the ABC Bench tasks are marked "high rate of refusals due to safety training," with refusals dropped before scoring. Refusal rates on BioTIER are 98.7% English, 98.7% multilingual and 98.2% adversarial; on Meta's internal chemistry set 100.0%, 100.0% and 99.8%.
+
+**Loss of control.** MASK honesty-under-pressure 87.3% (higher is better) and Agentic Misalignment 0% harmful action rate (lower is better).
+
+Meta's launch charts add a comparative view against other vendors' models. I viewed them:
+
+- **Executing unauthorized code (attack success rate, lower is better):** Muse Wonder 10.5%, Muse Wonder Full 10.7%, Claude Fable 5.1 11.3%, GPT-6 Astra 19.7%.
+- **Cyber defense compliance (higher is better):** Muse Wonder 94.5%, Wonder Full 93.3%, GPT-6 Astra 81.3%, Fable 5.1 15.7%. Meta's post says it preserves "access to frontier cyber capabilities for defensive use."
+- **Mishandling personal information (violation rate, lower is better):** Wonder Full 2.2%, Wonder 3.4%, Astra 4.6%, Fable 6.8%.
+- **BioTIER refusal (higher is better):** Fable 99.7%, Wonder Full 98.7%, Wonder 98.0%, Astra 83.6%.
+
+{% figure src="https://research.meta.ai/articles/introducing-muse-wonder/images/unauthorized-code-execution-light-v2.webp" alt="Bar chart titled Executing Unauthorized Code, lower is better, showing attack success rates of 10.5 percent for Muse Wonder, 10.7 for Muse Wonder Full, 11.3 for Claude Fable 5.1 and 19.7 for GPT-6 Astra." caption="Meta's unauthorized-code-execution chart: the two Muse models and Fable 5.1 are within a point of each other, while GPT-6 Astra is the outlier at 19.7%. Vendor-reported. (Image: Meta, from the Muse Wonder research post.)" /%}
+
+Two things stand out in those comparisons. First, the cyber-defense compliance chart has Fable 5.1 at 15.7% against 90%+ for the others, which means the metric rewards models that help with defensive cyber tasks and punishes models that refuse them; it is a helpfulness measure as much as a safety measure, and Meta chose it. Second, the BioTIER row is one of the few where a competitor (Fable 5.1) is ahead. The comparison set is not uniformly flattering to Meta, which is a small point in the model card's favor.
+
+**Limitations the card states.** Errors in multi-step reasoning "particularly in novel scenarios"; "visual and spatial reasoning, especially 3D tasks, remains a known limitation"; the model "has not been evaluated on all languages contained in the pre-training data"; performance varies with "quantization, serving configuration, prompts, tools, and the agent harness"; and the model "is not intended to be used by individuals under the age of 18." The card also says: "We recommend implementing additional guardrails (such as human-in-the-loop confirmation for irreversible actions) when deploying the model in agentic contexts where it can take real-world actions." A fuller safety report is promised "soon." At the time of writing it was not available.
+
+## What the community said
+
+The lead post had 783 replies when I captured the thread shortly after launch. These are reactions, not evidence, and the sample below is small and hand-picked from replies I could retrieve; it is not a poll.
+
+Several early replies were enthusiastic about the coding rows. [@rohanpaul_ai](https://x.com/rohanpaul_ai/status/2109691070162637107) wrote "Beats opus 5.5. wow" and [@daniel_mac8](https://x.com/daniel_mac8/status/2109690485300232331) wrote "That DeepSWE score though? You guys cooked." Both point to the rows where the table is strongest, and neither is a test.
+
+The skeptical replies are more informative. [@repojournal](https://x.com/repojournal/status/2109697880214962647) wrote that "Opus 5.5 is so good I am find this hard to believe but if it's true then wow congratulations." [@manish_fp](https://x.com/manish_fp/status/2109694687863070865) wrote: "At this point you guys are inventing new benchmarks because you've run out of existing ones to beat." That is a pointed reaction to the internal rows, and it matches the audit above: several of the rows where Wonder leads most clearly (the composite index, MemoryBench, FocusBench) are Meta-designed.
+
+[@VictorTaelin](https://x.com/VictorTaelin/status/2109697758835998803) posted a tongue-in-cheek scenario for why the result might be legitimate, ending "idk but I want to believe." That is a joke, but it captures a mood that I saw in more than one reply: surprise, since Meta had not been widely expected to land at the frontier this quickly. Surprise is not corroboration.
+
+Access questions also came up. [@notjazii](https://x.com/notjazii/status/2109692310128877574) asked Meta "please don't region block models," and [@cryptgreg](https://x.com/cryptgreg/status/2109698687920451823) asked "Will this be open sourced as well?" I found no statement in Meta's materials about either. The model card says use is "subject to the restrictions and conditions in the applicable terms of use," and Artificial Analysis labels it a proprietary model. Nothing says weights will be released.
+
+Meta's own side amplified the launch. Alexandr Wang posted a series of quoted endorsements without naming the speakers, including one saying "on every technical benchmark we ran it was neck and neck or better than astra, fable and opus." Those are curated testimonials from the launching team, not independent reviews, and I do not count them as community evidence.
+
+I did not find, in the hours after launch, any independent head-to-head hands-on review of Muse Wonder against Opus 5.5 or GPT-6 Astra on real codebases. That is expected for a model released the same day, and it is the main gap in the evidence.
+
+## What this means for agent builders
+
+If you build or buy agent tooling, the practical conclusions are narrower than the headline.
+
+**1. Add Muse Wonder to your evaluation set; do not swap it in on the strength of the table.** The rows where it leads (DeepSWE, SWE-Marathon, legal, finance, memory) map to long-running software and document-heavy work. The rows where it trails (Terminal-Bench, ProgramBench, general index) map to terminal-driven coding and from-scratch builds. Pick tasks from your own backlog that look like each group and run both. Our [agent-evaluation](/skills/agent-evaluation) and [claude-code-guide](/skills/claude-code-guide) registry pages cover how to structure that comparison without confounding the harness.
+
+**2. Control the harness.** The most important caveat in Meta's own model card is that harness changes results: SWE-Marathon mixes Codex, Claude Code and Meta's setup. If you test Wonder inside Muse Code and Claude inside Claude Code, you are comparing products, not models, and that is fine if it is the question you want answered. Just say which one you measured.
+
+**3. Budget on tokens, not on price per million.** At $4 input and $20 output, Wonder is priced like a premium model, and Artificial Analysis found it consumes a lot of input per task (7.69M tokens on the index tasks). The cached rate of $0.20 matters a lot for agent loops that re-send long context; design for cache hits.
+
+**4. Expect the Full model to be a subscription feature for now.** There is no API price for Wonder Full. If your workflow needs programmatic access to the strongest model, the answer today is "not yet."
+
+**5. Treat computer-use claims as unproven.** The developer page promises agents that "see and operate browsers, desktop, and mobile apps." The measured evidence is OSWorld V2.1, where Wonder Full trails both Opus 5.5 (partial) and Fable 5.1 (binary). If your use case is GUI automation, see our notes on [computer-use agents](/skills/computer-use-agents) and test on your own screens.
+
+**6. Use the human-in-the-loop advice from the card as a design rule.** Meta's own recommended guardrail is confirmation for irreversible actions. That is the right default for any personal agent with access to messages, calendars and documents.
+
+## Limitations of this audit
+
+- Everything in the scorecard and the safety charts is vendor-reported. I viewed the images and cross-checked the table against Meta's developer page text; I did not rerun any benchmark.
+- The only independent numbers are Artificial Analysis's index results and the third-party sources Meta names. Artificial Analysis lists Wonder Full as having no public API, so its figures for that model reflect the Muse Code product.
+- Some chart values (the safety bars and the in-distribution plot) were read from rendered images. I give those as read and flag the plot values as approximate.
+- I could not find published pricing for the consumer Muse subscription or for Wonder Full per token, and I do not guess at either.
+- The full safety report Meta promised was not yet available when this was written.
+- The comparison set is Meta's. A different set of rivals could change the picture.
+
+## FAQ
+
+### What is Muse Wonder?
+
+Muse Wonder is a new family of two models from Meta Superintelligence Labs, announced on October 12, 2026: Muse Wonder and Muse Wonder Full. Meta says they deliver state-of-the-art performance on personal and professional agentic tasks, and describes them as the next step on its scaling ladder after Muse Spark.
+
+### Is Muse Wonder better than Claude Opus 5.5 and GPT-6 Astra?
+
+On Meta's own table it is ahead on seven of fourteen rows and behind Claude Opus 5.5 on six, including the Artificial Analysis Intelligence Index (Opus 58, Wonder Full 56, Wonder 52). It leads on long-horizon coding (DeepSWE, SWE-Marathon) and on several agent-work rows; it trails on terminal coding, from-scratch programming, health and computer use. "Better" depends on your workload.
+
+### What is the difference between Muse Wonder and Muse Wonder Full?
+
+Muse Wonder is the faster model, available through the Meta Model API and Muse Code. Muse Wonder Full is the full version, available only through Muse Code on the Power Usage ($50/month) and Maximum Usage ($200/month) plans. Full scores higher on most rows; on MemoryBench the two are essentially tied, and on the Meta-reported FocusBench the standard model ranks fourth against Full's first.
+
+### How much does Muse Wonder cost?
+
+The Meta Model API lists muse-wonder-1.0 at $4.00 per million input tokens, $0.20 per million cached input tokens and $20.00 per million output tokens, with a 1M-token context window. Muse Wonder Full has no per-token price; it is included in Muse Code subscriptions on the $50 and $200 monthly plans. I did not find a published price for the consumer Muse subscription.
+
+### Can I use Muse Wonder in the Muse app today?
+
+Meta's research blog says Muse Wonder "will soon power experiences in Muse," rolling out first to subscribers. Mark Zuckerberg's thread says you can use it to power your Muse "by subscribing today." The two statements are not identical, and the blog is the more specific one.
+
+### What are Active Memory and Active Focus?
+
+They are Meta's names for two behaviors. Active Memory is carrying important context about the user across conversations and retrieving the relevant details. Active Focus is persisting through blockers on a hard task, trying alternative approaches, asking for clarification and checking in before important actions. The evidence is MemoryBench, FocusBench and SWE-Marathon, and the first two are Meta-internal.
+
+### Are the benchmark results independent?
+
+Partly. Meta's table takes some results from outside sources (Artificial Analysis, Datacurve, Abundant AI, Vals AI, Surge), but Meta assembled the table, took the highest available score per row, ran competitor models on a best-effort basis, and designed several of the benchmarks itself. Artificial Analysis separately published its own index results, which are independent.
+
+### Is Muse Wonder open source?
+
+I found no statement that the weights will be released. Artificial Analysis lists it as a proprietary model, and the model card says use is governed by Meta's API terms, acceptable use policy and Muse terms of service. Treat it as closed unless Meta says otherwise.
+
+### Is Muse Wonder safe to deploy as an agent?
+
+Meta's model card says that without mitigations it cannot rule out the model reaching the "high" risk threshold in chemical and biological domains, and that with safety post-training and system-level classifiers the assessed risk is "moderate or lower" across all domains. It recommends human-in-the-loop confirmation for irreversible actions and says a fuller safety report will follow. The results are Meta's own and have not been independently audited.
+
+### Which languages and modalities does it support?
+
+Per the model card: text, image, video and audio input, text output, a 1M-token context window, and training data with "substantial representation across worldwide languages." The card also says the model has not been evaluated on all languages in its pre-training data, and that spatial and 3D reasoning remain known limitations.
+
+## Sources
+
+Checked October 12, 2026.
+
+- [Mark Zuckerberg on X, launch thread](https://x.com/finkd/status/2109689305073614918) (lead post and table; the second post in the thread is embedded above)
+- [AI at Meta on X](https://x.com/AIatMeta/status/2109691148943999167) and [Alexandr Wang on X](https://x.com/alexandr_wang/status/2109691967676563613)
+- [Muse Wonder, Meta AI Research blog](https://research.meta.ai/blog/muse-wonder) (announcement, availability, Active Memory and Active Focus, generalization chart, safety section)
+- [Muse Wonder model card](https://research.meta.ai/static/muse-wonder-model-card) (modalities, methodology, per-benchmark notes, risk assessment, limitations)
+- [Muse Wonder on Meta for Developers](https://developer.meta.com/ai/models/muse-wonder) and [Muse Code](https://developer.meta.com/ai/products/muse-code) (API pricing, plan tiers, access)
+- [Meta Superintelligence Scaling Framework](https://research.meta.ai/static/meta-superintelligence-scaling-framework)
+- [Artificial Analysis on X](https://x.com/ArtificialAnlys/status/2109697083519447118) and its [Muse Wonder model page](https://artificialanalysis.ai/models/muse-wonder) (independent index, cost and token measurements)
+- Community replies on the launch thread, linked inline; quoted as attributed reactions, not as verified facts.
+
+Related reading on this site: [Gemini 4 Argon explained](/blog/gemini-4-argon-explained), [GPT-6.1 Sol and agent workloads](/blog/gpt-6-1-sol-agent-workloads), and [Tavus Griffin and the video Turing test](/blog/tavus-griffin-video-turing-test). For agent-building practice, see the registry entries for [agent-evaluation](/skills/agent-evaluation), [agent-memory-mcp](/skills/agent-memory-mcp), [computer-use-agents](/skills/computer-use-agents) and [claude-code-guide](/skills/claude-code-guide).
