@@ -1,0 +1,22 @@
+{
+  "title": "逐行拆解 Muse Wonder：Meta 前沿模型证明了什么，又没有证明什么",
+  "slug": "muse-wonder-meta-scorecard-agent-builders",
+  "category": "Deep Dives",
+  "description": "Meta 的 Muse Wonder 在自家 14 行成绩单中领先 7 行、落后 Claude Opus 5.5 共 6 行。逐行审视基准测试、价格、可用性与模型卡。",
+  "publishedDate": "2026-10-12",
+  "author": "Agent Skills",
+  "keywords": [
+    "Muse Wonder",
+    "Muse Wonder Full",
+    "Meta Superintelligence Labs",
+    "Muse Code",
+    "Meta Model API",
+    "Active Memory",
+    "Active Focus",
+    "DeepSWE",
+    "SWE-Marathon",
+    "Claude Opus 5.5"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/muse-wonder-meta-scorecard-agent-builders/hero.png"
+}
