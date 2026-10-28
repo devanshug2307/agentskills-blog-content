@@ -1,0 +1,21 @@
+{
+  "title": "Routing agent skills across GPT-6 Astra, Sol and Luna",
+  "slug": "gpt-6-model-routing-for-agent-skills",
+  "category": "Deep Dives",
+  "description": "Which GPT-6 tier should run which agent skill step: prices, cached SKILL.md context, Codex usage and a worked per-run budget.",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "GPT-6 Astra",
+    "GPT-6.1 Sol",
+    "GPT-6 Luna",
+    "model routing",
+    "agent skills",
+    "cached input",
+    "SKILL.md",
+    "Codex usage",
+    "subagents"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gpt-6-model-routing-for-agent-skills/hero.png"
+}

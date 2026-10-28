@@ -1,0 +1,216 @@
+An agent skill is a Markdown file the model reads before it acts, and a skill-heavy pipeline reads a lot of them. Every step of a run carries the same instructions, the same tool descriptions and often the same SKILL.md bundle, and then does a small amount of new work. That shape matters more to the bill than which model is smartest. OpenAI now sells three GPT-6 tiers that differ by 5x and 100x on price, so the practical question for anyone building on skills is not "which model is best" but "which step deserves which tier".
+
+This article answers that for the whole family: GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna. It covers what each costs, how the repeated skill context is billed, what OpenAI says about writing skills for different models, how Codex usage differs per model, and a worked per-run budget for a 35-step pipeline. It is deliberately not a benchmark comparison. For Sol's scores and workloads see [GPT-6.1 Sol for coding agents](/blog/gpt-6-1-sol-agent-workloads), and for the Ultrafast and Pro plan arithmetic see [Ultrafast and the Pro tiers](/blog/ultrafast-and-pro-tiers-cost-planning). For a head-to-head on API prices, release dates and the Plus allowance, the sibling post on AgentPedia, [GPT-6 Astra complete guide](https://agentpedia.codes/blog/gpt-6-astra-complete-guide), has the long version.
+
+Prices, dates and usage ranges below are OpenAI's, checked against its pricing page, model pages and help center on October 28, 2026. The routing rules and budget numbers are this post's own arithmetic and recommendations. Nothing here was measured on a live pipeline, and that is said again where it matters.
+
+{% x id="2104986129686741046" /%}
+
+## The three tiers in one table
+
+All three models share a 1,050,000-token context window, so context size is not what separates them. Price and Codex allowance are. Prices are per million tokens at Standard processing.
+
+| Model (API ID) | Input | Cached input | Output | Codex Plus messages per 5 hours (OpenAI estimate) | Role in a skill pipeline |
+|---|---:|---:|---:|---:|---|
+| GPT-6 Astra (`gpt-6-astra`) | $10.00 | $1.00 | $50.00 | 5 to 45 | Planning and the hardest steps |
+| GPT-6.1 Sol (`gpt-6.1-sol`) | $2.00 | $0.10 | $10.00 | 15 to 160 | Default for the main work |
+| GPT-6 Luna (`gpt-6-luna`) | $0.10 | $0.01 | $0.50 | 350 to 3,000 | Cheap, high-volume, well-specified steps |
+
+Three rules from OpenAI's pricing page change real bills. A request with more than 272,000 input tokens is billed at 2x the input and cache rates and 1.5x the output rate for the whole request. Batch and Flex processing are priced at 50% of Standard. Writing to the cache costs 1.25x the input rate for 30-minute retention and 2.5x for 12-hour retention. The cached rates are 10% of input for Astra and Luna and 5% for GPT-6.1 Sol, which is why Sol's cached price is a tenth of Astra's rather than a fifth.
+
+OpenAI also lists GPT-6.1 Terra at $1 input and $5 output on its model page, between Sol and Luna. This post routes across the three tiers OpenAI positions as a ladder and treats Terra as an option to evaluate separately.
+
+## The release order explains the ladder
+
+The family did not arrive at once, and the order tells you how OpenAI sees the roles.
+
+GPT-6 Astra was announced on Thursday, September 3, 2026, to limited organizations first, then in a phased rollout. By September 4, Sam Altman said it was available to all Pro, Enterprise and Business Premium users in Work and Codex and in the API, with Plus and Business to follow.
+
+{% x id="2095973658867171733" /%}
+
+GPT-6 Sol and GPT-6 Luna launched on Tuesday, September 22, in ChatGPT Work, Codex and the API, with OpenAI saying API prices are 50% lower than GPT-5.6. OpenAI's developer account summarized it as "Build with Sol. Scale with Luna."
+
+{% x id="2102461432684282061" /%}
+
+GPT-6.1 Sol followed on Tuesday, September 29, the day of OpenAI DevDay, at the same $2 and $10 token prices as GPT-6 Sol and a cached rate cut from $0.20 to $0.10. Neither Sol nor Luna launched in Chat; they are in Work, Codex and the API. Astra, in turn, is the model behind GPT-6 Pro in Chat on eligible plans.
+
+Read as a product line, that is a planner at the top, a workhorse in the middle and a volume model at the bottom. The rest of this article turns that line into routing rules for skills.
+
+{% figure src="https://pbs.twimg.com/media/HS1xi_kaAAEdeGH.png" alt="OpenAI table titled GPT-6 API pricing showing GPT-6 Sol falling from $4 and $20 to $2 and $10 and GPT-6 Luna from $0.20 and $1.20 to $0.10 and $0.50 per million tokens, versus the GPT-5.6 models" caption="OpenAI's September 22 pricing graphic, posted by @OpenAIDevs: GPT-6 Sol and Luna against GPT-5.6 Sol and Luna." /%}
+
+## Why skill pipelines are a caching problem first
+
+A skill-driven run is repetitive by construction. Codex loads each skill's name and description into context so the model knows when to use it, then reads the full SKILL.md when a skill fires. Add AGENTS.md, tool definitions and a system prompt, and the first several thousand tokens of every step are identical to the step before.
+
+That is the case prompt caching exists for. OpenAI's practical guide to building with GPT-6 says to put stable instructions and reference material at the start of the prompt and changing task details after it, and to count cache writes and long-context rates when estimating a whole workflow. Do that and the repeated prefix is billed at the cached rate on every step after the first.
+
+The size of the effect is easy to compute. Take a 12,000-token skill bundle read on each of 35 steps in a run:
+
+- On Astra, 35 reads cost $0.42 at the cached rate and $4.20 uncached.
+- On GPT-6.1 Sol they cost $0.042 cached and $0.84 uncached.
+- On Luna they cost $0.0042 cached and $0.042 uncached.
+
+The cache write is a one-time premium. Writing 12,000 tokens with 30-minute retention costs $0.15 on Astra, $0.03 on Sol and $0.0015 on Luna. Because the premium is 0.25x the input price and each cached read saves 0.9x or 0.95x of it, a single read pays for the write on all three tiers. The practical consequence is simple: if a skill bundle is read more than once inside the retention window, it should be cached, and the tier you run it on matters much less than whether the prefix stays byte-identical.
+
+Two habits protect that. Keep the stable skill text first and never insert timestamps, run IDs or per-task details above it. And keep one model per cached prefix where you can, since a prefix cached for one model is not something you get to reuse across tiers by assumption. OpenAI's pricing page describes cache behavior per model; treat cross-model reuse as unproven until you check your own usage logs.
+
+## What OpenAI says about writing skills for each tier
+
+OpenAI's developer blog post "Rethinking skills and prompts for GPT-6 Astra" is the closest thing to first-party guidance on this topic, and several of its points bear directly on routing.
+
+The post says people now package many skills into projects, and that each skill's name and description is loaded into context. When there are too many, Codex shortens the descriptions to fit, so the model sees less of each one and picks worse. Its advice is to keep descriptions as short as possible while stating when to use the skill. The example it gives contrasts "Use when working with databases, queries, models, or persistence" with "Use when adding or changing a migration, or reviewing its rollout."
+
+It also recommends progressive disclosure: make the root SKILL.md a minimal router that points to supporting documents and scripts, so the model reads only what the task needs. And it warns that many skills were written as elaborate itineraries, which can hinder newer models that handle nuance well.
+
+The sentence that matters most for routing is this one: repository skills also guide other contributors' agents, which may use different models, and guidance that helps Sol or Luna may over-constrain GPT-6 Astra. In other words, a skill is not model-neutral. A step-by-step recipe that a smaller model needs may be too rigid for the planner. OpenAI's help center adds a related point about reasoning effort: "Astra at Low effort can outperform Sol at High effort," and it suggests trying Astra at Low or Medium if Sol at High is working for you. Both are vendor statements and neither was tested for this post.
+
+For a routed pipeline that suggests a concrete design. Write short, descriptive skill headers that every tier reads. Keep the root file a router. Put the rigid step-by-step procedure in a supporting file that only Luna-tier steps load, and let the Astra planning step see goals and constraints rather than a script. That keeps the cached prefix small, and it avoids paying Astra rates to read instructions written for a cheaper model.
+
+{% callout type="info" %}
+OpenAI's skills post also notes that Astra can be more tentative about when to stop, and that defining "done" up front helps. In a routed pipeline, put the definition of done in the task prompt that goes to the planning step, not in a shared skill every tier reads.
+{% /callout %}
+
+## A routing map for common skills
+
+The skills below are real entries in the agentskills.codes registry. The tier assignments are this post's recommendations based on the step shape and the published prices, not benchmarks. Adjust them after you run your own tasks.
+
+**Luna steps: narrow, repeated, clear definition of correct.** Format conversions and extraction around documents, such as the [pdf](https://agentskills.codes/skills/pdf), [docx](https://agentskills.codes/skills/docx) and [xlsx](https://agentskills.codes/skills/xlsx) skills, are mostly mechanical: pull text, rewrite cells, produce a structured result. OpenAI's own guide names extracting invoice fields, classifying requests and producing structured summaries as Luna's kind of work. The same goes for triage steps that decide which skill to load, and for checks like "did the test command exit zero".
+
+**Sol steps: the main work.** Implementation under a discipline skill is the central case. [test-driven-development](https://agentskills.codes/skills/test-driven-development) and [systematic-debugging](https://agentskills.codes/skills/systematic-debugging) both involve many tool calls over a large, mostly stable context, which is exactly where Sol's 5% cached rate pays. [webapp-testing](https://agentskills.codes/skills/webapp-testing) runs similar loops against a local app. OpenAI's guide points Sol at complex coding, research and computer use, and this post's default for multi-step work that runs often is Sol.
+
+**Astra steps: planning and the failures nobody else cracked.** [writing-plans](https://agentskills.codes/skills/writing-plans) and [brainstorming](https://agentskills.codes/skills/brainstorming) produce the artifact every later step follows, so an error here multiplies. A final [verification-before-completion](https://agentskills.codes/skills/verification-before-completion) pass on high-stakes work is another candidate. A reasonable escalation rule is to send a task to Astra only after it has failed twice on Sol, which keeps Astra's premium for tasks that need it.
+
+**Orchestration.** Skills like [dispatching-parallel-agents](https://agentskills.codes/skills/dispatching-parallel-agents) and [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) describe splitting work across subagents. They are where routing becomes literal: the coordinator can run on one tier and the workers on another. OpenAI says GPT-6.1 Sol supports multi-agent workflows in the Responses API, currently in beta. Choose the model per worker, and let the cheap workers be Luna.
+
+**Authoring.** [skill-creator](https://agentskills.codes/skills/skill-creator) is the skill OpenAI's post names as the usual way to create skills, and it says the guidance was updated to address the failure modes above. Use it on Sol for routine skills and consider Astra when a skill encodes a subtle policy. [mcp-builder](https://agentskills.codes/skills/mcp-builder) is a similar judgment call, since a badly designed tool schema taxes every later step.
+
+## A worked per-run budget
+
+The numbers below use official Standard prices and assumed workload shapes. They are arithmetic, not measurements, and your token counts will differ. Reasoning tokens bill as output, so real output counts run higher than visible text at high effort.
+
+The assumed pipeline has 35 steps per run, each carrying a cached prefix that includes a 12,000-token skill bundle:
+
+| Step type | Count | Tier | Uncached in | Cached in | Output | Cost per run |
+|---|---:|---|---:|---:|---:|---:|
+| Triage | 6 | Luna | 1,000 | 14,000 | 300 | $0.0023 |
+| Format and extract | 20 | Luna | 800 | 14,000 | 400 | $0.0084 |
+| Main work | 8 | Sol | 6,000 | 60,000 | 3,000 | $0.3840 |
+| Plan or hard step | 1 | Astra | 8,000 | 40,000 | 6,000 | $0.4200 |
+| **Routed total** | 35 | | | | | **$0.8147** |
+
+Now compare the same run under single-model assignments, all with caching working:
+
+| Assignment | Cost per run | At 500 runs per day |
+|---|---:|---:|
+| Everything on Astra | $3.654 | $1,827.00 |
+| Routed as above | $0.8147 | $407.37 |
+| Luna, Luna, Sol, Sol (no Astra) | $0.4747 | $237.37 |
+| Everything on Sol | $0.6424 | $321.20 |
+| Everything on Luna | $0.0365 | $18.27 |
+
+Two results here are worth stating plainly. First, routing beats all-Astra by about 78%, which is the saving most people expect. Second, this routed design costs about 27% more than all-Sol, because the single Astra planning step costs $0.42 and the same step on Sol costs $0.08. The planning step is 52% of the routed bill. Putting Astra in the loop is a deliberate purchase of quality, not a saving, and the table is there so you can decide whether it is worth five times the price for that step. If Sol plans just as well on your tasks, the cheapest sensible pipeline is the Luna, Luna, Sol, Sol row.
+
+Caching changes the picture more than tier choice does. With no caching, the same routed run costs $2.12, all-Astra $11.61 and all-Sol $2.32. A routed pipeline with caching is cheaper than an all-Sol pipeline without it. That is why the first optimization for a skill-heavy system is prefix stability, and the second is tier assignment.
+
+One more cost to watch is the 272,000-token line. Crossing it prices the whole request at 2x input and 1.5x output, so a skill bundle that grows until the working context passes that line makes a step far more expensive than its token count suggests. Trim the context rather than pay the multiplier, and if a step really does need a large context, give it its own tier decision.
+
+## Codex usage when the models share a pool
+
+If your pipeline runs in Codex on a ChatGPT plan rather than through the API, tokens are not what you pay. OpenAI's help center says Work and Codex usage "does not correspond to a fixed number of messages or tasks," and publishes estimated ranges of local messages in a five-hour window for Plus and Standard Business: Astra 5 to 45, GPT-6.1 Sol 15 to 160 and Luna 350 to 3,000. The ranges are OpenAI's estimates and cloud tasks may use more allowance than local messages. Plus also has a weekly window, so you need allowance in both.
+
+Two details matter for routing. The models draw from the same Work and Codex pool, so dropping a step to Luna stretches what remains but does not restore what an Astra step already used. And the ratio between tiers is not the same as the API price ratio: Sol is about 3x to 3.6x Astra's range, while Luna's range is roughly 19x to 23x Sol's, which is close to the 20x API gap between Sol and Luna. That reading is this post's arithmetic from OpenAI's table, not an OpenAI statement.
+
+For subagent work in Codex, that points to the same conclusion as the API budget. Let the planner be the rare, expensive call, let the main worker be Sol, and let the many small steps be Luna. A Plus subscriber who runs every subagent on Astra is spending the smallest of the three allowances on the work that least needs it.
+
+Plan structure changes the limits as well. Pro 100, Pro 200 and Pro 500 currently have no five-hour limit in Work and Codex, while Ultrafast is included only on Pro $500 at launch. Those details are covered in the [Ultrafast and Pro tiers guide](/blog/ultrafast-and-pro-tiers-cost-planning) and are not repeated here.
+
+{% callout type="warning" %}
+OpenAI's usage article still names GPT-5.6 Sol and GPT-5.6 Luna in some of its descriptive text, and says GPT-6.1 Sol is selectable "if available for your account." Treat the model picker in your own Settings as the authority on what you can use, and Settings, then Usage, as the authority on what you have left.
+{% /callout %}
+
+## Which Luna: GPT-5.6 or GPT-6
+
+If your skills still pin an older model ID, the Luna comparison is simple but easy to get wrong. After OpenAI's July 30, 2026 price cut, GPT-5.6 Luna is listed at $0.20 input, $0.02 cached and $1.20 output. GPT-6 Luna is $0.10, $0.01 and $0.50. That makes GPT-6 Luna half the input price and about 58% cheaper on output.
+
+In the budget above, the Luna steps cost $0.0107 per run on GPT-6 Luna. On GPT-5.6 Luna the same steps would cost about $0.0234. Both are small numbers, which is the point of a Luna step, but the ratio compounds at high volume. There is no price reason to start new skill work on GPT-5.6 Luna. The reasons to keep it are compatibility and an existing evaluation set you do not want to redo.
+
+## Failure modes in a routed skill pipeline
+
+Routing adds moving parts, and most problems come from the same few places.
+
+**Prefix drift.** A single changing character near the top of the prompt turns every cached read into a full-price read. Common causes are timestamps, request IDs, shuffled tool order and skill lists that are sorted differently from run to run. Keep the stable block first, sort deterministically and log cached versus uncached token counts so you notice when the ratio falls.
+
+**Skill description bloat.** OpenAI's own advice is that too many skills push Codex to shorten descriptions, which makes the model choose worse. Adding a tier-specific skill for every step multiplies this. Prefer one skill with a router root over five near-duplicates.
+
+**Over-constraining the planner.** A skill written as a rigid recipe for Luna can make Astra stop to ask permission or hold back where you would have been happy for it to continue. Keep tier-specific procedure in files only that tier loads.
+
+**Silent escalation.** An "escalate on failure" rule with no cap can turn a cheap pipeline into an Astra pipeline. Cap retries, log which tier handled each step and report the share of spend by tier, as the budget table does.
+
+**Context that crosses 272K.** Long tool outputs pasted into history can push a step over the long-context line. Summarize tool results with Luna before they enter the main context, which is also one of Luna's cheapest and most useful jobs.
+
+## How to test a routing plan before you commit
+
+None of the figures in this article came from a live pipeline, so the last step is yours. Take 30 to 50 real tasks from your own backlog and run each at three settings: everything on Sol, the routed plan, and Astra at Low effort on the planning step only. Record pass rate, tokens, cached share and cost per passing task, not cost per call. If Sol plans as well as Astra on a task class, drop Astra from that class. If Luna passes most of a step type, route that type to Luna and send failures up. If a step fails on all three, the problem is the skill or the task definition, not the tier.
+
+Log the tier on every step and the cached-token share on every run. Those two columns are what let you answer the question next quarter, when prices or models change again.
+
+## Verdict
+
+Run skill pipelines on GPT-6.1 Sol by default, because most agent work is multi-step, runs often and carries a large stable prefix, which is where Sol's 5% cached rate and $2 and $10 token prices fit best. Move the many small, well-specified steps to GPT-6 Luna: document conversion, triage, short edits and checks. Spend Astra on the planning step and on tasks that have already failed on Sol, and decide that spend with a table like the one above rather than by instinct, because at $0.42 against $0.08 for one planning step it is the single largest line in the routed bill.
+
+Cache the skill bundle first, route second. A stable prefix does more for the bill than any tier choice, and the cache write pays for itself on the first read.
+
+## FAQ
+
+### Which GPT-6 model should run my agent skills by default?
+
+GPT-6.1 Sol. It is $2 per million input tokens, $0.10 cached and $10 output, and OpenAI's guide points it at complex coding, research and computer use. Move steps down to Luna when they are narrow and well specified, and up to Astra when a task fails on Sol or a mistake is expensive.
+
+### How much does a cached SKILL.md bundle save?
+
+On the assumed pipeline, 35 reads of a 12,000-token bundle cost $0.84 uncached on Sol and $0.042 cached, a 95% saving. On Astra the figures are $4.20 and $0.42. The cache write costs 1.25x the input rate for 30-minute retention, and a single cached read repays that premium on all three tiers.
+
+### Is Astra worth using for the planning step?
+
+It costs about five times as much as Sol on that step in the example ($0.42 against $0.08 per run). Whether it is worth it depends on how often Sol's plans fail on your tasks. OpenAI says Astra at Low effort can outperform Sol at High effort, a vendor claim worth testing on your own repository before you pay for it everywhere.
+
+### Do Astra, Sol and Luna share Codex usage?
+
+Yes. OpenAI says Work and Codex models draw from the same usage pool, so switching to Luna stretches the remaining allowance but does not restore what you spent. The estimated Plus ranges per five hours are 5 to 45 messages on Astra, 15 to 160 on GPT-6.1 Sol and 350 to 3,000 on Luna, and OpenAI describes them as estimates, not quotas.
+
+### What is the difference between GPT-5.6 Luna and GPT-6 Luna?
+
+After the July 30 cut, GPT-5.6 Luna is $0.20 input and $1.20 output per million tokens. GPT-6 Luna launched on September 22 at $0.10 and $0.50. GPT-6 Luna is therefore half the input price and about 58% cheaper on output, with the same 1.05M context window.
+
+### Should skills be written differently for different models?
+
+OpenAI says yes in part. Skills written as elaborate step-by-step recipes can hinder newer models, and guidance that helps Sol or Luna may over-constrain Astra. Keep skill descriptions short, make the root file a router, and put rigid procedure in supporting files that only the cheaper tier loads.
+
+### When does a long skill context get more expensive?
+
+At 272,000 input tokens. Above that, the whole request is billed at 2x input and cache rates and 1.5x output. Summarize large tool results before they enter the main context, and keep skill bundles small enough that working context stays under the line.
+
+### Does this post include benchmarks?
+
+No. For Sol's agent benchmarks and their configurations, read [GPT-6.1 Sol for coding agents](/blog/gpt-6-1-sol-agent-workloads). For the OpenAI DevDay announcements that surround the 6.1 Sol launch, see the [DevDay recap for agent builders](/blog/openai-devday-2026-recap-agent-builders).
+
+## Sources
+
+Sources checked October 28, 2026.
+
+- OpenAI API pricing: https://developers.openai.com/api/docs/pricing
+- Introducing GPT-6 Astra: https://openai.com/index/gpt-6-astra/
+- Introducing GPT-6 Sol and Luna: https://openai.com/index/introducing-gpt-6-sol-and-luna/
+- Introducing GPT-6.1 Sol: https://openai.com/index/introducing-gpt-6-1-sol/
+- Model pages for GPT-6 Astra, GPT-6.1 Sol, GPT-6 Luna, GPT-5.6 Luna and GPT-6.1 Terra: https://developers.openai.com/api/docs/models/gpt-6-astra
+- Managing usage with GPT-6 Astra in Work and Codex: https://help.openai.com/en/articles/20001516-managing-usage-with-gpt-6-astra-in-work-and-codex
+- Practical guide to building with GPT-6: https://openai.com/index/practical-guide-building-gpt-6/
+- Rethinking skills and prompts for GPT-6 Astra (OpenAI developer blog): https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra
+- Advancing the price-performance frontier with GPT-5.6: https://openai.com/index/advancing-the-price-performance-frontier-with-gpt-5-6/
+- X posts embedded above: @OpenAI (September 29), @sama (September 4) and @OpenAIDevs (September 22)
+
+## Watch the launch video
+
+OpenAI's launch video for developers covers Astra only, since it predates Sol and Luna.
+
+{% youtube id="bOC3DisEOfg" title="Introducing GPT-6 Astra for developers (OpenAI)" /%}
