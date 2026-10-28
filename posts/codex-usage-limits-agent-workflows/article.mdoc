@@ -1,0 +1,174 @@
+Most advice about Codex limits is written for someone typing prompts into a chat window. If you run agent skills, long unattended sessions, or parallel subagents, the limit behaves differently, because the person pressing enter is no longer the one deciding how much work gets done. A skill decides how many steps run. A subagent decides how many extra model calls happen. A long-lived session decides how much context gets carried forward. When the notice "You're out of Codex and Work usage" appears, the useful question is which of those design choices spent the allowance.
+
+This guide is for people who build and run skill-driven workflows in Codex and want a budget they can reason about. It uses OpenAI's help-center articles and developer documentation, labels every estimate as OpenAI's own, and says plainly where the published material stops. Last verified October 28, 2026. For the account-level mechanics of resets (banked, automatic, paid), the companion explainer on AgentPedia covers them in detail; this article stays on the workflow side and only restates what a budget needs.
+
+## The pool you are spending from
+
+Work and Codex share one allowance. OpenAI's usage guidance is that the allowance is not counted in messages or tasks; how much you finish depends on seat or plan, model, and the shape of the task. On some plans the allowance is enforced per five-hour window, per week, or on both clocks at once; when both apply, an empty meter on either one stops you.
+
+Two details shape how a skill author should think about it.
+
+First, the short window is opened by the first Work or Codex message sent once the previous window has closed. An unattended scheduled run that fires at an odd hour can therefore open a window you did not plan for, and the window it opens is the one your next interactive session inherits.
+
+Second, the five-hour and weekly meters are fed by the same usage but run on their own clocks. A workflow that finishes a large job in one burst can empty the short window while leaving the weekly meter healthy, and a workflow that trickles all week can do the opposite. Which meter you hit first is a property of the shape of your workload, not only its size.
+
+{% callout type="info" %}
+According to OpenAI's help center the three Pro tiers (100, 200, 500) have no five-hour cap in Work and Codex at present, so the burst-versus-trickle distinction mostly matters on Plus and Business Standard. On Pro tiers the weekly allowance is the pool to watch. Check Settings, then Usage, for your own plan before assuming either.
+{% /callout %}
+
+## How a skill actually costs usage
+
+A skill is a folder with a `SKILL.md` and optional scripts and references. OpenAI's skills documentation describes progressive disclosure: Codex starts with each skill's name, description and file path, and loads the full `SKILL.md` only when it decides to use that skill. That design is a usage feature as much as a context feature, and it has three consequences.
+
+**The idle cost is the description, not the body.** The initial skills list is capped at about 2% of the model's context window, or 8,000 characters when the window size is unknown. If you install many skills, Codex shortens descriptions first and may omit some skills with a warning. A large install does not multiply the cost of every turn by the size of every skill, but it does put pressure on descriptions, and a skill whose description gets shortened can fail to trigger when it should.
+
+**The active cost is the whole body plus everything it pulls in.** Once a skill is selected, its full instructions enter context, and every reference file, script output and tool result it asks for follows. A skill that says "read all the files in references before starting" turns a cheap trigger into an expensive turn. This is the largest lever a skill author controls, and it is invisible in the idle list.
+
+**Implicit matching can cause activations you did not ask for.** Codex can choose a skill when a task matches its description. A vague description widens the match, so a lean skill with a vague trigger can still run far more often than intended. Front-loading the key use case and trigger words, as the documentation recommends, helps both matching and cost.
+
+For skill authors the practical reading is this: treat `description` as a budget line you pay on every session, treat the body as a budget line you pay on every activation, and treat each linked file as an optional line item the agent should only open when a branch needs it.
+
+## Subagents: faster in wall time, heavier on the pool
+
+Subagent workflows let Codex spawn specialised agents in parallel and merge their results into one response. OpenAI's documentation states the cost side directly: because each subagent does its own model and tool work, subagent workflows consume more tokens than comparable single-agent runs. It also states the benefit: moving noisy output such as exploration notes, test logs and stack traces off the main thread reduces context pollution and context rot, and the main agent receives summaries instead of raw output.
+
+Those two statements pull in opposite directions for a budget. The way to reconcile them is to ask what the subagent is protecting.
+
+- **Read-heavy fan-out** (codebase exploration, log triage, summarising many documents) is where OpenAI says to start. The subagents burn tokens, but the main thread stays small, which can make later turns cheaper and more reliable.
+- **Write-heavy fan-out** (several agents editing code at once) is where the documentation advises more care, because conflicts and coordination overhead add cost with little to show for it.
+- **Delegation by instruction.** Current local Codex releases delegate when you ask directly, or when applicable `AGENTS.md` or skill instructions request it. A skill that says "spawn one agent per file" is a standing instruction to multiply spend, so write that sentence deliberately.
+
+If you manage subagent patterns in a registry of your own, the [create-subagents](/skills/create-subagents) skill is a useful reference for how subagent definitions are structured, although it is written for Claude Code's Task tool rather than Codex. The design questions it raises (what the agent owns, what it returns, when to stop) transfer directly. For isolating what each worker sees, [agent-context-isolation](/skills/agent-context-isolation) covers the same boundary problem from the context side.
+
+## Long sessions and the cache question
+
+Long sessions cost more because every turn carries the accumulated context. Two pieces of public information bear on that, and one of them needs careful reading.
+
+OpenAI's help center says longer conversations and tasks still count toward your usage limits, and notes that GPT-6.1 Sol has a default context window of 500,000 tokens in Work and Codex with no additional long-context surcharge on usage covered by your subscription's included allowance. In plain terms: a bigger window is not billed at a higher rate, but filling it still spends allowance.
+
+Separately, OpenAI's Tibo (@thsottiaux) posted two statements about caching, on October 21 and October 23. The first said that for logged-in users across Codex and Work the cache is kept indefinitely, with no penalty for returning to an old conversation or resuming after a few hours. The second said that changing reasoning level mid-conversation no longer invalidates the cache.
+
+{% x id="2112712984644784534" /%}
+
+{% x id="2113770573994299544" /%}
+
+Read those as product behavior announcements, not as an allowance guarantee. Neither post says how a cache hit translates into allowance consumed on a subscription, and the help center does not publish a conversion. What the posts do support is a design habit: keep a stable prefix (system prompt, `AGENTS.md`, skill instructions) at the start of a session, append new material at the end, and avoid rewriting early turns. Whether that lowers your meter is something to measure on your own account rather than assume. The sibling piece on [GPT-6.1 Sol for agent workloads](/blog/gpt-6-1-sol-agent-workloads) covers the API-side cached-input arithmetic; the subscription side has no equivalent published table.
+
+If you cannot avoid long runs, compaction tooling is the other lever. The [context-compression](/skills/context-compression) skill is built around structured summarisation to cut tokens per task, and [context-window-management](/skills/context-window-management) collects strategies for trimming and routing. Both are community skills, and neither promises an allowance saving; they reduce what each turn carries.
+
+## Model and reasoning choice is a budget line
+
+OpenAI says one task can cost different amounts on different models, and that bigger inputs and outputs, higher reasoning, multi-step tasks and Fast mode all push usage up; Fast mode in particular draws more of the included allowance. Its published estimates for Plus and Standard Business (local messages per five-hour window, described as estimates and not guarantees) put GPT-6 Astra at 5 to 45 and GPT-6 Luna at 350 to 3,000, with the two Sol rows in between. The width of each range is the point: the same model spans roughly an order of magnitude depending on task and settings.
+
+For skill-heavy workflows, the model decision is usually made per step, not per session. A step that only extracts fields, renames files or runs a formatter does not need the model you chose for design review. OpenAI's October 26 Terra launch post claims Terra stretches the allowance beyond its 5.6 predecessor and well past Sol 6.1 or Astra, and it sends deep research and hard coding to those two heavier models. That is a vendor claim about relative allowance, and no help-center article gives the exact multiplier; Tibo's social post put it at about twice Sol, which is directional only.
+
+Reasoning level has its own guidance. OpenAI suggests starting low when you want the allowance to stretch, warns that high effort costs more without guaranteeing a better answer, and notes that Astra at Low can outperform Sol at High. It adds that no amount of reasoning can conjure files, apps or permissions the agent was never given. For a skill, that translates into a rule: if the agent fails because the skill did not tell it where a file is, raising effort spends allowance without fixing the failure.
+
+## A budgeting worksheet for skill-heavy workflows
+
+There are no published per-task allowance figures, so any budget has to be built from your own observations. The structure below is a template, not data. Fill the blanks from a few measured runs on your own plan.
+
+| Step | What to record | Why it matters |
+|---|---|---|
+| Baseline | Meter percentage before and after one run of the workflow, same model and effort | Gives you percent-of-window per run for that configuration |
+| Skill activations | How many skills loaded, and which reference files they opened | Active cost scales with what loads, not what is installed |
+| Subagent count | Agents spawned per run and whether they were read-only | Separates cheap exploration from expensive parallel edits |
+| Context at end | Rough size of the session when it finished | Long carried context raises later turns |
+| Model and effort | Exact settings per step | Lets you swap one variable at a time |
+| Window opened | Time of the first message that started the window | Shows whether a scheduled run opened an unwanted window |
+
+With one measured baseline, the planning arithmetic is simple. If one run consumes a fraction *f* of your five-hour window, you can fit roughly 1/*f* runs before that window empties, and the weekly meter tells you how many windows of that size the week supports. The numbers are yours, and they change when OpenAI changes plan allowances, so rerun the baseline after any plan change. The Pro 200 allowance, for instance, is documented as moving to a lower included amount after October 29, 2026 for subscribers who held Pro 200 at any point between September 22 and September 29, 2026, so a baseline taken before that date may not hold after it.
+
+For routing work to the cheapest adequate model across providers, the [ai-cost-optimizer](/skills/ai-cost-optimizer) skill describes a multi-model routing approach. It is aimed at API cost rather than subscription allowance, so use it as a pattern for classifying task difficulty, not as a Codex-specific tool.
+
+## Which skills to keep lean
+
+Not every skill deserves the same discipline. A rough triage by how often and how widely each one runs:
+
+**Always-resident skills (descriptions are paid every session).** Keep descriptions to one tight sentence with the trigger words first. Remove skills you have not used in a month; they cost description space and add false-match risk.
+
+**Frequently activated skills.** These are the ones where body size matters most. Move rarely needed detail into reference files and tell the skill to open them only on a named condition. Avoid instructions that say to read everything up front.
+
+**Delegating skills.** Any skill that instructs Codex to spawn subagents should state a cap (for example, "at most three agents") and a return format (for example, "a ten-line summary, not raw output"). Without both, the cost of the skill is whatever the model decides it is.
+
+**Review and verification skills.** These tend to run at the end of a long session, when context is largest. If they re-read the full diff and every test log, they are the most expensive step. Pass them a compact summary instead.
+
+**Cross-tool skills.** If you bridge Codex with another agent, the loop structure decides the cost. The [codex-claude-loop](/skills/codex-claude-loop) skill orchestrates a plan-implement-validate cycle across two agents, and each round trip spends from both pools. [coding-agent](/skills/coding-agent) runs Codex CLI, Claude Code and others as background processes. Both are useful, and both multiply the number of model calls per task, so cap the number of review rounds.
+
+## When the limit hits mid-run
+
+According to the plan-usage article, a limit reached partway through a turn does not necessarily stop that turn: Codex may keep going, within fair-use limits, and you are then pointed to the usage page or the banner. For an unattended workflow this means the turn in flight may finish, and the next scheduled turn is what fails. Design for that: make runs resumable, write progress to files rather than relying on the conversation, and have the workflow check the usage surface before starting a large step where it can.
+
+When the notice appears, the options OpenAI documents are: wait for the displayed reset time, use an available reset, continue with eligible credits, or upgrade. A different model draws from the same pool, so swapping does not refill it. A banked reset can only be redeemed when at least one covered allowance has less than 80% remaining, and an assistant-triggered redemption needs the main 5-hour or weekly allowance at 10% or less. A paid instant reset is available only to eligible Plus and Pro personal accounts and moves your weekly period forward. Because free resets come with no promised schedule, never build a workflow that assumes one will arrive. The separate guide on [Ultrafast and Pro tier cost planning](/blog/ultrafast-and-pro-tiers-cost-planning) covers the multipliers on the premium speed tier, which are the other way a workflow can drain a pool faster than expected.
+
+{% callout type="warning" %}
+Some users report being blocked while the usage page shows 100% remaining or a positive credit balance. Several open issues on the openai/codex repository describe this on Plus and Business accounts, and no confirmed cause appeared in the sources read for this article. If an automated run stops on that mismatch, check which account and workspace it ran under, reload the usage page, and write to OpenAI Support with a screenshot, the refresh time displayed, client, model, and a timestamp including time zone. Spending money on credits or resets as an experiment is not advised.
+{% /callout %}
+
+## Claim and evidence table
+
+| Claim | Source | Confidence |
+|---|---|---|
+| Work and Codex share one allowance; it is not a fixed message count | OpenAI help center: usage with GPT-6 Astra; plan usage article | High (first party) |
+| Skills load name, description and path first; full SKILL.md only when selected | OpenAI Codex skills documentation | High (first party) |
+| The initial skills list uses at most 2% of context, or 8,000 characters if unknown | OpenAI Codex skills documentation | High (first party) |
+| Subagent workflows consume more tokens than comparable single-agent runs | OpenAI Codex subagents documentation | High (first party) |
+| Fast mode and higher reasoning raise allowance use | OpenAI help center | High (first party) |
+| Plus local-message estimates per 5-hour window vary widely by model | OpenAI help center (stated as estimates) | Medium (estimates, not guarantees) |
+| Terra gives about twice the usage of 6.1 Sol | Social post from OpenAI's Tibo, October 26 | Medium (directional, not documentation) |
+| Cache is kept for logged-in Codex and Work users; reasoning changes no longer invalidate it | Social posts from OpenAI's Tibo, October 21 and 23 | Medium (announcement; allowance effect not published) |
+| Codex can continue the active turn after the limit is reached | OpenAI help center: plan usage article | High (first party) |
+| 100%-shown-but-blocked reports exist; all were still open when checked on October 28 | GitHub issues 38892, 38354, 32680 | Medium (user reports, cause unconfirmed) |
+
+## What this does not tell you
+
+Four gaps matter for budgeting. There are no published per-skill or per-subagent allowance costs, so the worksheet above depends on your own measurements. The relationship between caching and subscription allowance is not documented. Plan allowances are described in relative terms in the sources read, with no absolute token figures, and the grandfathered Pro 200 allowance ends on October 29, 2026. Finally, the community reports about blocked-but-100% accounts are anecdotal, and OpenAI's one public statement about a counting problem on October 20 concerned about 40,000 accounts on a different issue, so the two should not be merged.
+
+## FAQ
+
+**Why did my skill-heavy workflow run out of Codex usage faster than a normal chat?**
+Skills load full instructions and any referenced files when they activate, subagents each do their own model and tool work, and long sessions carry accumulated context. OpenAI states that subagent workflows consume more tokens than comparable single-agent runs.
+
+**Do installed skills use usage when they are idle?**
+Only their names, descriptions and file paths sit in the initial list, which is capped at about 2% of the context window or 8,000 characters when the window is unknown. Full instructions load when a skill is selected.
+
+**Does lowering reasoning effort save allowance?**
+OpenAI says lower effort is a good way to make allowance go further and that higher effort can use more without always producing a better result. It does not publish a fixed saving per level.
+
+**Will Codex stop in the middle of a task when the limit is reached?**
+OpenAI says that if the limit is reached during an active turn, Codex can continue that turn, subject to fair-use limits. The next turn is what gets blocked.
+
+**Can I avoid the limit by switching models?**
+No. A new model spends from the same shared pool, so it refills nothing. You can lower the burn rate by choosing a lighter model for simple steps.
+
+**Should a workflow rely on a free reset?**
+No. Free banked and automatic resets are, in OpenAI's words, discretionary and unscheduled. Design for the refresh time on screen and make runs resumable.
+
+**Does a cache hit lower my usage meter?**
+Unknown. OpenAI's Tibo posted about longer-lived caching in Codex and Work, but neither the posts nor the help center say how cache hits change subscription allowance. Measure it on your own account.
+
+## Sources
+
+Checked October 28, 2026.
+
+**OpenAI documentation**
+
+- [GPT-6 Astra usage in Work and Codex (help center)](https://help.openai.com/en/articles/20001516-managing-usage-with-gpt-6-astra-in-work-and-codex): windows, estimates, model and reasoning guidance
+- [Using Codex with your ChatGPT plan](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan-usage-limits-and-troubleshooting): shared pool, mid-turn limit behavior, what Support can do
+- [ChatGPT Work and Codex](https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex): context window, usage structure
+- [How resets work in Codex](https://help.openai.com/en/articles/20001498-how-resets-work-in-codex) and [paid weekly rate limit resets](https://help.openai.com/en/articles/20001507-paid-weekly-work-and-codex-rate-limit-resets): reset rules
+- [About ChatGPT Pro tiers](https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers): Pro 200 transition
+- [Codex skills](https://developers.openai.com/codex/skills) and [Codex subagents](https://developers.openai.com/codex/subagents): progressive disclosure, skills list budget, subagent token cost
+
+**Primary posts and issues**
+
+- [OpenAI on X, GPT-6.1 Terra](https://x.com/OpenAI/status/2114780715086754261) and [Tibo on X, Terra usage](https://x.com/thsottiaux/status/2114800277677092936) and [caching](https://x.com/thsottiaux/status/2112712984644784534)
+- [openai/codex issue 38892](https://github.com/openai/codex/issues/38892), [38354](https://github.com/openai/codex/issues/38354) and [32680](https://github.com/openai/codex/issues/32680): user reports, not OpenAI statements
+
+**Registry skills referenced**
+
+- [create-subagents](/skills/create-subagents), [agent-context-isolation](/skills/agent-context-isolation), [context-compression](/skills/context-compression), [context-window-management](/skills/context-window-management), [ai-cost-optimizer](/skills/ai-cost-optimizer), [codex-claude-loop](/skills/codex-claude-loop), [coding-agent](/skills/coding-agent)
+
+{% callout type="warning" %}
+No figure in this article is a measurement taken by Agent Skills. Message-range estimates are OpenAI's, the cache and Terra statements come from social posts and are labelled directional, and the worksheet is a template to fill with your own runs. Nothing here predicts a future reset.
+{% /callout %}

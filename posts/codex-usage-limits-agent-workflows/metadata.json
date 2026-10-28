@@ -1,0 +1,20 @@
+{
+  "title": "Codex usage limits for agent workflows: skills, subagents and long runs",
+  "slug": "codex-usage-limits-agent-workflows",
+  "category": "Guides",
+  "description": "How skills, subagents, long sessions and model choice drain Codex's 5-hour and weekly pools, and how to budget a skill-heavy workflow. Verified Oct 28, 2026.",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "Codex usage limits",
+    "Codex weekly limit",
+    "Codex 5-hour limit",
+    "out of Codex and Work usage",
+    "Codex resets",
+    "agent skills",
+    "Codex subagents",
+    "usage budgeting"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/codex-usage-limits-agent-workflows/hero.png"
+}
