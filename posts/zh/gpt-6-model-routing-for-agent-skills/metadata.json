@@ -1,0 +1,21 @@
+{
+  "title": "在 GPT-6 Astra、Sol 与 Luna 之间为智能体技能做模型路由",
+  "slug": "gpt-6-model-routing-for-agent-skills",
+  "category": "Deep Dives",
+  "description": "哪一档 GPT-6 该跑智能体技能流程的哪一步：价格、缓存的 SKILL.md 上下文、Codex 用量，以及一份按次运行的预算算例。",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "GPT-6 Astra",
+    "GPT-6.1 Sol",
+    "GPT-6 Luna",
+    "模型路由",
+    "智能体技能",
+    "缓存输入",
+    "SKILL.md",
+    "Codex 用量",
+    "子智能体"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/gpt-6-model-routing-for-agent-skills/hero.png"
+}
