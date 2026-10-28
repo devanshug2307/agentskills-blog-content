@@ -1,0 +1,20 @@
+{
+  "title": "Opus 5.5 与 Sonnet 5.5 用于智能体 skill：每个 skill 该选哪个模型和 effort",
+  "slug": "opus-5-5-vs-sonnet-5-5-for-agent-skills",
+  "category": "Deep Dives",
+  "description": "在 Claude Code 里，skill 和子智能体该跑在哪个 Claude 模型、哪一档 effort 上：Opus 5.5 与 Sonnet 5.5 的路由、SKILL.md 的 token 成本和扇出算术。",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "Opus 5.5 对比 Sonnet 5.5",
+    "Claude Code 子智能体",
+    "Claude effort 档位",
+    "opusplan",
+    "SKILL.md 成本",
+    "智能体 skill 模型路由",
+    "Opus 与 Sonnet 编程对比",
+    "Sonnet 5.5"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/opus-5-5-vs-sonnet-5-5-for-agent-skills/hero.png"
+}
