@@ -1,0 +1,20 @@
+{
+  "title": "面向智能体工作流的 Codex 用量限制：技能、子智能体与长时间运行",
+  "slug": "codex-usage-limits-agent-workflows",
+  "category": "Guides",
+  "description": "技能、子智能体、长会话与模型选择如何消耗 Codex 的 5 小时与每周额度池，以及如何为技能密集型工作流做预算。2026 年 10 月 28 日核实。",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "Codex 用量限制",
+    "Codex 每周限额",
+    "Codex 5 小时限额",
+    "out of Codex and Work usage",
+    "Codex 重置",
+    "智能体技能",
+    "Codex 子智能体",
+    "用量预算"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/codex-usage-limits-agent-workflows/hero.png"
+}
