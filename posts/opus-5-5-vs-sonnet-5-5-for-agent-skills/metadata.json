@@ -1,0 +1,20 @@
+{
+  "title": "Opus 5.5 vs Sonnet 5.5 for agent skills: which model and effort per skill",
+  "slug": "opus-5-5-vs-sonnet-5-5-for-agent-skills",
+  "category": "Deep Dives",
+  "description": "Which Claude model and effort level to run skills and subagents on in Claude Code: Opus 5.5 vs Sonnet 5.5 routing, SKILL.md token cost and fan-out math.",
+  "publishedDate": "2026-10-28",
+  "author": "Agent Skills",
+  "keywords": [
+    "Opus 5.5 vs Sonnet 5.5",
+    "Claude Code subagents",
+    "Claude effort levels",
+    "opusplan",
+    "SKILL.md cost",
+    "agent skills model routing",
+    "Opus vs Sonnet for coding",
+    "Sonnet 5.5"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/opus-5-5-vs-sonnet-5-5-for-agent-skills/hero.png"
+}

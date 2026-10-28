@@ -1,0 +1,252 @@
+A skill is a prompt that runs inside someone else's context window, and the model that reads it decides how much of the instruction survives contact with a real repository. Anthropic's Claude 5.5 pair gives you two very different places to run that prompt: Opus 5.5 at $4 per million input tokens and $20 per million output tokens, and Sonnet 5.5 at exactly half of both. This article is not the general "which model is smarter" comparison. It asks a narrower question that agent builders hit every day in Claude Code: when a `SKILL.md` or a subagent definition fires, which model and which effort level should be doing the work, and what does the choice cost?
+
+The short version: put Opus 5.5 on the planning and final-judgment steps, put Sonnet 5.5 on the execution and fan-out steps, keep effort at medium until your own numbers say otherwise, and spend your optimization time on effort and subagent count before you shave tokens off a skill file. Every benchmark figure below is vendor-reported by Anthropic unless it is labeled as Artificial Analysis, which is the one independent source used. Every dollar figure is arithmetic on the published price list, not a measurement of any codebase.
+
+{% x id="2104633115620823187" /%}
+
+## The Short Answer
+
+For most skill-driven Claude Code work, the split is simple. Run the session on Sonnet 5.5 at medium effort. Use Opus 5.5 where a skill has to make a judgment call that is expensive to get wrong: writing the plan, deciding whether a change is mergeable, or untangling a failure that two Sonnet attempts could not. Claude Code already ships a mode for this. The model configuration docs describe `opusplan` as a special mode that uses `opus` during plan mode and then switches to `sonnet` for execution, and on the Anthropic API those aliases resolve to Opus 5.5 and Sonnet 5.5.
+
+Three facts from Anthropic's own materials support that split, and each one comes with a caveat. First, Anthropic's Sonnet 5.5 page says Opus 5.5 "remains clearly stronger at complex, open-ended work requiring sustained judgment", which is the planning and review end of a skill workflow. Second, on the FrontierCode benchmark Anthropic reports Opus 5.5 at 54.4 percent against 52.1 percent for Sonnet 5.5 at xhigh and 46.2 percent at max, so the gap is real but small at the settings Sonnet is best at. Third, a footnote on that same row says Sonnet 5.5 scored lower at max than at xhigh partly because it more often ran Claude Code's code-review skill, which splits a review across many subagents, and in two cases examined by Cognition that led to a timeout or to extra edits outside the task. That footnote is the best single argument in either announcement for treating effort and subagent fan-out as cost-and-quality controls rather than free upgrades.
+
+If you only change one thing after reading this, set effort deliberately. Opus 5.5 defaults to medium and Sonnet 5.5 defaults to high on the API, so the cheaper model is the one that thinks harder by default. A skill that never mentions effort is quietly choosing a different point on each model's curve.
+
+## What Changes When a Model Runs a Skill
+
+A chat prompt is read once. A skill is different in three ways that matter for model choice.
+
+First, a skill is a standing instruction that stays in the conversation. Claude Code's skills documentation says the rendered `SKILL.md` content enters the conversation as a single message when the skill is invoked and is not re-read on later turns. That means its tokens ride along in context for the rest of the session, and every later turn pays a cache-read charge for them. The cost is small per turn, but it is paid every turn, and a verbose skill in a long session adds up. The arithmetic follows later.
+
+Second, a skill is an instruction the model has to obey across many tool calls, not one answer. A model that follows a five-step skill for the first two steps and drifts on steps three to five produces a worse outcome than a weaker model that follows all five. The docs make a related point about compaction: after the conversation is compacted, Claude Code can keep only the start of an invoked skill, so the most important instructions belong near the top of the file. That advice is model-independent, but it interacts with model choice. A model that is more likely to hold a long instruction in view across tool calls tolerates a longer skill. Neither Anthropic page publishes a skill-following benchmark for either model, so treat any claim that one model "follows skills better" as an open question you can test, not a documented fact.
+
+Third, skills often delegate. A review skill, a research skill or an implementation-plan executor commonly launches subagents, and each subagent is a separate context with its own model and effort. That is where the biggest cost multipliers live, and it is why this article spends a full section on fan-out.
+
+## The Controls Claude Code Gives You
+
+Claude Code exposes model and effort at several levels, and the order of precedence is documented. Knowing it prevents the most common routing bug, which is believing a subagent runs on Sonnet when something upstream pinned it to Opus.
+
+For subagents, the `model` frontmatter field accepts an alias (`sonnet`, `opus`, `haiku` or `fable`), a full model ID such as `claude-opus-5-5`, or `inherit` to use the main conversation's model. The docs state the resolution order directly: the per-invocation `model` parameter that Claude can pass on an Agent tool call comes first, then the subagent definition's `model` frontmatter, then the `CLAUDE_CODE_SUBAGENT_MODEL` environment variable, then the main conversation's model. On that per-invocation call, Claude can pass only an alias, not a full ID or `inherit`. The same docs list an `effort` field for subagents with the options low, medium, high, xhigh and max, noting that available levels depend on the model, and that the field overrides the session effort level but not the `CLAUDE_CODE_EFFORT_LEVEL` environment variable.
+
+Two consequences follow. If you export `CLAUDE_CODE_EFFORT_LEVEL` in a shell profile to make your interactive sessions thorough, you have also made every subagent's `effort` field inert, because the environment variable wins. And if you switch models with `/model` partway through a session, the switch reaches subagents that inherit the main conversation's model, because Claude Code resolves their model from the session's current one when it starts them. The docs give the practical version: switch to Opus before Claude delegates research or test runs, and that delegated work runs on Opus too.
+
+The built-in helpers also differ in what they load. The docs describe Explore and Plan as starting without your `CLAUDE.md` files and the git status snapshot, to keep research fast and inexpensive, while other built-in and custom subagents load both unless you set `omitClaudeMd` in a custom definition. Plan inherits the main conversation's model, and Explore uses the main conversation's model in the typical case. So a "cheap research subagent" is cheap only if you gave it a cheaper model or a lower effort; otherwise it is as expensive per token as the session that spawned it.
+
+Skills now document the same two fields. The Claude Code skills documentation lists `model` and `effort` as optional SKILL.md frontmatter. `model` accepts the same values as `/model`, or `inherit`, and applies for the rest of the current turn without being saved to settings, so the session model resumes on your next prompt. `effort` accepts low, medium, high, xhigh or max, overrides the session level, and falls back to the normal effort resolution order when omitted. With `context: fork`, the `model` value sets the forked subagent's model instead. Available effort levels depend on the model, and an organization's `availableModels` allowlist can veto a model. For a skill that mixes cheap execution with expensive judgment, delegating to a subagent whose definition sets `model` and `effort` is still the cleaner split, because a skill's own frontmatter applies to the whole turn.
+
+Minimum versions matter too. Anthropic's model pages state that Sonnet 5.5 requires Claude Code 2.1.284 or later and Opus 5.5 requires 2.1.280 or later. An older install fails the request rather than falling back, which looks like a routing bug in logs.
+
+{% callout type="warning" %}
+`CLAUDE_CODE_EFFORT_LEVEL` beats a subagent's `effort` field, and `CLAUDE_CODE_SUBAGENT_MODEL` sits below both the per-invocation parameter and the subagent's own `model` field. If a routing change seems to have no effect, check the environment before the frontmatter.
+{% /callout %}
+
+## The Numbers This Article Relies On
+
+All prices come from Anthropic's pricing page and product pages, per million tokens.
+
+| | Opus 5.5 | Sonnet 5.5 |
+|---|---:|---:|
+| Input | $4 | $2 |
+| Output | $20 | $10 |
+| Cache read | $0.20 | $0.10 |
+| Cache write | $5 | $2.50 |
+| Context window | 1M tokens | 1M tokens |
+| Max output | 128K | 128K |
+| Default effort (API) | medium | high |
+| Effort levels | low, medium, high, xhigh, max | low, medium, high, xhigh, max |
+| Launch | September 22, 2026 | September 28, 2026 |
+
+Two details save money. The Sonnet 5.5 cache-read price is $0.10 because Anthropic halved it on October 7, which it described as making Sonnet 5.5 around 20 percent cheaper to run on most long-running work. If you read a launch-week cost table, it may carry the older rate. And every price in the Sonnet column is exactly half of the Opus column, so the cost ratio between the two models on identical token counts is a constant two regardless of workload shape. The only variable is how many tokens each model spends. If Sonnet 5.5 spends twice the tokens on the same task, the bill is the same.
+
+{% figure src="https://pbs.twimg.com/media/HS1XWO4XQAAsB0k.png" alt="Anthropic pricing card for Claude Opus 5.5 showing input, output and cache prices per million tokens" caption="Anthropic's Opus 5.5 pricing card from the launch thread. The Sonnet 5.5 prices above come from Anthropic's pricing documentation. (Image: Anthropic, via @claudeai on X)" /%}
+
+## Where the Tokens Go in a Skill-Heavy Session
+
+Skill-heavy sessions bill four kinds of tokens: uncached input, cache reads, cache writes and output. Output includes thinking and tool-call arguments, which is why effort changes the bill. With prices in dollars per million tokens, the formula is:
+
+`cost = (U x p_in + R x p_cache_read + W x p_cache_write + O x p_out) / 1,000,000`
+
+Here U is uncached input, R is cache reads, W is cache writes and O is output tokens. The three costs below are separate, so you can see which lever is large.
+
+**The listing.** Claude Code loads a listing of skill names and descriptions into context so the model knows what exists, and the docs say each entry's combined text is capped at 1,536 characters. Suppose you installed 100 skills averaging 300 characters of description. That is 30,000 characters, about 7,500 tokens at the rough four-characters-per-token rule, which is an assumption and not a measured figure. Over a 50-turn session, assuming one cache write and 49 cache reads: Opus 5.5 costs 7,500 x $5 = $0.0375 for the write plus 367,500 x $0.20 = $0.0735 for the reads, total $0.111. Sonnet 5.5 costs half: $0.056. Across a whole 50-turn session, the listing costs about eleven cents on Opus.
+
+**One invoked skill body.** Take a 4,000-token `SKILL.md` invoked on turn one of a 30-turn session. On Opus 5.5: 4,000 x $5 = $0.02 for the write plus 116,000 cache-read tokens x $0.20 = $0.0232, total $0.0432. On Sonnet 5.5: $0.0216. If the invoked body were twice as long, the cost would double to about eight and a half cents on Opus. That is not nothing across hundreds of sessions, but compare it with the next line.
+
+**One heavy-thinking turn.** A turn that produces 30,000 output tokens, which at high effort with thinking is not unusual for a hard step, costs 30,000 x $20 / 1,000,000 = $0.60 on Opus 5.5 and $0.30 on Sonnet 5.5. That single turn costs more than the entire 50-turn listing on either model, and more than six times a 4,000-token skill body on Opus.
+
+The conclusion is arithmetic, not opinion: trimming a skill from 4,000 tokens to 2,000 saves about two cents per session on Opus, while moving one 30,000-token turn from high effort to medium, if it halves output, saves thirty cents. Trim skill files for clarity and for the compaction reason, not for the bill. Spend your cost attention on effort and on how many subagents a skill launches. There is a caching caveat: cache entries expire, so a session with long idle gaps pays the write price again, and Anthropic's pricing page covers the cache duration rules.
+
+## Effort Is the Cost Dial
+
+Anthropic documents effort as a behavioral signal rather than a strict token budget, and says it affects every output token, including text, tool calls and thinking. For agents this means lower effort also produces fewer and terser tool calls, which is where long skill runs spend their time.
+
+Anthropic's launch thread for Opus 5.5 includes cost-per-task charts with each effort level labeled. On the AutomationBench chart, read from the image, Opus 5.5's five points run from roughly a 23 percent pass rate at about fifty cents per task at low effort to roughly 40 percent at somewhere around $1.35 to $1.40 at max. Those values are approximate readings from a log-scale chart, not figures Anthropic printed. They show the shape that matters for routing: a rising curve that flattens, where the last levels cost much more per extra point of pass rate than the first ones.
+
+{% figure src="https://pbs.twimg.com/media/HS1XbkUX0AAlGO-.png" alt="Anthropic chart titled Business workflows by effort level for AutomationBench, plotting pass rate against cost per task on a log scale for Opus 5.5, Opus 5, GPT-6 Astra and GPT-5.6 Sol with effort levels labeled low through max" caption="AutomationBench by effort level from the Opus 5.5 launch thread. Vendor-reported; AutomationBench is a partner benchmark. Point values are approximate readings from the chart. (Image: Anthropic, via @claudeai on X)" /%}
+
+{% x id="2102435525399331254" /%}
+
+Anthropic's guidance for Sonnet 5.5 is specific and fits skill work well. Start with high unless the workload is agentic or latency-sensitive; for agentic coding and multistep tool use, start with medium for well-specified tasks and move to high for harder or longer ones; use xhigh or max only where your own evals show a gain. A skill that supplies a clear procedure, like a test-first workflow with explicit steps, is the textbook "well-specified" task. A skill that says "investigate and decide" is not. Route accordingly.
+
+Both models also accept per-message effort, listed as a beta feature, which lets an agent loop change effort between turns while keeping the prompt cache. For skills that have a cheap bookkeeping phase and an expensive reasoning phase, this is a better design than splitting the skill in two, because you keep one context and one cache.
+
+## Routing by Skill Type
+
+The table maps common skill jobs to a starting model and effort. These are starting points to test. Where Anthropic's docs give guidance, the row follows it; the rest is my inference from the price and benchmark data, marked as such. The registry links point to real entries on this site so you can read what each skill actually instructs before you route anything.
+
+| Skill job | Example skill | Start with | Why |
+|---|---|---|---|
+| Turn a spec into a multi-step plan | [writing-plans](https://agentskills.codes/skills/writing-plans) | Opus 5.5, medium, raise to high on ambiguous specs | One pass, errors propagate to every later step; inference from Anthropic's "sustained judgment" language |
+| Execute independent plan tasks | [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) | Sonnet 5.5, medium | Many parallel tasks, Anthropic recommends medium for well-specified agentic work |
+| Test-first implementation | [test-driven-development](https://agentskills.codes/skills/test-driven-development) | Sonnet 5.5, medium | Explicit procedure, failing test gives the model a check |
+| Debug a failure | [systematic-debugging](https://agentskills.codes/skills/systematic-debugging) | Sonnet 5.5, high; escalate to Opus 5.5 after two failed attempts | Open-ended but checkable; escalation rule is my inference |
+| Pre-merge review | [requesting-code-review](https://agentskills.codes/skills/requesting-code-review) | Sonnet 5.5 at high for reviewers, Opus 5.5 medium for the final verdict; avoid max | Cognition's FrontierCode footnote on max-effort review fan-out |
+| Build against the Claude API | [claude-api](https://agentskills.codes/skills/claude-api) | Sonnet 5.5, medium | Reference-driven, well-specified |
+| Codebase search and summarization | Explore-style subagent | Cheapest model that holds the repo map, low effort | Read-only, output is summarized upward; confirm price for the model you choose |
+| Overnight sweeps through the API | Agent SDK jobs | Opus 5.5 with the Batch API | Batch takes 50 percent off, so Opus matches Sonnet's standard price for the same tokens |
+
+The last row is arithmetic from the pricing page: the Batch API discounts input and output by 50 percent and Anthropic says the discount stacks with caching, so a batched Opus 5.5 job costs what a standard Sonnet 5.5 job costs at the same token counts. It applies to asynchronous API pipelines, not interactive Claude Code sessions.
+
+## Subagents Multiply Everything
+
+A subagent starts a fresh context. It does not share the parent's cache, so its first input is a cache write at full write price, and it carries its own output. A skill that launches six subagents multiplies per-agent cost by six before you count the parent.
+
+Use an illustrative review fan-out. Each of six subagents reads 60,000 tokens of fresh context, billed at the cache-write rate, and produces 10,000 output tokens. On Opus 5.5 one subagent costs 60,000 x $5 = $0.30 plus 10,000 x $20 = $0.20, or $0.50, so six cost $3.00. On Sonnet 5.5 one costs 60,000 x $2.50 = $0.15 plus 10,000 x $10 = $0.10, or $0.25, so six cost $1.50. Now add a planning pass on the parent that reads 40,000 fresh tokens and writes 8,000: $0.36 on Opus and $0.18 on Sonnet.
+
+| Routing | Parent plan | Six subagents | Total |
+|---|---:|---:|---:|
+| Everything on Opus 5.5 | $0.36 | $3.00 | $3.36 |
+| Everything on Sonnet 5.5 | $0.18 | $1.50 | $1.68 |
+| Opus plans, Sonnet executes | $0.36 | $1.50 | $1.86 |
+
+The mixed arrangement costs eighteen cents more than all-Sonnet and $1.50 less than all-Opus. Those token counts are invented for illustration; the point is the structure. Planning is one pass and fan-out is many, so moving the expensive model to the one-pass step buys the most judgment per dollar.
+
+Effort moves the same table. If each subagent produces 25,000 output tokens instead of 10,000 because of higher effort, a Sonnet subagent costs $0.15 + $0.25 = $0.40, so six cost $2.40. That is already more than the earlier all-Sonnet total and still below all-Opus at the lower output. The takeaway is that a higher-effort Sonnet fan-out can approach the cost of a lower-effort Opus fan-out. Anthropic says as much about its own charts: Sonnet 5.5 complements Opus 5.5 best at lower effort settings, where it costs less per task, and at higher settings it can perform comparably at similar cost.
+
+Then there is the quality side, and the Cognition footnote applies directly. FrontierCode scores whether a maintainer would merge the change and penalizes out-of-scope edits even when helpful. A higher effort setting buys more activity, including more review subagents and more edits, and activity is not the same as a small mergeable diff. If a review skill is part of your pipeline, cap how many reviewers it may launch and give reviewers an explicit scope instruction, instead of raising effort to compensate for an open-ended brief.
+
+## Writing Skills That Hold Up on Either Model
+
+A skill that works only on one model is a maintenance liability, since model aliases move. The `sonnet` and `opus` aliases resolve to the newest version on the Anthropic API and to an earlier version on some other providers, according to the model configuration docs, so a skill pinned by alias can change model under you. Several habits make skills portable.
+
+Put the non-negotiable instructions at the top. Between the compaction behavior in the skills docs and the long-session cost of a bloated file, a skill's first screen should hold the rules that must survive. Procedures and examples can follow.
+
+Keep descriptions specific and front-loaded. The listing cap of 1,536 characters per entry applies to the combined description text regardless of budget, and the docs advise putting the key use case first. A vague description makes the model invoke a skill at the wrong time, which wastes tokens on both models. If a skill should only run when you ask, `disable-model-invocation: true` stops Claude from invoking it automatically.
+
+State scope as an instruction, not an expectation. The FrontierCode footnote showed that out-of-scope edits cost a model points even when the edits were reasonable. A skill that says "change only files under the named directory; list anything else you would change instead of editing it" gives both models the same boundary and makes review easier.
+
+Put hard requirements in hooks, not prose. The skills docs say that if Claude skipped a rule that must hold every time, the rule belongs in a hook, because a hook runs every time its event occurs. That is model-independent and removes a reason to pay for a stronger model.
+
+Test the skill on both models. A skill that only passes on Opus is expressing a requirement the Opus price is paying for; a skill that passes on Sonnet at medium is cheaper to run twice as often.
+
+## Mixed-Model Sessions and Thinking Blocks
+
+Routing across models inside one conversation has a documented wrinkle. Anthropic's docs say Sonnet 5.5 reads thinking blocks from Sonnet 5, Opus 4.8, Haiku 4.5 and earlier, but not from Opus 5, Opus 5.5 or any Fable or Mythos model, while Opus 5.5 does read Sonnet 5.5's blocks on the Claude API. In practice, a session that begins on Sonnet 5.5 and escalates to Opus 5.5 keeps its reasoning trail, and one that goes the other way runs later turns without it. The dropped blocks are not billed and the request still succeeds, but the second model starts without the first model's reasoning.
+
+So escalation upward is the cheaper handoff, which suits a "try Sonnet first, escalate on failure" skill policy. If a skill hands a long reasoning chain from Opus to Sonnet, summarize the decisions into the message text instead of relying on the thinking blocks to carry them.
+
+There is one more migration detail for builders using the API directly. Opus 5.5 does not allow thinking to be turned off, so a harness that disabled thinking to save cost should lower effort instead. If a skill's pipeline selects response content blocks by position, it can break because an Opus 5.5 response can begin with an empty thinking block at the default display setting. Select by block type. The full list of Sonnet 5.5 breaking changes is covered in the sister article on AgentPedia; this guide only flags the two that affect skill pipelines.
+
+## Independent Evidence, Kept Narrow
+
+Artificial Analysis published its Intelligence Index v5 and covered both models at max effort. On the coding benchmark built from Cognition's merge-oriented grading, Opus 5.5 at max scored 46 percent and Sonnet 5.5 at max 42 percent. On AA-Briefcase, a knowledge-work benchmark, Sonnet 5.5 led all measured models at 1812 Elo. Artificial Analysis also notes that the Sonnet 5.5 scores on two of its evaluations came from a pre-release deployment with a structured-output bug that Anthropic says is fixed and expects to have understated performance.
+
+Two limits apply to skill routing. These are max-effort numbers, so they say nothing about the medium and low settings where Sonnet's price advantage is greatest. And they measure single tasks, not a skill's multi-step compliance. They support the direction, Opus slightly ahead on coding and Sonnet strong on document-style work, but they do not decide a routing policy for your skills. For that you need your own runs.
+
+## Claim and Evidence Table
+
+| Claim | Source | Status |
+|---|---|---|
+| Opus 5.5 costs $4/$20, Sonnet 5.5 costs $2/$10 per million tokens | Anthropic pricing page | Verified, first-party |
+| Sonnet 5.5 cache reads cost $0.10 after an October 7 cut | Anthropic post and pricing page | Verified, first-party |
+| Both models accept five effort levels, low to max | Anthropic effort docs | Verified, first-party |
+| Opus 5.5 defaults to medium, Sonnet 5.5 to high on the API | Anthropic effort docs | Verified, first-party |
+| Subagent `model` and `effort` frontmatter, with documented precedence | Claude Code sub-agents docs | Verified, first-party |
+| Skill `model` and `effort` frontmatter exist, and apply for the current turn | Claude Code skills docs | Verified, first-party; not tested |
+| `opusplan` uses Opus in plan mode, then Sonnet | Claude Code model configuration docs | Verified, first-party |
+| Sonnet at max scored below xhigh on FrontierCode because of review-skill fan-out | Footnote on Anthropic's Sonnet 5.5 page | Vendor-reported, partner examined |
+| Opus 5.5 leads on FrontierCode, 54.4 vs 52.1 (xhigh) vs 46.2 (max) | Anthropic's Sonnet 5.5 page | Vendor-reported |
+| Opus 5.5 42 vs 46 percent on a merge-graded coding benchmark at max | Artificial Analysis Index v5 | Independent |
+| Skill invocation loads the body once and keeps it in context | Claude Code skills docs | Verified, first-party |
+| Sonnet is better than Opus at following skills | None | Not established; test it |
+| A skill file's size dominates session cost | Arithmetic above | Contradicted for typical sizes; effort and fan-out dominate |
+
+## Running Your Own Routing Experiment
+
+The cost arithmetic above is illustrative, so replace it with your own. Pick three skills you actually use, one planning skill, one execution skill and one review skill. For each, define a fixed set of ten tasks with known good outcomes, a mix of easy and hard. Run each task under four configurations: Sonnet 5.5 at medium, Sonnet 5.5 at high, Opus 5.5 at medium, and Opus 5.5 at high. Record whether the result passed your checks, whether a reviewer would merge it without edits, the number of subagents launched, total output tokens, and wall-clock time. Then compute cost per accepted change using the formula in this article, which is the number that matters, instead of cost per attempt.
+
+Two rules keep the experiment honest. Run every configuration on a clean branch so no model sees a previous attempt. And compare the number of subagents launched, because the Cognition footnote suggests more effort can change how a skill behaves, not just how long the model thinks. If effort at high launches twice as many reviewers as medium and the merge rate does not improve, you found a cap to add to the skill.
+
+Add xhigh and max only for the hard tasks and only where high showed a gain. Anthropic's own guidance says to use those levels only where your evals show a quality gain. Once you have a table of cost per accepted change by skill, encode it: set `model` and `effort` in the skill's frontmatter or on the subagents each skill delegates to, use `opusplan` for interactive planning, and leave the session default at Sonnet 5.5 medium. For broader context on model-driven agent workloads and a worked cost analysis of another frontier pair, read the [GPT-6.1 Sol agent workloads breakdown](/blog/gpt-6-1-sol-agent-workloads), and for a scorecard-style approach to a new model release, see the [Muse Wonder scorecard for agent builders](/blog/muse-wonder-meta-scorecard-agent-builders).
+
+{% youtube id="1f13Bl1sYkw" title="Introducing Claude Opus 5.5" /%}
+
+{% youtube id="s5nkj-L2vAw" title="Introducing Claude Sonnet 5.5" /%}
+
+Both videos are Anthropic's official product introductions on the Claude YouTube channel. This guide takes its numbers from the written pages and documentation, which carry the footnotes the videos omit.
+
+{% x id="2107894060229034197" /%}
+
+## Limitations
+
+This guide inherits the limits of its sources. Every Anthropic benchmark is vendor-reported, and several, including AutomationBench, are partner benchmarks. The two models' rows in Anthropic's tables are not always at the same effort level, and the Terminal-Bench 4.0 row does not state the effort Sonnet ran at. Differences of a few points sit inside the stated standard errors.
+
+The skill-specific advice is partly inference. Anthropic has not published a benchmark of skill compliance for either model, so the routing table's reasoning rests on documented behavior, price arithmetic and the FrontierCode footnote, and nothing here was measured on a skill workload. I did not run any of these skills against either model. The four-characters-per-token estimate is a rule of thumb, not a tokenizer count. The Claude Code default effort for Sonnet 5.5 is stated differently on two Anthropic pages, so check `/effort` in your own session. Claude Code ships changes quickly, so check the current skills and sub-agents pages before relying on any frontmatter field. I did not test skill-level `model` or `effort` frontmatter myself; I am reporting what the docs say.
+
+## Verdict
+
+Use Opus 5.5 for the steps that decide what to build and whether it is good, and Sonnet 5.5 for the steps that do the building many times. Set effort on purpose: medium for specified work, high for hard or open-ended work, and treat xhigh and max as experiments with a measured payoff. Cap subagent fan-out in review skills, because that is where Anthropic's own footnote says more effort stopped helping. Do not trim `SKILL.md` files for cost reasons alone; trim them so the important rules sit at the top and survive compaction.
+
+The honest unknown is skill compliance. Until someone publishes a skill-following benchmark for these models, the routing table is a hypothesis built from price, effort guidance and one revealing footnote. Run the ten-task experiment above on your three most-used skills before you change a team default.
+
+## FAQ
+
+**Should a skill run on Opus 5.5 or Sonnet 5.5?**
+Run execution-style skills on Sonnet 5.5 at medium effort and planning or final-review steps on Opus 5.5. Claude Code's `opusplan` mode applies that split automatically for plan mode versus execution. Test your own skills before treating this as a rule, because Anthropic has not published a skill-compliance benchmark for either model.
+
+**How do I set the model and effort for a subagent?**
+In the subagent's frontmatter, set `model` to an alias, a full model ID or `inherit`, and set `effort` to low, medium, high, xhigh or max. The `effort` field overrides the session level but not the `CLAUDE_CODE_EFFORT_LEVEL` environment variable. The model order is the per-invocation parameter, the frontmatter field, `CLAUDE_CODE_SUBAGENT_MODEL`, then the main conversation's model.
+
+**What are the effort levels called, and what is the default?**
+The API effort parameter accepts low, medium, high, xhigh and max on both Opus 5.5 and Sonnet 5.5. Opus 5.5 defaults to medium and Sonnet 5.5 defaults to high on the API. Anthropic's Sonnet page says the default in Claude Code and its apps is Medium, which differs from the docs wording for the previous Sonnet, so confirm with `/effort`.
+
+**Does a bigger SKILL.md make Claude Code more expensive?**
+Slightly. An invoked skill body stays in context and is billed as a cache read on later turns. For a 4,000-token body over a 30-turn session, the arithmetic above gives about $0.043 on Opus 5.5 and $0.022 on Sonnet 5.5. A single 30,000-token high-effort output turn costs $0.60 on Opus, so effort and subagent count matter more than file size.
+
+**How much cheaper is Sonnet 5.5 than Opus 5.5 for the same skill run?**
+Every Sonnet price is half the Opus price, so identical token counts cost half as much. If Sonnet uses twice the tokens, the cost is equal. In the six-subagent example above, Sonnet costs $1.68 against $3.36 for Opus, and a mixed Opus-plans, Sonnet-executes routing costs $1.86. Token counts there are illustrative.
+
+**Why did Sonnet 5.5 score lower at max effort than at xhigh on FrontierCode?**
+Anthropic's footnote says that at max, Sonnet 5.5 more often ran Claude Code's code-review skill, which splits a review across many subagents. In two cases Cognition examined, that caused a timeout or edits beyond the task's scope, which FrontierCode penalizes. The takeaway is that more effort can mean more activity, not necessarily a smaller mergeable change.
+
+**Can I switch from Sonnet 5.5 to Opus 5.5 mid-session without losing reasoning?**
+Going from Sonnet 5.5 to Opus 5.5 keeps the reasoning trail on the Claude API, because Opus 5.5 reads Sonnet 5.5's thinking blocks. Going the other way, Sonnet 5.5 does not read Opus 5.5's thinking blocks, so later turns run without it. The request still succeeds and the dropped blocks are not billed.
+
+## Sources
+
+Checked October 28, 2026.
+
+**Anthropic, first-party**
+
+- [Claude Opus 5.5](https://www.anthropic.com/claude-opus-5-5): pricing, benchmark tables, launch claims
+- [Claude Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5): pricing, benchmark table with Opus 5.5 column, FrontierCode footnote
+- [Pricing](https://platform.claude.com/docs/en/about-claude/pricing): per-token rates, Batch API, cache pricing
+- [Effort parameter](https://platform.claude.com/docs/en/build-with-claude/effort): levels, defaults, per-model guidance
+- [What's new in Sonnet 5.5](https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5): breaking changes, thinking-block compatibility
+- [Claude Code: subagents](https://code.claude.com/docs/en/sub-agents): `model` and `effort` frontmatter, resolution order
+- [Claude Code: model configuration](https://code.claude.com/docs/en/model-config): aliases, `opusplan`, effort environment variable
+- [Claude Code: skills](https://code.claude.com/docs/en/skills): skill loading, listing cap, compaction behavior, `model` and `effort` frontmatter
+- [@claudeai on X](https://x.com/claudeai): launch threads for Opus 5.5 and Sonnet 5.5, cache-read price cut
+- [Introducing Claude Opus 5.5 (YouTube)](https://www.youtube.com/watch?v=1f13Bl1sYkw) and [Introducing Claude Sonnet 5.5 (YouTube)](https://www.youtube.com/watch?v=s5nkj-L2vAw)
+
+**Independent**
+
+- [Artificial Analysis Intelligence Index v5](https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5)
+
+**On this site**
+
+- [writing-plans](https://agentskills.codes/skills/writing-plans), [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development), [test-driven-development](https://agentskills.codes/skills/test-driven-development), [systematic-debugging](https://agentskills.codes/skills/systematic-debugging), [requesting-code-review](https://agentskills.codes/skills/requesting-code-review), [claude-api](https://agentskills.codes/skills/claude-api)
+
+{% callout type="warning" %}
+No performance figure in this article was independently reproduced. Anthropic's benchmark numbers are vendor-reported, several come from partner benchmarks, and the cost tables are this article's own arithmetic on Anthropic's published prices using illustrative token counts. Nothing here was measured on a real skill workload.
+{% /callout %}
