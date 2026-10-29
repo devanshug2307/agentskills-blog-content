@@ -1,0 +1,21 @@
+{
+  "title": "Running agent skills and subagents on GLM-5.3-Flash: cost per run and where it breaks",
+  "slug": "glm-5-3-flash-for-agent-skills",
+  "category": "Guides",
+  "description": "What a skill run or subagent fan-out costs on GLM-5.3-Flash at Z.ai list prices, the tool-calling limits to plan for, and when to route skills to GLM-5.3.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GLM-5.3-Flash",
+    "GLM-5.3",
+    "agent skills",
+    "subagents",
+    "model routing",
+    "cost per run",
+    "tool calling",
+    "GLM Coding Plan",
+    "Ox Alpha"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/glm-5-3-flash-for-agent-skills/hero.png"
+}
