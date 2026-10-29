@@ -1,0 +1,20 @@
+{
+  "title": "Supervising Claude Code skill and subagent runs from your phone",
+  "slug": "claude-code-remote-control-for-skill-workflows",
+  "category": "Guides",
+  "description": "Supervise long Claude Code skill and subagent runs from your phone with Remote Control: which prompts reach you, what can run unattended, which rules to set.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Claude Code Remote Control",
+    "Claude Code skills",
+    "subagents",
+    "permission modes",
+    "permission rules",
+    "push notifications",
+    "SKILL.md",
+    "unattended agent runs"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-remote-control-for-skill-workflows/hero.png"
+}
