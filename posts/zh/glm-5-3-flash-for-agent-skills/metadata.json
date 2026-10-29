@@ -1,0 +1,21 @@
+{
+  "title": "在 GLM-5.3-Flash 上运行 Agent Skills 与子智能体：单次成本与失效点",
+  "slug": "glm-5-3-flash-for-agent-skills",
+  "category": "Guides",
+  "description": "按 Z.ai 标价，一次技能运行或子智能体扇出在 GLM-5.3-Flash 上要花多少钱、工具调用有哪些限制需要提前规划，以及在 Flash 与 GLM-5.3 之间路由技能的规则。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GLM-5.3-Flash",
+    "GLM-5.3",
+    "Agent Skills",
+    "子智能体",
+    "模型路由",
+    "单次运行成本",
+    "工具调用",
+    "GLM Coding Plan",
+    "Ox Alpha"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/glm-5-3-flash-for-agent-skills/hero.png"
+}

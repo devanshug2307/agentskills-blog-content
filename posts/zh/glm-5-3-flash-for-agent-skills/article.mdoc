@@ -1,0 +1,243 @@
+一个技能（skill）就是一份小合约：一个 SKILL.md、几个工具，外加一个循环，直到检查器喊停才结束。当你每天跑几十个这样的循环，或者让父智能体每个任务派生五个子智能体时，背后的模型就不再是质量问题，而是单位成本问题。GLM-5.3-Flash 是 Z.ai 对第二个问题的回答。它的标价是每百万输入 token $0.15，每百万缓存输入 token $0.03，每百万输出 token $0.50；GLM-5.3 则分别是 $1.40、$0.26 和 $4.40。
+
+这篇指南写给构建和运维技能的人，而不是比较排行榜的人。它回答四个实际问题：按标价算，一次技能运行在 Flash 上花多少钱？把推理 token 算进去之后，单 token 折扣在哪里缩水？Z.ai 的工具调用文档里哪些部分会约束你写技能的方式？以及哪些技能该路由到 Flash，哪些留在 GLM-5.3，哪些该换到别的模型？文中所有基准数字都是 Z.ai 自己报告的，成本表是我们用已公布价格和虚构的用量形态做的算术。我们没有在这个模型上跑过任何真实技能。
+
+{% x id="2092616209426493766" /%}
+
+## 从技能作者的角度看 Flash
+
+Flash 就是自 2026 年 8 月 20 日起，以隐身模型 Ox Alpha 的身份在 OpenRouter 和 OpenCode 智能体上匿名运行的那个模型，Z.ai 于 8 月 26 日以正式名称发布。Z.ai 的发布文章称它原生多模态，上下文窗口 1M token，架构为 320B-A18B（总参数 320B，激活参数 18B），采用 MIT 许可证。Z.ai 表示，隐身期间它在当周 OpenRouter 上的流量是所有模型中最高的。
+
+对技能作者来说，有四个属性比架构更重要。
+
+**它是另一个模型，不是缩小版的 GLM-5.3。** GLM-5.3 沿用 GLM-5.2 的基座，只支持文本。Flash 是全新训练的基座，接受文本、图像、视频和文件。需要读截图、PDF 或录屏的技能，只有在 Flash 上才能原生完成，GLM-5.3 做不到。
+
+**思考始终开启。** 两个模型都会拒绝试图关闭思考的请求。你可以选择 low、high 或 max 三档强度，默认是 max。下文“思考始终开启”一节会讲这对期望快速便宜步骤的技能有什么影响。
+
+**限制很宽松。** 文档列出两个模型都是 1M token 上下文、128K 最大输出。对于拿到大块代码仓库切片的子智能体，窗口很少成为瓶颈，账单才是。
+
+**权重是公开的。** Flash 在 Hugging Face 上以 MIT 许可证发布。如果技能处理的代码或文档不能离开你的网络，自托管是真实可行的选项，模型卡提到了 SGLang、vLLM、TokenSpeed、Transformers 和 KTransformers。GLM-5.3 权重同样公开，但许可证列为“other”，其中有一条针对超大规模模型即服务运营商的条款。
+
+价格页上还有两个值得了解的同族模型。GLM-5.3-FlashX 是更快的变体，文档标称 200 token 每秒，标价为每百万 token $0.37、$0.075 和 $1.25。GLM-5.3-FlashX-Legal 是面向法律领域的模型，价格相同。文档当时写明 FlashX 尚未进入 Coding Plan。
+
+## 一次技能运行要花多少钱
+
+不给运行形态，每 token 价格说明不了什么。我们用四种虚构的形态，它们类似技能作者实际会做的东西。所有输入都拆成未缓存和已缓存 token，因为技能循环每一轮都会重发系统提示、工具定义和不断增长的对话记录，缓存折扣打的正是这个稳定前缀。
+
+| 运行形态 | 输入 / 缓存 / 输出 token | GLM-5.3-Flash | GLM-5.3-FlashX | GLM-5.3 |
+|---|---|---:|---:|---:|
+| A：一次性分诊技能 | 3K / 0 / 1.5K | $0.0012 | $0.0030 | $0.0108 |
+| B：20 轮修复并测试技能 | 200K / 170K / 12K | $0.0156 | $0.0389 | $0.1390 |
+| C：五子智能体扇出 | 300K / 225K / 20K | $0.0280 | $0.0696 | $0.2515 |
+| D：长篇仓库审计 | 1.2M / 1.1M / 90K | $0.0930 | $0.2320 | $0.8220 |
+
+有两点值得注意。第一，每种形态下 GLM-5.3 与 Flash 的比值几乎恰好是 9，因为 Flash 在输入上便宜 9.3 倍，缓存输入上便宜 8.7 倍，输出上便宜 8.8 倍，任何混合都落在 9 附近。第二，这些运行没有一个超过一美元。一个技能每天按形态 B 跑 200 次，Flash 上约 $3.12，GLM-5.3 上约 $27.80，前提是 token 数不变。绝对金额很小，所以选择取决于规模和频率，而不是任何一次运行。
+
+{% callout type="info" %}
+把这张表当模板，不要当测量值。从你的服务商用量字段里取十次有代表性运行的真实输入、缓存和输出 token 数，再替换这些数字。B 到 D 形态里的缓存占比是假设；如果技能每轮都改自己的前缀，缓存命中会低得多。
+{% /callout %}
+
+### 缓存比模型选择更关键
+
+Flash 上缓存输入每百万 token $0.03，是未缓存 $0.15 的五分之一。形态 B 里 200K 输入有 170K 命中缓存，输入侧约 $0.0096。完全没有缓存命中时，同一次运行的输入侧要 $0.03。Z.ai 价格页还把缓存输入存储标为“Limited-time Free”，所以为长期会话做预算前请再核对一次该页面，因为这一行明确是临时的。
+
+所以在争论 Flash 还是 GLM-5.3 之前，先看你的技能是不是为缓存而设计的。把 SKILL.md 正文、工具 schema 和项目上下文放在提示最前面并保持固定顺序，新的轮次追加在末尾。每一轮都重排工具结果或改写系统提示的技能，在任何模型上都会花更多钱。
+
+### 仔细读 Artificial Analysis 图表
+
+Z.ai 的发布文章认为 Flash 推进了性价比前沿，引用的是 Artificial Analysis Intelligence Index v4.1.1，得分 57，每任务 $0.045。
+
+{% figure src="https://z-cdn-media.chatglm.cn/prompts-rich-media-resources/5.3-flash-blog/Sy_ehD3wzx.png" alt="Artificial Analysis Intelligence Index v4.1.1 与每任务成本（对数轴）的散点图，GLM-5.3-Flash 标注为折扣价，0.045 美元、57 分" caption="Artificial Analysis Intelligence Index v4.1.1 与每任务成本，更新于 2026 年 8 月 26 日，取自 Z.ai 的 GLM-5.3-Flash 发布文章。Flash 的点标注为折扣价。（图片：Z.ai，原始数据来自 Artificial Analysis）" /%}
+
+图表把 Flash 的点标为折扣价，没有说明用的是哪个价格。2026 年 10 月 29 日我们抓取 Artificial Analysis 模型页时，没有找到 Flash 在当前指数版本上的独立得分；其指数和每任务成本字段显示 N/A。所以把这张图当作 Z.ai 自己的立场声明，预算则用你自己的运行成本。
+
+## 为什么输出侧决定账单
+
+技能循环输入量大但大部分被缓存，所以任务变难时增长最快的是输出：推理 token 加答案。Z.ai 为 Flash 发布了一张强度图，把这一点说清楚了。
+
+{% figure src="https://z-cdn-media.chatglm.cn/prompts-rich-media-resources/5.3-flash-blog/H1hAKXnDMx.png" alt="Z.ai Code Bench v1.0 准确率与平均每任务输出 token 的折线图，覆盖 GLM-5.3、GLM-5.2、GLM-5.3-Flash、Claude Fable 5 和 Claude Opus 4.8 在 low、high、max 强度下的表现" caption="Z.ai Code Bench v1.0，使用 Claude Code 2.1.207：按强度档位划分的准确率与平均每任务输出 token。这是厂商自跑的私有基准。（图片：Z.ai，取自 GLM-5.3-Flash 发布文章）" /%}
+
+读图可得，Flash 在 max 强度下约 29.0% 准确率，每任务约 139K 输出 token；GLM-5.3 在 max 下约 34.5%，约 75K。这些 token 数是读图所得，请视为近似值。GLM-5.3 一侧的 34.5% 对应约 75K，Z.ai 的正文里有明确说明。
+
+对技能预算的直接后果是：如果 Flash 在同一任务上输出的 token 约为 GLM-5.3 的 1.9 倍，那么 8.8 倍的输出价差就变成每任务输出成本约 4.7 倍。把形态 B 和 C 中 Flash 的输出放大 1.9 倍（GLM-5.3 不变）重算，B 为 $0.0210 对 $0.1390，C 为 $0.0370 对 $0.2515。比值从约 9 降到 6.6 和 6.8。Flash 仍然便宜得多，但节省接近七倍而不是九倍，而且在最难的编码任务上准确率读数更低。
+
+### 重试预算
+
+最清晰的思路是重试预算。如果一次 Flash 尝试与一次 GLM-5.3 尝试用的 token 一样多，那么在上表每种形态下，一次 GLM-5.3 尝试的钱可以跑大约九次 Flash 尝试。考虑 1.9 倍的输出膨胀，预算接近六到七次。有可靠检查器的技能，比如测试套件、schema 校验器或 diff 审查步骤，可以利用这个预算：先跑 Flash，验证，失败时才升级到 GLM-5.3。没有检查器的技能做不到，因为它没法知道便宜的那次尝试失败了。
+
+这就是本文后面的路由规则围绕验证而不是只围绕任务难度来设计的原因。
+
+## 思考始终开启
+
+Z.ai 的迁移指南说，GLM-5.3 上不能再关闭思考，Flash 遵循同样的规则。请求字段 `thinking.type` 只接受 `enabled`。如果你的框架现在对便宜步骤发送 `disabled`，指南要求改成 `enabled` 并把强度设为 `low`，否则请求会失败。
+
+对技能作者，这有三点实际影响。
+
+**没有免费的步骤。** 原本设计成瞬时完成的步骤，比如返回标签的分类器或选工具的路由器，现在每次调用都会花推理 token。对这些步骤把 `reasoning_effort` 设为 `low` 并测量输出 token，因为默认值是 `max`。
+
+**强度应该写在技能里，而不是全局配置里。** 同一个技能的不同步骤需要不同强度。规划步骤可能值得 high，格式化步骤用 low。如果你的宿主允许技能或子智能体定义携带自己的模型参数，就把强度放在那里。
+
+**流式设置很重要。** Flash 文档推荐 `temperature: 1`、`top_p: 0.95`、`reasoning_effort: max`、`thinking.clear_thinking: false`，流式时同时开启 `stream: true` 和 `tool_stream: true`。我们读到的文档页面没有解释 `clear_thinking`，只是建议保持 false。在多轮技能里，请在你自己的循环上测试它并观察输入 token 数，因为我们无法确认它具体改变了什么。
+
+## 工具调用：文档写了什么，没写什么
+
+技能主要就是工具调用，所以这一节值得慢慢读。
+
+**文档明确写了什么。** Z.ai 的函数调用文档说，`tool_choice` 默认是 `auto`，并且只支持 `auto`。实际含义是：你不能强制模型调用某个特定工具，也不能强制它必须调用任何工具。依赖“结尾必须调用 `submit_result`”的技能，必须在提示里写明，并在代码里校验。流式工具调用需要在请求里设置 `tool_stream: true`。
+
+**基准怎么说。** 在 Z.ai 自己的表里，Flash 在 Toolathlon Verified 上得 78.4，GLM-5.3 为 73.0，GLM-5.2 为 59.9；在 AutomationBench v1.0.6 上 Flash 得 48.8，GLM-5.3 为 48.2。Z.ai 说明 Toolathlon Verified 是官方评测服务上三次运行平均的 pass@1。这些是厂商报告的数字，也是把工具密集型技能路由到 Flash 的最有力论据。同时它们也是最受测试框架细节影响的行，所以在相信之前请用你自己的工具复现。
+
+**HF 提交历史说明了什么。** 两个 Hugging Face 仓库的聊天模板在 9 月 4 日改过，10 月 14 日和 15 日又改过，提交标题是“speed up tool-result validation and reordering”。如果你自托管，请固定到某个版本。如果你用托管端点，要假设服务商接入这项改动的时间可能与别家不同。
+
+**我们没能找到什么。** 我们没有找到任何独立测量，说明两个模型的工具调用错误率、参数格式错误率、并行调用行为或工具出错后的恢复情况。上面的厂商数字衡量的是任务成功率，不是调用级可靠性。关于畸形 JSON 参数、幻觉出来的工具名，或者反复重复同一个失败调用的循环，任何你需要知道的东西都得来自你自己的评测。
+
+### OpenRouter 上的服务商差异
+
+如果你通过 OpenRouter 使用 Flash，就是在多个服务商之间做选择。2026 年 10 月 29 日，端点 API 为 z-ai/glm-5.3-flash 列出 40 行，输入价从 $0.0457 到 $0.225，输出价从 $0.0625 到 $0.75 每百万 token，量化标签包括 fp4、fp8、nvfp4 和未知。Z.AI 这一行与标价一致，为 $0.15 和 $0.50。更便宜的行可能提供的是低精度构建。对于工具调用型技能，低精度是产生更多畸形调用的合理来源，不过我们没有测量。请在路由偏好里固定服务商，并针对技能实际使用的确切端点运行你自己的检查。
+
+## 哪些技能该路由到 Flash
+
+把下表当作起步策略，再根据你自己的结果调整。
+
+| 技能类型 | 起始模型 | 原因 |
+|---|---|---|
+| 带校验器的高量分诊、打标签、抽取 | low 强度的 GLM-5.3-Flash | token 最便宜；schema 检查能抓住坏输出 |
+| 前缀稳定的测试驱动修复循环 | GLM-5.3-Flash，反复失败时升级 | 缓存输入每百万 $0.03；测试充当检查器 |
+| 多文件重构与长程编码 | high 或 max 强度的 GLM-5.3 | 在 Z.ai 的表里，Terminal Bench 2.1、DeepSWE v1.1 和带工具的 HLE 上领先 Flash |
+| 截图、UI 与文档技能 | GLM-5.3-Flash | GLM-5.3 不接受图像、视频或文件输入 |
+| 浏览器与电脑操作技能 | GLM-5.3-Flash，先测试 | Z.ai 报告 Flash 在 OSWorld 2.0 上得 59.1，同样有厂商数据的常规保留 |
+| 延迟可见的交互式技能 | GLM-5.3-FlashX 或 Flash，实测 | 文档标称 FlashX 200 token 每秒 |
+| 安全审查与漏洞利用工作 | GLM-5.3 加人工审查 | Z.ai 的网络安全结果针对 GLM-5.3，在漏洞利用行上落后于闭源前沿 |
+| 没有检查器且失败代价高的技能 | 比两者都更强的模型 | 你承担不起无声的漏判 |
+
+规律是：Flash 在那些有廉价自动手段判断成败的技能上物有所值。错误答案代价高昂、又没有任何检查的地方，每 token 价格就是错误的变量。
+
+### 子智能体扇出
+
+并行子智能体是 Flash 价格最有意义的地方。成本表里的形态 C 是父智能体派生五个子智能体，每个读取仓库的一个切片并返回摘要。Flash 上 $0.0280，GLM-5.3 上 $0.2515，一百次这样的扇出分别花 $2.80 和 $25.15。技能 [dispatching-parallel-agents](https://agentskills.codes/skills/dispatching-parallel-agents)、[subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) 和 [create-subagents](https://agentskills.codes/skills/create-subagents) 描述了编排模式。
+
+合理的分工是：工作者跑在 Flash 上，负责规划和合并的父智能体跑在 GLM-5.3 上。工作者做有边界的读取和抽取，有清晰输出 schema 的便宜模型就够了。父智能体持有计划并解决工作者结果之间的冲突，漏掉的细节会向下传播。有两点需要小心。只被告知“总结一下”的工作者会乐于在上面花 max 强度的推理，所以请在子智能体定义里明确设置强度。另外因为 `tool_choice` 不能强制调用，请给每个工作者一份输出契约，由父智能体在合并前校验。
+
+## 把路由规则写下来
+
+团队往往凭感觉路由，然后为结果争论。写下来的规则更容易改进。下面的策略是通用草图，不是任何特定宿主的配置语法，其中每个阈值都是占位，应当用你自己的数据替换。
+
+```
+route(skill_run):
+  if skill.needs_images_or_video_or_files:      use GLM-5.3-Flash
+  elif skill.has_automatic_checker:
+      attempt 1..2 on GLM-5.3-Flash (effort: low or high)
+      if checker fails twice:                   escalate to GLM-5.3 (effort: high)
+  elif skill.failure_is_costly:                 use the strongest model you trust
+  else:                                         use GLM-5.3-Flash and sample outputs for review
+  record(tokens_in, tokens_cached, tokens_out, attempts, passed)
+```
+
+最后一行最重要。没有每次运行的 token 和通过与否记录，你就算不出每个完成任务的成本，而只有这个数字才能告诉你路由到 Flash 是否真的省了钱。
+
+关于跨模型厂商的更广泛路由讨论，可以看我们的文章：[GPT-6 model routing for agent skills](/blog/gpt-6-model-routing-for-agent-skills)、[GPT-6.1 Sol for agent workloads](/blog/gpt-6-1-sol-agent-workloads) 和 [Opus 5.5 versus Sonnet 5.5 for agent skills](/blog/opus-5-5-vs-sonnet-5-5-for-agent-skills)。注册表里还有通用工具：[ai-cost-optimizer](https://agentskills.codes/skills/ai-cost-optimizer) 和 [clawrouter](https://agentskills.codes/skills/clawrouter) 是路由器，[openrouter](https://agentskills.codes/skills/openrouter) 涵盖网关，[context-budgeting](https://agentskills.codes/skills/context-budgeting) 处理前缀和窗口管理，[agent-evaluation](https://agentskills.codes/skills/agent-evaluation) 是下文检查的起点。我们把它们列为注册表条目，不是背书；我们没有用 GLM-5.3-Flash 测试过它们。
+
+## 在套餐上为编码智能体运行 Flash
+
+如果你的技能运行在 Claude Code、OpenCode 或 Cline 这类编码智能体里，GLM Coding Plan 可能比按量计费的 API 调用更合适。Z.ai 文档描述了带 5 小时额度上限和每周上限的档位。
+
+| 套餐 | 5 小时额度 | 每周额度 |
+|---|---:|---:|
+| Lite | 2,000 | 10,000 |
+| Pro | 12,000 | 60,000 |
+| Max | 28,000 | 140,000 |
+
+一次调用的额度消耗是：未缓存输入 token 乘以输入系数，加缓存 token 乘以缓存系数，加输出 token 乘以输出系数，再整体除以 10,000。GLM-5.3 的系数是 6.9、1.7 和 24，Flash 是 2.3、0.56 和 8。高峰时段是周一到周五的 UTC+8 14:00 到 18:00（UTC 06:00 到 10:00），非高峰调用只消耗标准额度的一半。
+
+套用到我们的四种形态：
+
+| 运行形态 | Flash 额度 | GLM-5.3 额度 | 每 2,000 额度可跑 Flash 次数（高峰 / 非高峰） | 每 2,000 额度可跑 GLM-5.3 次数（高峰 / 非高峰） |
+|---|---:|---:|---:|---:|
+| A：一次性分诊技能 | 1.89 | 5.67 | 1058 / 2116 | 353 / 705 |
+| B：20 轮修复并测试技能 | 26.02 | 78.40 | 77 / 154 | 26 / 51 |
+| C：五子智能体扇出 | 45.85 | 138.00 | 44 / 87 | 14 / 29 |
+| D：长篇仓库审计 | 156.60 | 472.00 | 13 / 26 | 4 / 8 |
+
+三个系数的额度比值都约为 3.0，这就是 Z.ai 文章说 Flash 的可用额度约为 GLM-5.3 三倍的原因。这比美元定价里的 9 倍优势小得多，因为套餐是按额度而不是按美元计价的。如果你有订阅，套餐会翻转经济账：你不再是在最小化美元账单，而是在最大化每个窗口内的运行次数。Lite 套餐在高峰费率下，每个 5 小时窗口大约能跑 77 次 Flash 的形态 B，GLM-5.3 则是 26 次。
+
+文档还说，套餐上对 GLM-5.2 和 GLM-5.1 的请求会路由到 GLM-5.3，对 GLM-4.7 的请求会路由到 Flash。如果某个技能固定了旧模型名，请检查实际由哪个模型提供服务。有一个悬而未决的细节：Z.ai 列出了多个基础 URL，包括专用的编码路径和通用路径。我们没有找到页面说明哪个扣套餐额度、哪个扣按量余额，所以在把生产智能体指向任何一个之前请先确认。
+
+## 换模型前的评测流程
+
+在把真实技能路由到 Flash 之前，做一次小型对照。一个下午就能完成。
+
+1. **从自己的日志里固定 20 到 40 次真实运行**，包括几次失败或需要重试的。保存输入以及预期结果或检查器。
+2. **在匹配的强度下跑两个模型**，再让 Flash 低一档强度跑一遍。记录每次调用的输入、缓存和输出 token，以及通过所需的尝试次数。
+3. **计算每个完成任务的成本**，而不是每次调用的成本：总花费除以通过检查器的任务数。
+4. **单独统计调用级失败**：畸形参数、选错工具、调用不存在的工具、重复同一个失败调用、缺少最终调用。这些是任何已发布数字都没有衡量的失效模式。
+5. **用你真实的工具定义和真实的错误信息测试。** 返回长堆栈的工具与返回短错误码的工具，对模型的考验不同。
+6. **在生产将使用的确切服务商和量化版本上重复。**
+7. **如果技能用到图像或文件，单独跑这项测试**，因为 Z.ai 表里的多模态行对比模型最少。
+8. **当服务商更换构建或聊天模板时重新运行。** Hugging Face 历史显示模板在发布后确实改过。
+
+## 我们无法验证的内容
+
+- 这里每一个性能数字都是 Z.ai 报告的。我们没有重跑任何基准。
+- 强度图里的 token 数和 Artificial Analysis 图表的值都是读图所得，属于近似。Z.ai 的 Code Bench 是私有的。
+- 我们没有找到 Flash 在当前 Artificial Analysis 版本上的独立指数得分，也没有找到对 Z.ai GLM-5.3 表格的独立复现。
+- 我们没有找到任一模型在工具调用可靠性、并行工具调用或错误恢复方面的独立数据。
+- 运行形态和额度估算是用标价和文档公布的系数构建的虚构示例。
+- 我们没有测量延迟、负载下的吞吐或长上下文准确率。
+- Z.ai 说 Ox Alpha 流量跑在中国 AI 芯片上，OpenRouter 的公告说 Ox Alpha 的提示被服务商保留。我们如实转述这两点，都没有核实。
+- 第三方折扣和转售商促销未经核实，因此没有写入。
+
+## 结论
+
+GLM-5.3-Flash 是技能工作负载中高量、可检查、对缓存友好那一部分的好候选。按每百万 token $0.15 和 $0.50，五路子智能体扇出只要几美分，而且在 GLM-5.3 系列的两个模型里，只有它能读图像、视频和文件。折扣是真的，但比价格比值暗示的要窄，因为 Z.ai 自己的图表显示 Flash 每任务花更多输出 token，而且思考无法关闭。
+
+对于失败无声且代价高的技能，以及最难的长程编码，它并不合适，Z.ai 自己的表格把 GLM-5.3 放在前面。工具调用的情况是最没有定论的部分：文档限制你只能用 `tool_choice: auto`，厂商数字看起来很强，而独立的调用级证据缺位。把第一周当作一次实验，配上书面路由规则、每次运行的 token 记录，以及升级到 GLM-5.3 的路径。
+
+## 常见问题
+
+**在 GLM-5.3-Flash 上一次技能运行要花多少钱？**
+按 Z.ai 标价，我们虚构的形态里，一次性分诊技能 $0.0012，20 轮修复并测试循环 $0.0156，五子智能体扇出 $0.0280。真实数字取决于 token 数和提示被缓存的比例。
+
+**GLM-5.3-Flash 实际上比 GLM-5.3 便宜九倍吗？**
+按 token 算是的：输入约 9.3 倍，输出约 8.8 倍。按完成的任务算，Z.ai 自己的强度图暗示约 4.7 到 6.8 倍，因为 Flash 输出了更多 token。这个比值是我们根据读图数据算的，属于近似。
+
+**能强制 GLM-5.3-Flash 调用某个特定工具吗？**
+按 Z.ai 的函数调用文档不能：`tool_choice` 只支持 `auto`。把要求写进技能提示，并在代码里校验结果。
+
+**便宜的步骤可以关掉思考吗？**
+不能。思考始终开启。对简单步骤把 `reasoning_effort` 设为 `low`，因为默认值是 `max`。
+
+**Flash 在技能里接受图像吗？**
+接受。Flash 接受文本、图像、视频和文件输入，输出文本。GLM-5.3 只接受文本。
+
+**它在 GLM Coding Plan 上可用吗？**
+可用，额度系数是 2.3、0.56 和 8，而 GLM-5.3 是 6.9、1.7 和 24，Z.ai 概括为可用额度约三倍。
+
+**子智能体应该全部跑在 Flash 上吗？**
+合理的默认是：有边界的工作者任务且输出 schema 经过校验时用 Flash，负责规划与合并的父智能体用 GLM-5.3。承诺之前，请在自己的任务上测量。
+
+## 来源
+
+核对于 2026 年 10 月 29 日。
+
+**Z.ai，一手来源**
+
+- [GLM-5.3-Flash: Frontier Intelligence, Flash Cost](https://z.ai/blog/glm-5.3-flash)：架构、基准表、强度图和帕累托图、Ox Alpha 声明
+- [GLM-5.3: Frontier Coding with Emergent Cyber Capabilities](https://z.ai/blog/glm-5.3)：基准表、强度图、API 变更
+- [Z.ai 价格页](https://docs.z.ai/guides/overview/pricing) 和 [发布说明](https://docs.z.ai/release-notes/new-released)：标价与发布日期
+- [GLM-5.3-Flash 指南](https://docs.z.ai/guides/vlm/glm-5.3-flash)、[GLM-5.3 指南](https://docs.z.ai/guides/llm/glm-5.3)、[迁移指南](https://docs.z.ai/guides/overview/migrate-to-glm-new) 和 [函数调用文档](https://docs.z.ai/guides/capabilities/function-calling)：参数、限制、思考与 tool_choice 规则
+- [GLM Coding Plan 概览](https://docs.z.ai/devpack/overview)：额度、系数、高峰时段
+- [Z.ai 在 X 上：Flash 定价帖](https://x.com/Zai_org/status/2092616209426493766)
+
+**权重与网关**
+
+- [Hugging Face 上的 GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash) 和 [Hugging Face 上的 GLM-5.3](https://huggingface.co/zai-org/GLM-5.3)：许可证、服务框架、提交历史
+- [OpenRouter：z-ai/glm-5.3-flash](https://openrouter.ai/z-ai/glm-5.3-flash) 和 [Ox Alpha 隐身页面](https://openrouter.ai/stealth/ox-alpha)：服务商行与隐身公告
+
+**独立来源与媒体**
+
+- [Artificial Analysis：GLM-5.3-Flash](https://artificialanalysis.ai/models/glm-5-3-flash)：速度和许可证字段，抓取时指数字段为 N/A
+- [The Batch 关于 Ox Alpha 的报道](https://www.deeplearning.ai/the-batch/what-we-know-about-preview-model-ox-alpha)：媒体背景
+
+{% callout type="warning" %}
+本文中的任何基准都不是我们复现的。所有性能数字都是 Z.ai 厂商报告的，强度图和帕累托图的数值是读图所得，成本和额度表是本文根据 Z.ai 公布的价格与系数、用虚构运行形态做的算术。OpenRouter 上的价格因服务商而异，且会不经通知变动。
+{% /callout %}
