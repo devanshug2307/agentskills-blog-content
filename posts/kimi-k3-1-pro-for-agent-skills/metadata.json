@@ -1,0 +1,21 @@
+{
+  "title": "Kimi K3.1 Pro for agent skills: setup, cost per run, and rate limits",
+  "slug": "kimi-k3-1-pro-for-agent-skills",
+  "category": "Guides",
+  "description": "Run SKILL.md workflows and subagents on Kimi K3.1 Pro: harness setup, worked cost per skill run, cache effects, API tiers, and subscription quota.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Kimi K3.1 Pro",
+    "agent skills",
+    "subagents",
+    "SKILL.md",
+    "Kimi Code CLI",
+    "Claude Code",
+    "Codex",
+    "cost per run",
+    "rate limits"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/kimi-k3-1-pro-for-agent-skills/hero.png"
+}
