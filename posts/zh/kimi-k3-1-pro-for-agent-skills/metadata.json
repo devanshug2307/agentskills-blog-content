@@ -1,0 +1,21 @@
+{
+  "title": "面向智能体技能的 Kimi K3.1 Pro：配置、单次运行成本与速率限制",
+  "slug": "kimi-k3-1-pro-for-agent-skills",
+  "category": "Guides",
+  "description": "在 Kimi K3.1 Pro 上运行 SKILL.md 工作流与子智能体：工具链配置、技能单次运行成本推算、缓存影响、API 档位与订阅配额。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Kimi K3.1 Pro",
+    "智能体技能",
+    "子智能体",
+    "SKILL.md",
+    "Kimi Code CLI",
+    "Claude Code",
+    "Codex",
+    "单次运行成本",
+    "速率限制"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/kimi-k3-1-pro-for-agent-skills/hero.png"
+}
