@@ -1,0 +1,20 @@
+{
+  "title": "技能作者能从 Caveman 的 SKILL.md 学到什么",
+  "slug": "caveman-skill-review-for-skill-authors",
+  "category": "Deep Dives",
+  "description": "从技能作者的角度评审 Caveman v4.0：简洁输出规则、激活方式、渐进式披露、与其他技能组合，以及如何测量你自己的 SKILL.md。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Caveman 技能",
+    "SKILL.md",
+    "技能编写",
+    "渐进式披露",
+    "省 token",
+    "输出风格技能",
+    "Claude Code 技能",
+    "测量技能成本"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/caveman-skill-review-for-skill-authors/hero.png"
+}
