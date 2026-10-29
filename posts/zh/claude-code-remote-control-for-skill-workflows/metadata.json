@@ -1,0 +1,20 @@
+{
+  "title": "用手机监督 Claude Code 的 skill 和 subagent 任务",
+  "slug": "claude-code-remote-control-for-skill-workflows",
+  "category": "Guides",
+  "description": "如何用 Remote Control 在手机上监督长时间运行的 Claude Code skill 和 subagent 任务：哪些提示会送达、哪些 skill 可以无人值守，以及该设置哪些规则。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Claude Code Remote Control",
+    "Claude Code skills",
+    "subagent",
+    "权限模式",
+    "权限规则",
+    "推送通知",
+    "SKILL.md",
+    "无人值守的智能体任务"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-remote-control-for-skill-workflows/hero.png"
+}

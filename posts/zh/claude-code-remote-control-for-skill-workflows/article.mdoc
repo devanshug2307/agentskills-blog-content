@@ -1,0 +1,205 @@
+在工位上启动一个长时间的 skill 任务，再从别处查看进度，这是 Claude Code Remote Control 最直接的用法。对编写和运行 skill、subagent 并行任务和多步骤 SKILL.md 工作流的人来说，真正有意思的问题比“能不能连上”更具体：当任务里有 subagent 在后台运行时，手机上到底能看到什么？哪些提示会推送到你手上，哪些会让任务停下来等你回答？人不在的时候，哪些 skill 适合放着不管？
+
+本文只依据 Anthropic 自己的官方文档回答这些问题，核对日期为 2026年10月28日。文档中的使用条件很简短：用 claude.ai 账号登录，套餐为 Pro、Max、Team 或 Enterprise（Team 和 Enterprise 需要由 Owner 先开启），不能使用 API key，也不能走 Amazon Bedrock、Google Cloud 或 Microsoft Foundry。完整清单见 [Remote Control 文档页](https://code.claude.com/docs/en/remote-control)。下文所有内容都不来自我们自己的测试。文档写明的行为，我们会标注出处；属于判断的部分，比如哪些 skill 可以无人值守，我们会明确标为我们自己的判断。
+
+## 手机上能看到 skill 任务的哪些内容
+
+Remote Control 并不会把任务搬到别处。会话仍然在你的机器上执行，手机或浏览器只是一扇窗口。会话已有的一切都留在本地：项目文件、MCP 服务器、工具、hooks，以及这台主机上安装的 skills。skill 不需要装在手机上，因为手机从不执行任何东西。
+
+文档里有一点对重度使用 subagent 的 skill 很重要：对话内容，以及 subagent 和动态工作流的进度，会在终端、浏览器和手机之间保持同步。设备连上时，会显示会话已经在后台运行的 subagent 和工作流；在设备上停止其中一个，就会停止你机器上的那个任务。所以手机上的停止按钮对并行任务来说是真正的控制手段，而不是只读的状态指示。
+
+你能发送的内容也不止纯文字消息。附上的照片会直接被 Claude 看到。其他文件会被下载到主机，并作为 `@` 引用传入；如果某个文件下载失败，Claude 会收到一条类似 `[1 of 3 attachments did not arrive]` 的说明来代替。一些内置命令也能在手机和网页上使用，其中几个在长时间运行 skill 时直接有用：
+
+- `/context`、`/compact` 和 `/clear`，用于管理很长的会话。
+- `/usage`，查看你距离套餐额度还有多少。
+- `/model` 和 `/effort`，在手机和网页上以参数形式传值，例如 `/model sonnet` 或 `/effort high`。
+- `/rename`，修改会话列表中显示的会话标题。
+- `/recap`、`/mcp`（手机上为文字摘要）和 `/config key=value`。
+
+有些命令只能在本地使用。`/plugin` 和 `/resume` 只能在本地 CLI 中使用。`/mcp` 选择器在手机和网页上不可用，所以需要重新授权的 claude.ai 连接器，必须在主机上用 `claude mcp login "claude.ai Slack" --no-browser` 处理，然后执行 `/mcp reconnect`。从手机发送、以 `!` 开头的一行，会作为普通消息交给 Claude，而不会进入 shell 模式。
+
+文档里有一句话专门涉及 skill。它说从手机或网页输入 `/claude-api` 时该命令不可用，但 Claude 在那里仍然可以自己加载这个 skill。这是我们读到的页面中唯一一处与 skill 相关的表述。自定义 skill 的斜杠命令从手机输入是否同样如此，文档没有说明，我们也没有测试。建议按“用自然语言让 Claude 自己加载 skill”来规划，并在依赖输入形式之前，先在自己的环境里验证。
+
+{% figure src="https://academy.claude.com/og/tutorials/using-claude-code-remote-control.png" alt="Claude Academy 教程《Using Claude Code Remote Control》的标题卡，卡片内的终端示意图显示一行 remote control active 和一行 awaiting approval on mobile" caption="Anthropic Academy 中 Remote Control 教程的标题卡。其中的终端是对“在手机上批准”流程的示意图，不是真实会话截图。（图片：Claude Academy，Anthropic）" /%}
+
+## 手机上的审批循环
+
+用手机监督 skill，大部分工作其实是处理审批。文档中记录的两种行为决定了这个循环的手感。
+
+### 哪些内容会推送到手机
+
+权限提示和 `AskUserQuestion` 提问都会转发到已连接的设备，Claude Code 会让它们一直保持打开，直到有人回答。通知负责告诉你有一次运行正在等你。Remote Control 处于活动状态时，Claude 可能向手机推送消息，通常在长任务结束或需要你做决定的时候。你也可以在提示词里要求推送，文档给出的例子是 “notify me when the tests finish”。设置方法是：安装 app，使用同一个账号登录，授予操作系统的通知权限，再到 `/config` 中开启推送，可选择主动通知、权限提示和提问，或两者都开。更细的按事件设置并不存在。
+
+对 skill 作者来说，实际含义是：这两个开关决定了一个卡住的任务能不能联系到你。如果某个任务需要为新工具获得批准，而权限提示的开关是关着的，它会一直停在那里，直到你自己打开 app。
+
+### 哪些会一直等，哪些会过期
+
+并不是所有对话框的行为都一样，这些差别决定了任务能不能放心撒手。
+
+| 项目 | 文档记录的行为 |
+|---|---|
+| 权限提示 | 保持打开，直到你回答 |
+| `AskUserQuestion` 提问 | 保持打开，直到你回答 |
+| 其他转发的对话框，例如安全拒绝后的模型选择提示 | 默认五分钟后关闭，并采用其“不操作”的默认值；可用 `dialogExpiry` 调整或关闭（v2.1.224 或更高版本） |
+| Fable 模型的用量额度同意提示 | 只在会话运行的地方显示，不会出现在你的设备上；如果关闭之前终端前没有人回答，这一轮会在不发送请求的情况下结束 |
+| claude.ai 连接器登录 | `/mcp` 选择器在手机和网页上不可用；请在主机 shell 中授权 |
+
+由此得出两点。第一，权限提示很多的任务会变成一连串等待，而文档没有给这些提示设置过期时间。一个在十二步中的第三步要求批准的 skill，会在你联系不上的整段时间里一直停在那里。第二，有几种对话框根本不等人。它们会过期并落到默认值，或者直接结束一轮，所以依赖其中任何一种的任务，耐心不如权限提示那么好。
+
+{% figure src="https://pbs.twimg.com/media/HEnnQaub0AAavjA.jpg" alt="iPhone 截图，显示 Claude app 的 Code 标签页：会话标题为 claude-cli-internal 中的 Add Vim keybindings for same-line navigation，Changes 列表中有 src/vim/motions.ts 和 src/vim/transitions.ts" caption="Boris Cherny 介绍 Claude 移动端 app 的系列推文中第一条所附的截图：Code 标签页中的一次编码会话摘要，并列出了改动的文件。它展示了在手机上审阅一次已完成任务可能是什么样子，但本身并不能证明该会话是 Remote Control 会话。（图片：Claude Code 团队的 Boris Cherny，来自 X 上的 @bcherny，2026年3月30日）" /%}
+
+{% x id="2038454339933548804" /%}
+
+## 无人值守 skill 的权限设置
+
+### 模式：Remote Control 会话中可选的
+
+根据权限模式页面，如果会话是你自己在本地机器上启动的，app 中可以选择四种模式：Manual、Accept edits、Plan 和 Auto。在 app 里无法选择 Bypass permissions。切换入口是 claude.ai/code 上提示框下方的下拉菜单；在移动端 app 中则是提示框里的加号按钮，然后点 Permission。下拉菜单显示的就是本地会话当前所处的模式，包括在终端里设置的模式，任何一端做出的更改都会出现在另一端。你也可以在启动服务器时设置起始模式，例如 `claude remote-control --permission-mode acceptEdits`。
+
+| 模式 | 文档的说法 | 适合 skill 任务吗（我们的判断） |
+|---|---|---|
+| Manual | 每种工具首次使用时提示 | 每一种新的工具调用都会提醒手机；适合不熟悉的 skill 的首次运行 |
+| Accept edits | 自动接受文件编辑，以及工作目录或 `additionalDirectories` 中常见的文件系统命令，如 `mkdir`、`touch`、`mv` 和 `cp` | 适合只修改 worktree 内文件的 skill |
+| Plan | Claude 读取文件并运行只读 shell 命令，但不会编辑你的源文件 | 适合研究和审查类 skill |
+| Auto | 后台分类器在操作执行前先检查；减少提示但不保证安全；明确的 ask 规则仍会强制提示 | 适合较长的任务，并为你在意的步骤配上 ask 规则 |
+| Bypass permissions | 跳过提示；文档建议只在容器或虚拟机等隔离环境中使用；app 中无法选择 | 不是适合手机监督的模式 |
+| dontAsk | 自动拒绝所有会触发提示的操作；文档将其描述为适用于锁定的 CI 和脚本；不在 app 的列表中 | 是另一类工具，面向脚本而不是有人监督的运行 |
+
+Auto 模式附带可用性条件。截至 Claude Code v2.1.283，终端和 VS Code 的交互式会话默认以它启动，文档还列出了对模型和服务商的要求。它的分类器还会审查 Claude 通过 `SendMessage` 发给另一个 agent 的每条消息，如果你的 skill 驱动的是 agent 团队，这一点就很重要。根据文档，auto 模式会减少权限提示，但不保证安全，也不能代替对敏感操作的审查。
+
+文档还描述了一种不用分类器、也能减少提示的办法：Manual 模式配合自动允许模式的 Bash 沙箱，先用 `claude --permission-mode default` 启动，再运行 `/sandbox`，支持 macOS、Linux 和 WSL2。具体到 Remote Control 服务器，`--sandbox` 和 `--no-sandbox` 标志在 v2.1.300 中已被移除，现在改为在设置文件中开启沙箱。
+
+### 规则，以及它们在哪里生效
+
+权限规则按固定顺序评估：先 deny，再 ask，最后 allow。第一个匹配的规则决定结果，具体程度不会改变这个顺序，所以 allow 规则无法在 deny 规则里开例外。文档还明确说，权限规则由 Claude Code 执行，而不是由模型执行。你在提示词或 `CLAUDE.md` 里写的指令会影响 Claude 想做什么，但不会改变 Claude Code 允许什么。
+
+这句话对 skill 作者有直接影响，以下推论是我们自己的。SKILL.md 里写的“没问过我就绝不 push”只是对模型的请求。如果 push 真的必须先到你的手机上确认，就需要 ask 规则或 PreToolUse hook。规则无论你用哪台设备都有效，所以应该把规则用在那些你原本想靠措辞来保护的步骤上。
+
+### 按参数控制 subagent 派生和 skill
+
+deny 和 ask 规则可以匹配内置工具的顶层输入参数，写法为 `Tool(param:value)`。文档给了三个与并行 skill 相关的例子：
+
+- `Agent(model:opus)` 匹配请求 Opus 模型档位的 Agent 调用。
+- `Agent(isolation:worktree)` 匹配请求 git worktree 的 Agent 调用。
+- `Bash(run_in_background:true)` 匹配在后台运行的 Bash 调用。
+
+给第一条加上 ask 规则，会让每一次 Opus 档位的 subagent 派生都变成手机上的一次决定，这是成本关卡，而不是安全关卡。同一页还提到，`Skill(skill:)` 的 deny 规则会按 skill 的任何名称匹配，比如别名或显示名称，所以你可以屏蔽那些绝不希望无人值守运行的 skill。我们没有测试过这些规则。文档还补充了几条限制：参数必须是工具输入的直接字段；模型省略的参数永远不会被匹配；比较对象是 Claude 发送的字面输入，且在任何规范化之前；`Agent(model:opus)` 能匹配别名 `opus`，但匹配不了完整的模型 ID。文档建议加上 `--verbose` 运行，以查看每次工具调用中确切的参数名称和值。
+
+下面是一个示意性的设置片段，并不是对你的仓库的建议：
+
+```json
+{
+  "permissions": {
+    "deny": ["Bash(git push *)"],
+    "ask": ["Agent(model:opus)", "Bash(run_in_background:true)"]
+  }
+}
+```
+
+针对命令文本的规则有先天的缺口，因为同一个操作可以有很多种写法。文档建议，对不依赖命令文本的文件系统和网络限制使用沙箱；如果想在命令执行前用自己的逻辑检查完整命令，就用 PreToolUse hook。
+
+### 项目 skill 与工作区信任
+
+如果你运行的 skill 来自不是你自己写的仓库，文档信任表里有一行值得读一读。设置文件中的 hooks、`env` 块、辅助命令，以及项目 skill 的 hooks 和 `allowed-tools`，在你信任该文件夹之前就已经被使用；文档还补充说，工作区信任在任何会话里都不会限制 skill 的 `allowed-tools`。相比之下，项目 subagent 的 frontmatter hooks 在你接受信任之前不会被使用。Remote Control 服务器的文档默认行为也相关：在不受信任的目录中，它会询问 `Trust? [y/N]`；在非终端环境中，它会以 “Workspace not trusted” 退出。所以无人值守的服务器第一次启动就退出，是符合文档的行为，解决办法是先在终端里信任该目录一次。
+
+由此得出的实际规则，同样是我们的解读：让任何第三方 skill 在无人看管下运行之前，先打开它的 SKILL.md frontmatter，看看它预先批准了什么。
+
+## 哪些 skill 可以放心让它跑
+
+上面记录的行为引出了四个问题，可以拿来问任何一个 skill。它是否需要会阻塞的审批？它的影响是否留在代码检出目录或 worktree 内？git 能否撤销？有没有东西离开这台机器？下面的分级是基于这些问题的编辑性框架，并非 Anthropic 发布的内容。
+
+| 等级 | 典型的 skill 工作 | 建议的设置 | 可以无人值守吗 |
+|---|---|---|---|
+| A：只读 | 研究、代码审查、规划、仓库摘要 | Plan 模式，或 Manual 加上收紧的 allow 规则 | 可以；等待完成推送即可 |
+| B：在 worktree 内编辑 | 重构、生成测试、在分支上更新文档 | 使用 `--spawn worktree` 的 Accept edits；对 push 和部署命令设置 deny 规则 | 有边界的任务可以；回来后审阅 diff |
+| C：影响到检出目录之外 | push、开 pull request、部署、发送消息、迁移 | 带 ask 规则的 Manual 或 Auto；在手机上逐步批准 | 只在你能回答的时候；会话会等待 |
+| D：不可逆或涉及凭据 | 删除数据、修改生产环境、轮换密钥 | 不要从手机上运行 | 不可以 |
+
+worktree 隔离是让 B 级可行的关键。在服务器模式下，`--spawn worktree` 会让每个按需创建的会话拥有自己的 git worktree，所以并行会话不会修改同一个目录。它需要 git 仓库或 WorktreeCreate hook，运行时按 `w` 可以在同目录和 worktree 派生之间切换，选择会按项目保存。默认并发容量是 32 个会话。
+
+### 注册表中的例子
+
+下面这些 skill 我们都没有运行过。分类来自它们在注册表中的描述，也就是说只是一个起点，需要通过阅读每个 SKILL.md 来确认。
+
+| Skill | 注册表描述 | 可能的等级及原因 |
+|---|---|---|
+| [code-review](https://agentskills.codes/skills/code-review) | “Code review assistance with linting, style checking, and best practices” | A；如果会应用修复则为 B；阅读和汇报都容易放着不管 |
+| [code-change-verification](https://agentskills.codes/skills/code-change-verification) | 当改动影响 OpenAI Agents Python 仓库的运行时代码、测试或构建行为时，运行必须执行的验证流程 | A 或 B；它与该仓库绑定，所以是可借鉴的模式，不是直接可用的成品 |
+| [create-worktree-skill](https://agentskills.codes/skills/create-worktree-skill) | 在用户要求时创建 worktree 的 skill | B；git 状态在本地变化，且可逆 |
+| [create-handoff](https://agentskills.codes/skills/create-handoff) | “Create handoff document for transferring work to another session” | A 或 B；它写一份文档，而这份文档正适合在手机上阅读 |
+| [debug-hooks](https://agentskills.codes/skills/debug-hooks) | “Systematic hook debugging workflow” | B；hooks 会执行命令，所以对它们的改动在下次运行前值得审阅 |
+| [create-subagents](https://agentskills.codes/skills/create-subagents) | 关于创建和使用 Claude Code subagent 与 Task 工具的指导 | skill 本身为 A；风险在于它帮你定义的 subagent，应当给它们最窄的工具范围 |
+
+关于在并行任务中如何选择模型和 effort，我们之前的文章 [Opus 5.5 与 Sonnet 5.5 用于 agent skills](/zh/blog/opus-5-5-vs-sonnet-5-5-for-agent-skills) 讨论了按 skill 路由。想看另一款 agent 产品如何设计审批，可以读 [OpenAI dots：权限模型与该交接什么](/zh/blog/openai-dots-permissions-and-workflows)。
+
+## 为受监督的运行准备主机
+
+文档里记录的各个部分可以组合成一套简短的设置。下面的命令和标志来自 Remote Control 页面，组合方式是我们自己的安排。
+
+```bash
+# 在常开的主机上，放进 tmux 里，这样 SSH 断开也不会结束会话
+tmux new -s skills
+cd ~/projects/my-app
+claude remote-control --name "my-app skills" --spawn worktree --permission-mode acceptEdits
+```
+
+文档建议在远程机器上使用 tmux 或 screen，让会话在 SSH 断开后继续存活。离开之前，有几项设置值得先定下来：
+
+1. 使用 claude.ai 账号登录，而不是 API key 或 `claude setup-token` 令牌。`setup-token` 和 `CLAUDE_CODE_OAUTH_TOKEN` 的令牌只用于发出模型请求，无法建立 Remote Control 会话。
+2. 给服务器起名。`--name` 设置会话列表中的标题；会话一多，在小屏幕上靠易读的名字才能找到对的那个。
+3. 在 `/config` 中开启推送，包括权限提示和提问的开关，并在同一账号上安装 app。
+4. 用 `--permission-mode` 有意识地选择起始权限模式。无法识别的模式会让服务器在启动时停止。
+5. 先在终端里信任该目录一次，免得无人值守的启动卡在信任提示上退出。
+6. 离开前先做好 `/mcp` 检查和连接器授权，因为手机上没有那个选择器。
+
+`remoteControlAtStartup` 可以让会话自动连接，但只有你的用户设置才能把它打开，因为写在项目或本地设置中的 true 值会被忽略。写在 `remote-control` 之前的全局标志不会传给服务器创建的会话。对其中一些标志，例如 `--settings`，Claude Code 会拒绝启动并告诉你该删除哪一个。
+
+{% youtube id="Ko7_tC1fMMM" /%}
+
+上面的视频是 Anthropic 自己对这项功能的演示，链接自它的 Academy 教程。我们通过 YouTube 的 oEmbed 接口确认了该视频及其标题存在，这里没有总结它的内容。
+
+## 把 SKILL.md 写得便于监督
+
+文档没有涉及面向远程使用的 skill 编写，所以本节是我们的建议，基于文档记录的行为，且未经测试。
+
+1. **把决定写成提问，而不是大段文字。** `AskUserQuestion` 提问会保持打开直到被回答，而推送开关也覆盖提问。需要人来选择并以提问形式提出的 skill，到手机上就是一次点按就能回答的东西。skill 能否稳定触发这个工具，需要在你自己的环境里检查。
+2. **不要把强制约束写在文字里。** 规则由 Claude Code 执行，所以必须停下来等人的步骤应该放进 ask 规则或 hook，SKILL.md 里的措辞只作为后备。
+3. **每个阶段结束时写一行简短的状态。** 在手机上你读的是会话的末尾。每个阶段之后一行摘要，能让很长的任务不用滚动也看得懂。
+4. **把结果写进 worktree 里的文件。** 磁盘上的报告能在连接中断和会话恢复后保留下来，以后还可以附到 pull request 上。
+5. **让步骤可以安全地重复执行。** 文档说，服务器模式下崩溃的会话，在你从已连接设备发消息时会被重新服务（v2.1.238 或更高版本），而 `--continue` 和 `--session-id` 能在服务器停止后大约四小时内恢复会话（v2.1.200 或更高版本）。步骤可以无损重复的 skill，比假定只会干净跑一遍的 skill 更适合这种模型。
+6. **要求在结束时通知。** 文档自己的例子，是在提示词里加一句让它在测试结束时通知你，同样的办法也适用于 skill 的最后一个阶段。
+7. **不要让仅限本地的命令出现在运行中途。** 如果某个 skill 在流程中间需要 `/plugin`、`/resume` 或 `/mcp` 选择器，手机提供不了它们。
+
+## 回来之后要检查什么
+
+连接断开，看上去和“任务停了”还是“任务仍在继续”没有区别。文档说，“Remote Control disconnected” 和 “Can't reach” 这两条消息表示你的浏览器或 app 与你电脑上的 Claude Code 失去了联系，而这两条消息都不会告诉你 Claude 或你正在关注的 subagent 是否还在工作。需要检查的状态在主机上，也就是运行 Claude Code 的那个终端里。
+
+| 发生了什么 | 文档记录的行为 | 该怎么做 |
+|---|---|---|
+| 机器休眠或网络中断（交互式会话） | 机器或网络恢复后自动重连；只要中断持续就会一直重试 | 打开会话列表；会话应该会回来 |
+| 长时间中断（服务器模式） | 大约 10 分钟后放弃，进程退出 | 重新运行 `claude remote-control`，然后用 `-c` 继续 |
+| VPN 或网络变化后出现 HTTP 403 拒绝 | 交互式会话最多重试三分钟，然后断开并指出是什么拒绝了它 | 检查 VPN、代理和防火墙 |
+| 约 30 分钟内与服务器没有联系 | 交互式会话可能断开，并给出相应说明 | 运行 `/remote-control` 重新连接 |
+| 服务器模式的会话崩溃 | 从已连接设备发一条消息，Claude Code 会重新服务它（v2.1.238 或更高版本） | 无需重启 |
+| 服务器已停止 | 可用 `--continue` 或 `--session-id` 在大约四小时内恢复会话（v2.1.200 或更高版本） | 在该时间窗口内恢复，或重新开始 |
+| 有审批在等待 | 提示保持打开直到回答 | 回答它，或下次降低需要审批的范围 |
+
+回来之后，先检查 worktree 的 diff，再看 subagent 列表，然后用 `/context` 和 `/usage` 查看这次运行消耗了多少会话上下文和套餐额度。关于连接错误以及每条文档消息的详细含义，Remote Control 页面的故障排查一节为每条消息都列出了原因和解决办法。
+
+## 我们无法验证的内容
+
+- 我们没有测试 Remote Control 或这里提到的任何 skill。所有行为都以 Anthropic 在 2026年10月28日 的文档为准，而文档引用了很多版本号，请把 `claude --version` 与它们对照。
+- 自定义 skill 的斜杠命令从手机或网页输入是否有效，文档没有说明。我们找到的唯一与 skill 相关的表述是 `/claude-api` 那句话。
+- 文档没有说明，并行任务中某一个 subagent 上等待的权限提示，会如何影响其他 subagent。我们只按文档所说，把该提示描述为在等待，没有再多说什么。
+- 我们无法确认用 `--permission-mode` 启动的服务器是否接受权限模式页面中列出的所有模式。文档里的示例用的是 `acceptEdits`。
+- Remote Control 页面没有列出专属于该功能的用量配额。受监督的运行如何计入你的套餐，我们读到的页面里没有涉及。
+- 分级框架和注册表分类是我们根据文档记录的行为和注册表描述做出的判断，不是测试结果。
+- 早期的报道描述的功能比今天的文档更窄；例如 Simon Willison 在 2026年2月 的一篇文章提到一次只有一个会话。凡是早于这个页面的说法，都应视为历史。当前服务器默认容量是 32 个会话。
+
+## 结论
+
+如果 skill 和 subagent 的工作本来就运行在你能控制的机器上，Remote Control 是监督它们的一个合理方式：它让本地的工具、hooks 和 skills 原地不动，并给手机提供真正的控制手段：回答提示、停止后台任务和切换模式。它做不到的是让无人值守的运行自己变得安全。安全来自你离开之前做出的决定：起始模式、针对关键步骤的 ask 和 deny 规则、每个会话一个 worktree，以及一个适合在小屏幕上阅读的 skill。
+
+如果只带走一件事，就带走“文字”与“规则”的区分。任何你需要在发生之前就拦住的事，都应放进由 Claude Code 执行的规则或 hook 里；任何你只是想引导一下的事，放进 SKILL.md 就行。A 级和 B 级 skill 很适合用手机监督。C 级 skill 在你能回答的时候可以用，D 级 skill 应该留在键盘前。
+
+{% x id="2032533699116355819" /%}
