@@ -1,0 +1,234 @@
+Caveman is one of the most widely starred output-style skills anyone has published, and its SKILL.md is 89 lines long. That makes it a useful specimen for a skill author, separate from the question of whether the "talk like a caveman" voice saves you money. The file shows how a popular skill words its rules, when it tells the model to break them, how it keeps state outside the markdown, and where it hands work to sibling skills. The project's documentation also has a habit that most skill repositories lack: a page that lists the savings numbers it does not have.
+
+This article reads the file as a template. It is written for people who build and maintain skills, subagents and SKILL.md workflows, so it skips the install walkthrough and the product comparison. The evidence behind the savings claims is summarised only where it changes how you should write or test your own skill. Sources were opened on October 29, 2026, no hands-on run of Caveman was done for this piece, and every figure that belongs to the project is labelled as the project's own.
+
+{% x id="2077744835457397224" /%}
+
+## What the File Contains
+
+The v4.0.1 SKILL.md has a short frontmatter block and a body of nine numbered rules, a list of seven cases where the rules stop applying, and a four-item check to run before sending. A local count with the `o200k_base` tokenizer from tiktoken, which approximates but does not match the tokenizer any Claude or Codex model bills with, gave 1,158 tokens for the whole file: about 70 for the frontmatter and 1,087 for the body. The project's README estimates its voice rules at about 1,160 input tokens, so the two numbers agree.
+
+| Part of the file | What it holds | Why it matters to an author |
+|---|---|---|
+| Frontmatter | `name`, plus a `description` that lists trigger phrases such as "caveman mode", "be brief" and "less tokens" | The only part that is always in context, so it carries all the routing weight |
+| Persistence | "Every response, whole session, until user says stop caveman or normal mode" | A style skill must say how long it lasts, or the model drifts back to defaults |
+| Why | Four short reasons, including "A dropped negation costs more than every token saved" | Gives the model a principle to apply when a rule does not cover the case |
+| Rules 1 to 9 | Answer first, kill ceremony, short words, optional articles, one idea per sentence, payload verbatim, bounded status during tool runs, user's language, never perform caveman | Each rule is a single behaviour with a named failure |
+| When to break the rules | Security warnings, irreversible actions, step order, confused users, persisted artifacts, harness status lines, questions to the user | Exceptions are written down instead of left to judgment |
+| Pre-send check | Delete announcing first sentences and recap last sentences, confirm negations and exact payload, expand ambiguous lines | A cheap self-review the model can run in one pass |
+
+Two details stand out before any analysis. The file never mentions the project's proxy, CLI or account, so the skill still works as a plain markdown file in any host that loads skills. And it contains no examples longer than a line or two, which keeps the body near the size the project says it costs. Those choices are the first lesson: a style skill stays cheap when it is a rule list with a handful of contrast pairs, not a tutorial.
+
+## Writing Terse-Output Rules That Hold Up
+
+Most "be concise" instructions fail in one of two ways. They are too vague to change behaviour, or they push compression so hard that a dropped "not" turns an instruction into its opposite. Caveman's rules are an instructive middle path, and several of its habits transfer to any skill that controls how a model writes.
+
+**State the failure each rule prevents.** The Why block gives four numbered reasons, and the fourth is the guardrail: clarity beats compression. Rule 4 then says articles are optional but "meaning never", and lists the words that must survive, namely not, never, no, only and except. A rule that names the specific thing that must not be lost is easier for a model to follow than a general call for care.
+
+**Pair a bad example with a good one.** Rule 1 contrasts a long apology-plus-diagnosis with a one-line answer about a token expiry check using the wrong comparison operator. Rule 4 contrasts a mangled migration warning with a clean one. Each pair costs a few dozen tokens and does more than a paragraph of description. Keep the pairs to the cases where models usually go wrong, not to cases that are already obvious.
+
+**Cap the unit, not the length.** Rule 5 sets a floor borrowed from ASD-STE100, a controlled-English standard used in aircraft maintenance manuals: 20 words at most, active voice, one term per thing, a pronoun only when the referent is obvious. A cap on sentence length is easier to check than "be brief", and it produces short output without asking the model to guess a target word count.
+
+**Protect the payload explicitly.** Rule 6 keeps code blocks, commands, paths, API names and quoted errors exactly as they are, and says to show changed lines with a line or two of context rather than a whole file. This is the same split JetBrains found when it tested the skill: agentic output is dominated by code, diffs, tool invocations and exact error text, which the skill leaves alone, so only the narration is compressible. If your own output skill does not say what is untouchable, the model has to guess, and guesses are where silent corruption comes from.
+
+**Handle tool-use text separately.** Rule 7 targets the chatter between tool calls: no text between routine calls, one line before a multi-step run, one line per phase change, one line with the result. In an agent loop this is where a lot of tokens go, and it is a different behaviour from answering a question. If your skill is used in agent sessions, give tool-run narration its own rule instead of folding it into a general style paragraph.
+
+**Forbid the performance.** Rule 9 says never announce the mode, never prefix replies, never add a word to sound like a caveman, and use plain phrasing when it is shorter. Skills that impose a persona tend to grow decorative behaviour that costs tokens and adds nothing. A rule that says "if the flourish is not shorter, drop it" removes that failure mode at the source.
+
+Rule 8 is worth a second look for anyone writing a skill that people use in more than one language. It says to compress the style, not the language, to let an explicit reply-language instruction win, and to leave technical terms and errors verbatim. A style skill written only in English examples can silently force English replies; one line prevents that.
+
+Adjacent skills in the registry cover the same ground from other directions. The [humanizer](https://agentskills.codes/skills/humanizer) skill pushes against AI-sounding prose, which is a different axis from length, and [writing-skills](https://agentskills.codes/skills/writing-skills) is a guide to writing and testing skills themselves. Reading either beside Caveman's file shows how much of the craft is the same: state the behaviour, name the failure, test it.
+
+## Frontmatter and Activation
+
+The Caveman description is short and trigger-heavy: a one-line summary, then the slash command, the phrases "caveman mode", "talk like caveman", "be brief" and "less tokens", and a closing sentence about how to turn it off. The Claude Code skills documentation says that descriptions are loaded into context so the model knows what exists, that the full body loads only when the skill is invoked, and that the combined `description` and `when_to_use` text is cut at 1,536 characters in the skill listing, so the key use case should come first. Caveman's description is far under that cap, which is where a description should sit unless you truly need the room.
+
+Three activation patterns in the project are worth copying or adapting.
+
+1. **State lives outside the markdown.** The persistence section tells the model to stay in the mode until the user says "stop caveman" or "normal mode", and to relay a `Caveman mode: <mode>` value from a hook when one is present. On a host without hooks it falls back to reporting the mode it followed. A markdown rule can say "stay on", but it cannot guarantee the model remembers after a long session; a hook that re-injects the mode can. The project's INSTALL.md documents hook-based starts for Claude Code, Codex and Cursor. That is the project's description of its design, and no independent test of the Codex or Cursor hooks was found for this article.
+2. **Scripted runs start off.** INSTALL.md says that `claude -p` and Agent SDK runs start with Caveman off regardless of config, so tools that parse a reply get plain text, and that you opt in with `/caveman` or the `CAVEMAN_DEFAULT_MODE` environment variable. If your skill changes output format, decide what a non-interactive run should get by default and document the switch.
+3. **Aliases route to siblings.** The file says `/caveman ultra` and `/caveman wenyan` are aliases that should follow the `ultracave` or `megacave` skill instead of this one, and that `/caveman status` reports the mode and changes nothing. The base skill stays small because the heavier modes live in other skills, which leads to the next section.
+
+For skills you do not want the model to trigger on its own, the same documentation describes `disable-model-invocation: true`, which stops automatic loading and also stops the skill from being preloaded into subagents. A style skill with a persistent effect is a reasonable candidate for manual invocation, because a model that auto-loads it at the wrong moment changes every later reply in the conversation.
+
+## Progressive Disclosure in Practice
+
+Progressive disclosure means the model reads a little up front and loads more only when needed. For skills there are two layers in the host, the always-visible description and the body that loads on invoke, and a third you build yourself: supporting files and sibling skills that the body points to. Caveman uses all three.
+
+The voice skill is deliberately narrow. Stronger compression lives in `ultracave` and `megacave`, and the memory-file compressor `/caveman-compress` is its own skill with its own benchmark. The README's output table, from a 10-question test on the 3.1.0 rules that the project says it has not re-run, shows why the split helps: against a plain "Answer concisely." control, `/caveman` cuts about 3% more at the median and `/ultracave` about 35% more. A user who wants light touch gets a cheap skill; a user who wants more opts into a different file instead of paying for its text on every load.
+
+| Pattern | Caveman's version | What to copy |
+|---|---|---|
+| Narrow default | One voice skill of about 1,158 tokens | Keep the always-on body to the behaviour everyone needs |
+| Sibling skills for intensity | `ultracave` and `megacave` as separate skills the base file points to | Move optional depth to files that load only on request |
+| Task skill with its own cost | `/caveman-compress` rewrites memory files and keeps a backup | A skill that does a job should carry its own measurement and its own safety step |
+| State and status | `/caveman status` reports the mode and changes nothing | Give every stateful skill a read-only way to inspect itself |
+| Host-level pieces | Hooks, a statusline badge and a CLI | Put what must persist or run every turn outside the prompt |
+
+The Claude Code documentation reinforces the cost side of this: once a skill loads, its content stays in context across later turns, so every line is a recurring token cost, and the guidance is to state what to do rather than narrate how or why. Caveman's file follows that guidance in the rules and spends its words on contrast pairs and exceptions instead. If you want a deeper treatment of splitting a large skill, the [skill-creator](https://agentskills.codes/skills/skill-creator) skill and the [claude-md-progressive-disclosurer](https://agentskills.codes/skills/claude-md-progressive-disclosurer) skill are the registry entries closest to this topic; the second one applies the same idea to CLAUDE.md files.
+
+## Composing with Other Skills
+
+An output-style skill is the hardest kind to compose, because it touches every reply and so collides with whatever else is loaded. Caveman's file settles the collisions in writing, and the way it does so is a template.
+
+**Name what the style does not touch.** The exceptions list says that anything persisted outside chat is written in plain language: code, comments, commits, documentation, issues, pull requests, tickets, memory files and messages to third parties, with `/caveman-compress` exempted because compressing is its job. If another skill produces a commit message or a pull request description, Caveman steps aside. Without that clause, a terse voice would leak into artifacts other people read later.
+
+**Let the harness decide when, and the skill decide how.** The sixth exception says that when a harness asks for a status line or a confirmation, the model gives it. The file's own wording is that the harness decides when you speak and the skill decides how. That one sentence is a precedence rule you can lift into your own skills: a style skill never suppresses output that a workflow requires.
+
+**Give safety content its own mode.** Security warnings, irreversible actions, step orders that a fragment could scramble, and a confused user all trigger full sentences, after which the terse style resumes. Rule seven in the exceptions adds that when the model asks the user a question or offers options it writes full sentences, so the answer comes back right the first time. Any skill that changes tone should say when a safety message overrides it.
+
+**Expect conflicts with writing-quality skills.** A skill that asks for fuller, more natural prose and a skill that asks for fewer words will disagree about the same sentence. The file does not resolve that case by name; it resolves it by scope, since persisted writing is exempt. If you ship a style skill, list the artifact types it should never touch and say which skill wins when two style rules meet. For the cost of running several skills in an agent that routes between models, the posts on [GPT-6 model routing for agent skills](/blog/gpt-6-model-routing-for-agent-skills) and [Opus 5.5 versus Sonnet 5.5 for agent skills](/blog/opus-5-5-vs-sonnet-5-5-for-agent-skills) cover the model side of the trade.
+
+The proxy and CLI pieces are a different kind of composition. Caveman's v4.0.0 release notes describe the CLI as the one install, and the project's SECURITY.md has a data-flow table showing the skill and classic hooks make no calls to a Caveman service, while the local proxy forwards requests to the provider you chose and an optional signed-in router sends recent turns to Caveman Cloud. That table is a good model for anything you ship beyond a markdown file: say, per component, where content goes and whether an account is needed. This article did not audit the code, the signing setup or the service.
+
+## What the Savings Numbers Teach About Claims
+
+Skill authors are tempted to put a percentage in the README. Caveman's history is a case study in what that costs, and the corrections are the useful part.
+
+The launch post on April 4, 2026 said "75% less word", and the early README screenshot repeated "cutting ~75% of tokens". The project's current Honest Numbers page states that earlier stats releases applied a fixed 65% output ratio without a committed reviewed result, that current reports ignore those estimated fields, and that the benchmark harness has no committed reviewed raw result for output reduction against default verbose replies, a row it marks as not published. It also lists the input cost the skill adds as not measured yet, and a section on cases where the skill loses: terse coding questions where the fixed prompt overhead can exceed any saving, agents billed per request such as GitHub Copilot, and a Cursor comparison showing 4.3M tokens with the skill against 1M without, which the project says it could not reproduce.
+
+The README's own tests are labelled with their limits. The output table has a control row, "Answer concisely.", that does most of the shortening: from README figures of 6,983 tokens with no instruction, 4,334 with that sentence and 4,119 with `/caveman`, the control is 37.9% below the baseline and the skill is a further 5.0% below the control. Those percentages are derived here from the README's totals and are not figures the project states. The test was one run of 10 questions on the 3.1.0 rules with `claude-opus-5-5`. The input-side figures, 33.2% fewer input tokens and a 54% cost reduction with the optional router, belong to components other than the voice skill, are self-reported, and carry printed caveats about an older engine and a half-finished run.
+
+| Claim | Measured by | Setup | What a skill author should take from it |
+|---|---|---|---|
+| 8.5% fewer output tokens, quality unchanged (sign test p = 0.82) | JetBrains | 86 of 87 SkillsBench tasks, paired, activation forced, `claude-sonnet-5` at low effort | A ceiling for an output-style skill in agentic coding, not an expectation |
+| About 30% on an early 10-task run | JetBrains | Same team, first run | Did not replicate; their lesson is to never trust a single-trial eval |
+| 3% median over an "Answer concisely." control | Project README | 10 questions, 3.1.0 rules, single run | Always include a one-line instruction as the baseline |
+| Billed output down 44.1%, total cost up 0.06% | Community report in issue 727, as quoted by the project | 300 runs per arm, `claude-opus-4-8` | Cheaper output does not guarantee a cheaper bill |
+| 63.6% fewer response tokens (1,284 to 467) | Elastic | Eight live MCP scenarios, a Caveman variant remade for Elasticsearch | A scoped variant can be measured more cleanly than a general skill, but it is the vendor's own |
+
+Two points follow. First, keep a "not published" row for what you have not measured. The project's habit of printing that state is rarer than it should be, and it is what let this article classify the 75% line as marketing copy without guessing. Second, tie each number to a setup. JetBrains' first run and its final run on the same team and the same benchmark differed by a factor of more than three because the sample was small; a percentage with no run count attached tells the reader nothing.
+
+A related research result sits underneath this design. A paper on arXiv, 2606.24083, evaluates output compression and input compression separately across eight models and five datasets. Its authors report that output compression cut realized cost 1.4 to 2.4 times per model on most API models, input compression raised net cost, and the output-side savings are partly mechanical on short-answer benchmarks. The README labels the paper Adobe Research, which this article did not check against the paper's title page, and the paper tests prompt-level constraints on benchmark questions, not coding agents. The practical lesson for authors is the same as Caveman's own: shorten what the model says and leave the user's prompt alone.
+
+{% figure src="https://pbs.twimg.com/media/HNWh5qCWEAEcOFg.jpg" alt="JetBrains two-panel comic. Normal Dev types a wordy reply with a full TOKEN USE bar at 100 percent. Caveman Dev says Bug found, Fix, Test, Done, with a TOKEN USE bar at 91.5 percent and the label 8.5 percent fewer output tokens." caption="JetBrains' summary graphic for its Caveman test, an illustration with two bars rather than a data chart. Image: @jetbrains on X, July 16, 2026." /%}
+
+## Measuring Your Own SKILL.md
+
+A skill has two costs that a README percentage hides. The first is the file itself: its frontmatter sits in context all the time, and its body loads when invoked and then remains for the rest of the conversation. The second is the effect on output. You can measure the first exactly and the second only by comparing real runs.
+
+**Step 1: count the file.** The script below splits a SKILL.md into frontmatter and body and prints token counts, along with the number of saved output tokens needed to repay one uncached read at several output-to-input price ratios. It uses `o200k_base`, an approximation. If you can run your skill through the provider's own token-counting endpoint, prefer that number.
+
+```python
+"""Count the tokens a SKILL.md adds, split into frontmatter and body.
+
+Usage: python skill_tokens.py path/to/SKILL.md [output_price_ratio ...]
+Tokenizer: tiktoken o200k_base, an approximation, not Claude's tokenizer.
+"""
+import sys, re
+import tiktoken
+
+enc = tiktoken.get_encoding("o200k_base")
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.match(r"^---\n(.*?)\n---\n(.*)$", text, re.S)
+front, body = (m.group(1), m.group(2)) if m else ("", text)
+n_front, n_body, n_all = (len(enc.encode(x)) for x in (front, body, text))
+print(f"chars={len(text)} words={len(text.split())}")
+print(f"frontmatter_tokens={n_front} body_tokens={n_body} file_tokens={n_all}")
+ratios = [float(x) for x in sys.argv[2:]] or [4, 5, 8]
+for r in ratios:
+    # saved output tokens that repay one uncached read of the whole file
+    print(f"output/input price ratio {r:g}: break-even saved output tokens = {n_all / r:.0f}")
+```
+
+On the v4.0.1 Caveman file this printed 1,158 tokens in total. The break-even model is simple: if one output token costs a ratio *r* times one input token, the file pays for a single uncached read once it saves about its own token count divided by *r* output tokens. The paper cited above says output tokens are typically priced four to eight times higher than input tokens, which gives the thresholds below for a 1,158-token file.
+
+| Output to input price ratio | Saved output tokens that repay one uncached read |
+|---|---|
+| 4 times | about 290 |
+| 5 times | about 232 |
+| 8 times | about 145 |
+
+This is a floor on the work your skill has to do, not a forecast. Cached reads cost less than uncached ones, and a body that stays in context is read again on each later turn, so the real balance depends on caching and conversation length. The project itself lists the input cost of the skill as not yet measured. For the cost structure of agent sessions where caching dominates, the post on [Codex usage limits and agent workflows](/blog/codex-usage-limits-agent-workflows) and the one on [ultrafast and pro tiers cost planning](/blog/ultrafast-and-pro-tiers-cost-planning) are the closest siblings on this site.
+
+**Step 2: run paired A/B comparisons.** Pick a repeatable task from your own use and run it with and without the skill, at least five times per arm. JetBrains' paired design is a good template: the same tasks in both arms, one arm forced to activate the skill so you see a ceiling, then a second pass in which the skill has to trigger on its own. Record provider-billed totals from the usage or billing page, not output length. The project's own advice is to compare provider-billed totals on the same task with and without the skill and turn it off if the total goes up.
+
+**Step 3: add a plain-instruction control.** The README's strongest lesson for authors is the "Answer concisely." row. If a one-line instruction in your system prompt gets most of your skill's reduction, the skill's marginal value is in the part that goes beyond it. Run that control in every comparison.
+
+**Step 4: score quality separately.** Token counts cannot show that a terse answer kept a caveat. JetBrains counted outcomes per task, 8 better, 10 worse and 64 tied, and tested the difference with a sign test. A smaller version of this is a checklist of required facts per task that you grade by hand.
+
+**Step 5: read cost, not only tokens.** One JetBrains task past a 200k-token pricing tier billed USD 8.29 against USD 0.33 and moved the whole-run cost total from USD 36.39 to USD 40.60, even though output tokens fell. A community run reported billed output down 44.1% with total cost up 0.06%. Look at the invoice line, and look at outliers before averaging.
+
+| What to record | Why |
+|---|---|
+| Token count of the file, frontmatter and body | Your fixed cost per load |
+| Provider-billed input, cached input and output per run | The numbers that reach the invoice |
+| Runs per arm, at least five | JetBrains' first 10-task result did not hold up |
+| A one-line-instruction control arm | Separates your skill from plain brevity |
+| Outcome per task, graded | Shows whether shorter meant worse |
+| Whether the host re-injects the skill each turn | The project's own Cursor investigation points at rule re-injection |
+
+{% figure src="https://raw.githubusercontent.com/JuliusBrussee/caveman/main/docs/assets/learn-report.png" alt="A Caveman Learn report: a cave score of 62 out of 100, 41 sessions scanned, a ranked list of the places tokens go with a global CLAUDE.md costing 2,340 tokens per turn at the top, and a histogram of how full sessions get." caption="A sample Caveman Learn report from the project README, labelled as inferred in the interface. It is an example from the project's assets, not a measurement of anyone's sessions. Image: JuliusBrussee/caveman on GitHub." /%}
+
+The report above points at where your own measurement should look next. In the sample, the biggest sink is a large always-loaded CLAUDE.md, not the model's replies. The creator made the same point in his own post about the memory-file compressor, which is easier to see than to paraphrase.
+
+{% x id="2041205908382888381" /%}
+
+A skill that trims a file loaded every turn is working on input, and the project reports that `/caveman-compress` takes five files from 6,198 tokens to 4,138, 22.8% to 49.1% each. That is a self-reported figure, and it is a separate mechanism from the voice skill. For an author, the point is that the largest lever may be a file you load constantly. The registry's [context-compression](https://agentskills.codes/skills/context-compression) and [token-budget](https://agentskills.codes/skills/token-budget) skills are worth a look if you want to track context cost as part of your own workflow.
+
+## A Pre-Publish Checklist
+
+Use this list on any skill that changes how an agent writes or how much it reads.
+
+1. The description puts the main use case and the trigger phrases first and stays well under the 1,536-character listing cap.
+2. Every rule names one behaviour and, where it helps, the failure it prevents.
+3. Each rule that is easy to over-apply has a bad and a good example.
+4. The file lists what must stay verbatim: code, commands, paths, errors, numbers and negations.
+5. The exceptions say when safety, irreversible actions or user confusion override the style.
+6. Persisted artifacts such as commits, docs, tickets and memory files are exempt, or the skill explains why not.
+7. A harness that needs a status line or confirmation wins over the style.
+8. State that has to survive a long session is held by something outside the markdown, or the skill says it may drift.
+9. Optional depth lives in sibling files or sibling skills instead of the base body.
+10. The file's token count and break-even are written down, along with how they were measured.
+11. Any savings figure in the README names its setup, run count, model and date, and unmeasured items say so.
+12. Scripted and non-interactive runs have a documented default.
+
+## Limitations
+
+- Caveman was not run for this article. The only local computation is the tiktoken count of the v4.0.1 SKILL.md, and `o200k_base` is not the tokenizer that Claude or Codex bill with.
+- Every figure labelled as the project's own, including the output test, 33.2%, 54% and 4,138 from 6,198, comes from the repository documents and was not reproduced. The 5.0% and 37.9% figures are derived here from the README totals.
+- The JetBrains result covers one model at low effort on one benchmark with activation forced. The paper's affiliation was taken from the README and not checked on its title page.
+- Outside A/B results, including the 44.1% billed-output result and the Cursor comparison, were read as summarised on the project's Honest Numbers page, not on the original issue threads.
+- Codex and Cursor activation is described from INSTALL.md only. No independent test of those hooks was found.
+- The agentskills.codes registry had no page for the official JuliusBrussee/caveman repository on October 29, 2026. Several pages named caveman exist for copies in other repositories, for example [caveman-damian87x](https://agentskills.codes/skills/caveman-damian87x), and this article did not compare those files with the official one.
+- The v4.0 CLI, proxy, router and signing setup were not audited. Star counts, forks and versions change quickly; about 115,900 stars was the count on October 29, 2026.
+
+## FAQ
+
+### What is the main lesson of Caveman's SKILL.md for skill authors?
+
+Keep an always-on style skill small and specific. The file uses nine rules, contrast pairs, a list of exceptions and a short self-check in about 1,158 tokens, and it moves heavier modes into sibling skills.
+
+### How many tokens does the Caveman SKILL.md add?
+
+A local count of the v4.0.1 file with tiktoken's `o200k_base` tokenizer gave 1,158 tokens: about 70 in the frontmatter and 1,087 in the body. That tokenizer is an approximation. The README estimates about 1,160 input tokens.
+
+### Does a style skill like Caveman actually save money in agent work?
+
+The best independent measurement, from JetBrains, found 8.5% fewer output tokens with activation forced and no detectable quality loss, but its full-run cost total was 11.6% higher because of one task past a pricing tier. Expect single digits for output tokens and measure your own bill.
+
+### How should I measure a skill I wrote?
+
+Count the file, then run paired A/B tasks at least five times per arm, with a one-line-instruction control, provider-billed totals and graded outcomes. Switch one component at a time so you know which one moved the number.
+
+### Can I use Caveman together with other skills?
+
+The file composes by scope: persisted writing such as code, commits and docs is plain, harness status lines are always given, and safety messages use full sentences. If another skill sets a different writing style, decide which one wins for each artifact type.
+
+### Is there a Caveman page in the agentskills.codes registry?
+
+Not for the official JuliusBrussee/caveman repository as of October 29, 2026. The registry has pages named caveman that come from other repositories, and they are separate files.
+
+## Sources
+
+Sources opened October 29, 2026.
+
+- [JuliusBrussee/caveman on GitHub](https://github.com/JuliusBrussee/caveman), README and repository metadata
+- [Caveman INSTALL.md](https://github.com/JuliusBrussee/caveman/blob/main/INSTALL.md) and [SECURITY.md](https://github.com/JuliusBrussee/caveman/blob/main/SECURITY.md)
+- [Caveman Honest Numbers](https://github.com/JuliusBrussee/caveman/blob/main/docs/HONEST-NUMBERS.md)
+- [Caveman v4.0.0 release notes](https://github.com/JuliusBrussee/caveman/releases/tag/v4.0.0) and [SKILL.md at v4.0.1](https://github.com/JuliusBrussee/caveman/blob/v4.0.1/skills/caveman/SKILL.md)
+- [JetBrains AI blog: Speaking to AI Agents Like Cavemen Saves 65% of Tokens. We Test.](https://blog.jetbrains.com/ai/2026/07/speak-to-ai-agents-like-cavemen-tosave-tokens/)
+- [arXiv 2606.24083: Cavewoman, a two-channel evaluation of caveman-style compression](https://arxiv.org/abs/2606.24083)
+- [Elasticsearch Labs: elastic-caveman](https://www.elastic.co/search-labs/blog/elastic-caveman-ai-token-reduction)
+- [Claude Code documentation: Skills](https://code.claude.com/docs/en/skills)
+- [JetBrains post on X](https://x.com/jetbrains/status/2077744835457397224) and [Julius Brussee on X](https://x.com/JuliusBrussee/status/2041205908382888381)

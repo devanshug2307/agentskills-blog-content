@@ -1,0 +1,20 @@
+{
+  "title": "What Skill Authors Can Learn from Caveman's SKILL.md",
+  "slug": "caveman-skill-review-for-skill-authors",
+  "category": "Deep Dives",
+  "description": "A skill-author review of Caveman v4.0: terse-output rules, activation, progressive disclosure, composing with other skills, and how to measure your own SKILL.md.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Caveman skill",
+    "SKILL.md",
+    "skill authoring",
+    "progressive disclosure",
+    "token savings",
+    "output style skill",
+    "Claude Code skills",
+    "measure skill cost"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/caveman-skill-review-for-skill-authors/hero.png"
+}
