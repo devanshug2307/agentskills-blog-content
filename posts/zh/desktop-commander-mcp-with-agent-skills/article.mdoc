@@ -1,0 +1,202 @@
+技能（skill）是一个文件夹，里面有智能体先阅读、再照做的说明和脚本。一旦技能要求智能体运行某个脚本，就必须有人决定：由哪个进程真正执行它，拥有什么权限，在哪个目录里运行，以及留下怎样的执行记录。Desktop Commander MCP 是对这个问题的一种回答。它是一个开源的 MCP 服务器，给 AI 客户端提供你电脑上的 shell、进程控制和文件工具，不少人用它，是因为自己的客户端没有内置 shell。本文写给在它之上编写和运行技能、子智能体和 SKILL.md 工作流的人。
+
+简短的结论是：Desktop Commander 改变了技能的执行环境，它的若干默认设置会以项目 README 从未提及的方式影响技能行为，因为 README 并不是为技能而写的。50 行的写入上限会让一次输出大文件的技能出问题。空的目录白名单意味着没有任何围栏。一份不含 `rm`、`curl` 和任何解释器的命令黑名单，保护不了会调用这些命令的技能。这些都不是缺陷。项目自己的安全政策明确说，这些限制是护栏，不是沙箱。对技能作者来说，意思是有一份很短的清单需要绕开设计，还有一份很短的清单需要在把 shell 交给某个技能之前核对。
+
+我们在 2026 年 10 月 29 日阅读了项目的代码仓库、npm 元数据、漏洞记录和 X 账号，以及 MCP 安全文档和 Claude Code 的权限文档。我们没有安装或运行 Desktop Commander，也没有拿任何技能做过测试。下文凡是出自我们推断而非文档明确记载的内容，都会标明。关于这个服务器本身、安装方式和完整的安全记录，可以从 AgentPedia 的 [top MCP servers 榜单](https://agentpedia.codes/blog/top-mcp-servers) 入手；本文只讲技能作者这一侧。
+
+{% x id="2102449093867909508" /%}
+
+## 技能能从 shell 服务器得到什么
+
+大多数技能分两类。一类是纯说明：一份检查清单、一份风格指南、一套审查流程。这类技能完全不需要运行环境，只要有模型读它就行。另一类自带脚本，比如密钥扫描器、分支清理器或备份生成器，并依赖智能体去执行。第二类才是 Desktop Commander 发挥作用的地方，因为正是这一层把“运行这个脚本”变成机器上的真实进程。
+
+{% figure src="https://raw.githubusercontent.com/wonderwhy-er/DesktopCommanderMCP/main/header.png" alt="Desktop Commander README 的头图，展示一个 AI 聊天客户端连接到 Desktop Commander MCP 服务器以及电脑的文件和终端" caption="Desktop Commander README 的头图。图中带有一个已过时的聊天客户端标签，请把它当作对这个思路的示意，而不是当前支持的客户端列表。来源：wonderwhy-er/DesktopCommanderMCP。" /%}
+
+README 的工具表有 25 项，对技能作者而言可以归为几类用途。
+
+| 技能的需求 | Desktop Commander 工具 | 需要知道的事 |
+|---|---|---|
+| 运行自带脚本 | start_process | 启动命令或 REPL 并返回输出；命令要经过黑名单检查 |
+| 回应脚本提出的提示 | interact_with_process | 向运行中的进程发送输入；未解决的 issue #552 报告这条路径会绕过黑名单 |
+| 读取脚本的长日志 | read_process_output | 分页读取输出，适合运行时间超过一次调用的脚本 |
+| 写入生成的文件 | write_file | 默认每次调用上限 50 行 |
+| 对文件做小改动 | edit_block | 定向替换，而不是整体重写 |
+| 查找某个模式出现的位置 | start_search | 以流式方式返回文件或内容的搜索结果 |
+| 修改服务器设置 | set_config_value | 模型自己就能调用，包括安全相关的设置 |
+
+在做其他事情之前，有两行值得先注意。最后一行意味着，任何持有这个工具的智能体都可以修改约束它自己的设置，包括允许目录列表和命令黑名单。如果某个技能在“安装”步骤里重新配置服务器，那就是审查者应当明确看到的操作。而 `interact_with_process` 这一行，则是驱动交互式安装程序的技能比只运行单条命令的技能更需要审视的原因。
+
+## 写文件的技能会撞上 50 行上限
+
+服务器的 `fileWriteLineLimit` 默认值是 50。README 把它说成是促使模型使用更小分块的办法，并没有把它描述为安全控制。对技能作者来说，这是一个兼容性事实。一个写着“生成完整的迁移文件”或“把整个脚本写到磁盘”的技能，在一种运行环境里可能成功，在另一种里却撞上上限，而且失败方式并不是技能自身逻辑里一个干净的错误。模型看到的是拒绝或不完整的写入，然后开始即兴发挥。
+
+有三种应对办法，第一种成本最低。
+
+把技能写成分步构建大输出。指示智能体先用第一块内容创建文件，再追加后续块，而不是一次大调用。这在所有运行环境里都成立，也不花任何成本。
+
+把生成器做成脚本。如果技能自带 `generate.sh`，智能体用 `start_process` 运行它，文件由脚本写入而不是 `write_file` 工具，所以行数上限根本不起作用。这也更容易测试，因为脚本是确定性的，模型不在写入路径上。
+
+如果服务器归你管，就调高上限。这个设置通过配置暴露。我们不会把它交给技能去负责。一个为了自己方便而修改服务器配置的技能，就是上一节描述的那种模式，它应该是人做一次的决定，而不是智能体反复执行的步骤。
+
+读取方面，每次 `read_file` 调用的默认值是 1000 行。如果技能让智能体去看长日志或生成的产物，应当指明读哪一部分，比如最后 200 行，免得智能体把所有内容翻一遍。
+
+## 空白名单不是围栏
+
+`allowedDirectories` 设置默认是空列表，按 README 的说法，空列表授予文件操作访问整个文件系统的权限。把它设为具体的项目文件夹，会收窄文件工具的范围，但不会收窄终端。README 说终端命令仍然可以访问允许目录之外的路径，项目的 SECURITY.md 也说，shell 替换、绝对路径或另一种解释器都可以绕过这个限制。
+
+这对技能有具体影响。技能的脚本就是一条终端命令。如果技能带了 `cleanup.sh`，而这个脚本使用了绝对路径或会展开成绝对路径的变量，白名单根本不会被查询。审查者如果只在 SKILL.md 的文字里看到相对路径，可能就会认为这个技能待在项目目录内，而脚本实际做的是另一回事。所以审查技能时，要读脚本，而不只是读说明，并检查脚本构造的每一个路径。
+
+对技能作者的实用规则是，让脚本如实声明自己的范围。从单一的根目录变量解析路径，如果根目录在预期目录树之外就拒绝运行，并先打印解析出的根目录，让日志显示脚本以为自己在处理什么。这并不会让运行环境更安全，但让技能的行为可以被检查，而这正是审查者需要的。
+
+## 黑名单覆盖账户和磁盘命令，而不是日常工具
+
+默认黑名单有 33 项，针对的是磁盘格式化、账户管理、电源控制、防火墙变更和 Windows 管理命令。其中包括 `sudo`、`dd`、`mkfs`、`reboot`、`iptables` 和 `reg`。它不包含 `rm`、`curl`、`wget`、`python` 或 `bash`。
+
+要把这理解为对这份清单用途的说明。它能阻止模型意外格式化磁盘。它不能阻止技能的脚本删除一个目录、下载并运行远程代码，或者启动一个黑名单从未见过的解释器去做别的事。用 `curl ... | bash` 安装依赖的技能会毫无阻碍地运行。这不是要向维护者报告的缺陷，而是文档写明的适用范围。
+
+这给技能设计带来两点后果。第一，不要写一个安全性依赖黑名单的技能。如果一个技能不该删除东西，就让脚本不删除东西，并测试这一点。第二，如果你的技能需要用到被屏蔽的命令，比如管理防火墙规则的技能，要在它的描述里说明，因为在使用默认设置的服务器上它会失败，而且这种失败看起来像模型出错。
+
+## 在交出 shell 之前审查技能
+
+这里信任的基本单位是技能，所以对来源不明的技能，值得用对待陌生脚本的方式来对待。注册表里有一些面向安全的技能，可以帮助处理其中的部分环节，下面每一个都只按其注册表条目的说明来描述。我们没有拿其中任何一个对着 Desktop Commander 运行过。
+
+{% callout type="warning" %}
+注册表里的描述只说明技能声称自己能做什么。在依赖某个技能之前，请先阅读它的源码，就像你运行任何不是自己写的脚本之前那样。
+{% /callout %}
+
+### 把技能自己的文字当作不可信输入
+
+SKILL.md 是智能体读完后会照做的内容。如果它来自你无法控制的地方，就可能含有针对智能体而不是读者的指令。[indirect-prompt-injection](https://agentskills.codes/skills/indirect-prompt-injection) 技能面向的是这个问题的阅读一侧：按其注册表描述，它在读取网页、文档和邮件等外部内容时检测并拒绝间接提示注入，并列出了 20 多种检测模式。一个获取网页并据此行动、又运行在 shell 服务器上的技能，恰好就是 SECURITY.md 描述的那条链，因为服务器无法分辨注入的指令和真实的指令。
+
+[clawguard](https://agentskills.codes/skills/clawguard) 技能把自己描述为面向 AI 智能体的安全黑名单，用于执行外部命令、访问未知 URL 或安装新技能之前。即使你选了别的工具，这个模式也值得借鉴：在执行外来内容的那一步前面放一道检查。
+
+### 在技能运行前后扫描代码仓库
+
+写文件的技能可能把密钥写进文件，读取工作目录的技能也可能把它们读出来。[check-secrets](https://agentskills.codes/skills/check-secrets) 技能扫描代码库中泄露的 API 密钥、令牌和密码，[secrets-gitleaks](https://agentskills.codes/skills/secrets-gitleaks) 技能则用 Gitleaks 做 git 仓库的密钥检测，包括 pre-commit 钩子。在第一次智能体会话之前运行一次，在较长的会话之后再运行一次。针对 Desktop Commander 要这样做，原因是它的审计日志：README 说 `claude_tool_call.log` 记录每次调用的参数，而且不做脱敏或清理。出现在命令行里的令牌会以明文留在磁盘上，所以把你主目录下的日志文件夹也纳入扫描，应当成为例行动作。
+
+### 读脚本，而不只是读描述
+
+一次简短的人工审查，比任何扫描器发现的都多。对技能自带的每个脚本，检查它删除什么、下载什么、在项目之外写什么、是否调用 `sudo`，以及是否修改 shell 启动文件。把这份清单和 SKILL.md 说的技能做什么对照一下，不一致之处就是发现的问题。
+
+## 在容器里运行技能工作流
+
+SECURITY.md 把 Docker 或虚拟机隔离列为边界，并说进程内的设置不是边界。对运行脚本的技能而言，容器才是真正执行这一决定的地方。
+
+README 里服务器的基础 Docker 配置没有挂载任何目录，所以容器看不到你的任何文件：
+
+```json
+{
+  "mcpServers": {
+    "desktop-commander-in-docker": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "mcp/desktop-commander:latest"]
+    }
+  }
+}
+```
+
+要让技能处理某个项目，就为那一个目录加上 `-v` 挂载。README 展示了用 `-v` 参数把宿主机文件夹映射到 `/mnt` 下路径的写法。对技能工作来说，容器的行为带来三个习惯。只挂载技能应当修改的那个项目。当技能只做分析时，以只读方式挂载，这在审查和审计类技能里很常见。容器的环境变量里不放任何凭据，这样一个会回显环境变量的技能就没有敏感内容可回显。
+
+{% figure src="https://raw.githubusercontent.com/wonderwhy-er/DesktopCommanderMCP/main/screenshots/docker-config.png" alt="Claude Desktop 的设置面板，选中 Standalone，显示 Settings、Developer 和 Edit Config 步骤，以及一个运行 docker run -i --rm 的 desktop-commander JSON 条目" caption="Desktop Commander README 中的 Docker 设置面板。来源：wonderwhy-er/DesktopCommanderMCP，screenshots 文件夹。" /%}
+
+注册表里的 [agent-sandbox](https://agentskills.codes/skills/agent-sandbox) 技能很简短，它的描述只说用 `$agent-sandbox` 调用，所以我们不描述它的行为。把它列在这里，是给构建沙箱工具的读者一个线索：在决定它是否适合之前，先查看它的源码。
+
+容器也有助于你自己写的脚本。[bash-defensive-patterns](https://agentskills.codes/skills/bash-defensive-patterns) 技能涵盖面向生产环境脚本的防御式 Bash。技能自带的脚本能从常规习惯中受益，比如遇到未设置的变量就失败、给展开的内容加引号，因为通过 shell 服务器运行的脚本会执行其参数展开出来的任何内容。谨慎的脚本写法限制了一条被误读的指令能造成的影响，即使是在容器里。
+
+## 用手机发起远程任务
+
+Desktop Commander 的远程模式让 ChatGPT、网页版 Claude 和其他远程客户端能够访问你机器上的同一套工具。命令是 `npx @wonderwhy-er/desktop-commander@latest remote`，它会启动 OAuth 设备授权流程，然后你在 mcp.desktopcommander.app 连接 AI 客户端。项目的帖子说，机器必须开机并联网，Claude 的访问在任何已登录的地方都能用，包括手机。
+
+{% x id="2103160029805215991" /%}
+
+对技能工作流来说，有用的模式是启动后再回来查看的长时间任务。启动构建、数据导出或备份脚本的技能适合这种模式：脚本在你的机器上运行，`read_process_output` 让智能体汇报进度。需要注意的地方很具体。按项目 README，调用要经过一个托管服务，该服务会临时存储工具参数和结果，终端相关的行在一分钟后可被删除，一小时是兜底上限，所以技能绝不应该把密钥作为命令行参数。凭据应通过机器自身的环境变量传递。而且因为远程路径依赖托管服务，必须完成的技能应当把结果写到磁盘上，不要依赖会话一直保持连接。项目曾在 2026 年 10 月 5 日回复过一次 20 分钟的中断，我们没有找到公开的可用性数字。
+
+配对本身就是一份凭据。会话保存在 `~/.desktop-commander-device/device.json`，`remote --logout` 会把它从机器上移除，但保留服务端的授权，真正结束访问的是在控制台里撤销该设备。如果你把机器交给别人或者淘汰它，请执行撤销。
+
+## 子智能体与共享配置
+
+技能经常运行在子智能体里，也就是主智能体委派的独立智能体上下文。我们没有找到 Desktop Commander 在多个智能体共享同一个服务器时行为的文档，所以这一部分是推断，已按此标注。如果两个智能体连着同一个服务器实例，它们看到的是同一份配置，而且任何一个都可以调用 `set_config_value`。这意味着你为主智能体设置的限制，并不是对拥有同样工具的子智能体的限制。如果你依赖收窄后的目录列表，就在子智能体无法编辑的层面施加这种收窄，比如容器的挂载。
+
+Claude Code 的权限文档给出了限制会话可以调用哪些工具的办法。它说 `mcp__*` 的拒绝规则会移除所有 MCP 工具，并且允许规则只有在字面的 `mcp__<server>__` 前缀之后才接受通配符，示例是 `mcp__puppeteer__*`。按这个模式，注册为 `desktop-commander` 的服务器会暴露形如 `mcp__desktop-commander__start_process` 的名称。这种命名是我们对文档所述模式的解读，请在你自己的客户端里确认。它的权限模式页面说，`bypassPermissions` 会跳过提示，只应在容器或虚拟机这类隔离环境里使用。如果某个技能工作流在这种模式下无人值守运行，容器就不是可选项。
+
+[OpenAI dots permissions 指南](/zh/blog/openai-dots-permissions-and-workflows) 在 OpenAI 一侧讨论了同样的设计问题：智能体哪些步骤可以不询问就执行，哪些必须交回给人。[Codex Security Cloud 解读](/zh/blog/codex-security-cloud-agent-workflows) 则可以用来对照厂商如何描述沙箱内的验证。两篇都没有涉及 Desktop Commander，我们也不声称这些模型是等价的。
+
+## 技能作者应当了解的安全记录
+
+有两个事实会改变你对长期运行的技能配置应有多少信任的判断。CVE-2025-11491 是 src/command-manager.ts 中 CommandManager 函数里的一个操作系统命令注入，影响最高到 0.2.13 的版本。美国国家漏洞数据库（NVD）给它评了 9.8 分，而 CNA（VulDB）在同一套 CVSS 3.1 体系下评为 6.3，记录中没有写明修复版本。目前的 npm 版本是 0.3.1，发布于 2026 年 10 月 22 日，要求 Node 22.12.0 或更高，这一要求从 0.3.0 开始引入。
+
+三个未解决的 issue，#933、#552 和 #411，报告了绕过白名单和黑名单的办法。我们没有复现它们。Issue #933 说换行符不被当作命令分隔符，我们对主分支上分隔符列表的静态阅读与此相符。Issue #552 说通过 `interact_with_process` 发送的输入没有经过校验，在我们读的文件里，校验调用只出现在启动进程的路径上。校验也可能发生在别处，所以请把这当作一个线索。对技能作者来说，结论很简单：黑名单是安全带，安全性依赖它的技能需要另一种设计。
+
+关于更新策略，要注意 README 里使用 `@latest` 的安装方式，会在客户端重启时获取最新发布的版本。这很方便，同时也意味着，在你机器上持有 shell 的代码可能在两次会话之间发生变化。审查自己技能的团队，应当考虑固定他们审查过的版本。
+
+## 上线前检查清单
+
+这是我们在通过 Desktop Commander 运行第三方技能之前会使用的清单。它根据上文的来源整理而成，我们没有测试过其中任何一项。
+
+1. 先决定运行环境。如果技能会读取不可信内容，或来自不明作者，就在容器中运行服务器，使用窄挂载并且不放任何密钥。
+2. 阅读技能自带的每个脚本，并把它接触的内容与 SKILL.md 的声明对照。
+3. 在技能中搜索对 `set_config_value` 的调用、对配置文件的编辑以及对 shell 启动文件的修改。把每一处都当作一项发现。
+4. 检查它是否需要被屏蔽的命令或超过 50 行的文件，以及技能是否说明了如何处理这两种情况。
+5. 不要把密钥放进参数和提示文本，因为本地日志会不加脱敏地保留参数，而远程服务也会在一段时间内存储它们。
+6. 添加客户端侧的权限规则，在 `start_process`、`interact_with_process` 和 `set_config_value` 之前先询问。
+7. 在第一次真实会话之前和之后各运行一次密钥扫描。
+8. 固定你审查过的服务器版本，更新前先阅读发布说明。
+9. 远程使用时，用完某台机器后要登出并撤销设备。
+
+{% callout type="tip" %}
+如果一个技能只有在服务器运行于容器中时才能通过审查，请把这一点写进技能的 README。之后安装它的人在第一次运行之前，就能知道预期的运行环境。
+{% /callout %}
+
+## 我们无法验证的内容
+
+我们没有拿本文中的任何技能对着 Desktop Commander 运行过，所以类似某个脚本与行数上限如何交互这样的行为，都是依据文档中的默认值推理出来的。我们没有在任何客户端中确认这个服务器的确切权限规则名称。我们没有审计远程服务、它的数据保留声明或遥测说明，这些都是厂商的描述。远程设备的 README 把 Node.js 18 列为前提，而 npm 元数据要求从 0.3.0 起使用 22.12.0 或更高版本，我们没有确定远程命令适用哪一个。我们没有找到 Remote MCP 的定价，也没有找到独立的安全审计。安全类技能的注册表描述只是描述，我们没有评估它们实际效果如何。星标数、下载量和未解决 issue 数这类计数每天都在变化，因此本文不收录。
+
+## 常见问题
+
+### 没有 Desktop Commander，技能能运行吗？
+
+可以。纯说明的技能除了会阅读它的模型之外不需要任何运行环境，自带 shell 工具的客户端也可以直接运行自带脚本。当你的客户端没有自己的 shell，或者你想要它的交互式进程会话时，Desktop Commander 才有意义。
+
+### 写长文件的技能能通过 Desktop Commander 正常工作吗？
+
+可能无法在一次调用里完成。默认的写入上限是每次调用 50 行，所以技能应当分步构建大文件，或者用它自己运行的脚本来生成。
+
+### 允许目录设置能约束技能的脚本吗？
+
+不能。它限制的是文件工具。终端命令，包括技能脚本做的任何事，仍然可以访问其他路径。
+
+### 默认黑名单能阻止技能删除文件吗？
+
+不能。这份清单有 33 项，针对的是磁盘、账户、电源、防火墙和 Windows 管理命令，其中不含 `rm`。请把技能设计成不会删除不该删除的东西。
+
+### 应该如何运行不可信的技能？
+
+放在容器或虚拟机里，使用窄挂载，环境中不放任何密钥。项目自己的政策把这指定为它的隔离边界。
+
+### 子智能体能修改服务器的安全设置吗？
+
+据我们对工具表的理解，只要它持有 `set_config_value` 工具就可以。我们没有找到关于多智能体行为的文档，所以请把限制施加在智能体无法编辑的地方，比如容器挂载或客户端权限规则。
+
+### 远程运行技能时，密钥最终会落在哪里？
+
+README 说，托管服务会临时存储工具参数和结果，而本地日志存储的参数不做脱敏。请通过机器的环境变量传递凭据，而不是通过命令或提示词。
+
+## 来源
+
+核查日期：2026 年 10 月 29 日。
+
+- Desktop Commander 代码仓库与 README：https://github.com/wonderwhy-er/DesktopCommanderMCP
+- SECURITY.md：https://github.com/wonderwhy-er/DesktopCommanderMCP/blob/main/SECURITY.md
+- 远程设备 README：https://github.com/wonderwhy-er/DesktopCommanderMCP/blob/main/src/remote-device/README.md
+- 配置源码：https://github.com/wonderwhy-er/DesktopCommanderMCP/blob/main/src/config-manager.ts
+- 命令解析源码：https://github.com/wonderwhy-er/DesktopCommanderMCP/blob/main/src/command-manager.ts
+- 进程工具源码：https://github.com/wonderwhy-er/DesktopCommanderMCP/blob/main/src/tools/improved-process-tools.ts
+- 未解决的 issue：[#933](https://github.com/wonderwhy-er/DesktopCommanderMCP/issues/933)、[#552](https://github.com/wonderwhy-er/DesktopCommanderMCP/issues/552) 和 [#411](https://github.com/wonderwhy-er/DesktopCommanderMCP/issues/411)
+- npm 注册表元数据：https://registry.npmjs.org/@wonderwhy-er/desktop-commander
+- NVD 记录：https://nvd.nist.gov/vuln/detail/CVE-2025-11491
+- 远程服务：https://mcp.desktopcommander.app
+- MCP 安全最佳实践：https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices
+- Claude Code [权限](https://code.claude.com/docs/en/permissions) 与 [权限模式](https://code.claude.com/docs/en/permission-modes)
+- 官方帖子：https://x.com/desktopcommandr/status/2102449093867909508 和 https://x.com/desktopcommandr/status/2103160029805215991
+- 注册表技能：[indirect-prompt-injection](https://agentskills.codes/skills/indirect-prompt-injection)、[clawguard](https://agentskills.codes/skills/clawguard)、[check-secrets](https://agentskills.codes/skills/check-secrets)、[secrets-gitleaks](https://agentskills.codes/skills/secrets-gitleaks)、[agent-sandbox](https://agentskills.codes/skills/agent-sandbox)、[bash-defensive-patterns](https://agentskills.codes/skills/bash-defensive-patterns)
+- 图片：Desktop Commander README 的 Docker 部分，即上述仓库中的 screenshots/docker-config.png

@@ -1,0 +1,20 @@
+{
+  "title": "通过 Desktop Commander 运行智能体技能：技能作者的上线前检查指南",
+  "slug": "desktop-commander-mcp-with-agent-skills",
+  "category": "Guides",
+  "description": "技能脚本改由 Desktop Commander MCP 执行后会发生什么变化：写入上限、目录范围、技能审查、容器、远程任务，以及一份上线前检查清单。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Desktop Commander MCP",
+    "智能体技能",
+    "SKILL.md",
+    "MCP 服务器安全",
+    "技能审查",
+    "智能体沙箱",
+    "提示注入",
+    "Claude Code 权限"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/desktop-commander-mcp-with-agent-skills/hero.png"
+}
