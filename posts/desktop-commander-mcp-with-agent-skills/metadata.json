@@ -1,0 +1,20 @@
+{
+  "title": "Running agent skills through Desktop Commander: a pre-flight guide for skill authors",
+  "slug": "desktop-commander-mcp-with-agent-skills",
+  "category": "Guides",
+  "description": "What changes when skill scripts run through Desktop Commander MCP: write limits, directory scope, vetting, containers, remote jobs and a checklist.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "Desktop Commander MCP",
+    "agent skills",
+    "SKILL.md",
+    "MCP server security",
+    "skill vetting",
+    "agent sandbox",
+    "prompt injection",
+    "Claude Code permissions"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/desktop-commander-mcp-with-agent-skills/hero.png"
+}

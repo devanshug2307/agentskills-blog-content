@@ -1,0 +1,225 @@
+An agent skill is a set of instructions that gets read many times and acted on a few times. That shape is what makes model choice for skill pipelines different from model choice for a chat window. A single run of a skill-driven coding agent re-sends the same SKILL.md text, the same tool descriptions and the same repository context on every request, and then produces a small amount of new output. The bill is driven by how many requests there are, how many tokens the model chooses to spend, and how cheaply the repeated prefix is cached, much more than by which model has the highest headline score.
+
+This post answers a narrow question for people who write and run skills, subagents and SKILL.md workflows: **which model should run which kind of skill step in October 2026?** It uses the Artificial Analysis Intelligence Index v5 published on October 27, 2026, the vendors' own pricing pages read on October 28 and 29, and a small cost model with assumed token counts that you can replace with your own. For the full leaderboard, the Astra versus Fable comparison and the cheapest-model rankings, the sibling article on AgentPedia, [Best AI model for coding, October 2026](https://agentpedia.codes/blog/best-ai-model-for-coding-october-2026), has the long version. Nothing here was measured on a live pipeline. Scores are Artificial Analysis's, prices are the vendors', and the routing rules and budget numbers are this post's own arithmetic and recommendations.
+
+{% x id="2115265133467635877" /%}
+
+## What the re-score means for skill pipelines
+
+Artificial Analysis rebuilt its Index on October 27. Two evaluations are new: FrontierCode 2.0, a private coding benchmark from Cognition with 132 tasks in real open-source repositories graded on whether a maintainer would merge the change, and Terminal-Bench-Science 0.1. Three evaluations were upgraded, three were removed, and 60% of the Index now rests on private or held-out test sets. Any comparison written before that date, including model-versus-model tables from launch posts, is on a different scale. Kimi K3.1 Pro is the clearest example: it scored 55 when it launched on October 23 and 46 under v5.
+
+Three findings from the v5 announcement matter more to a skill builder than the ranking itself.
+
+First, tokens. Artificial Analysis reports that every model it measured generates more output tokens per Index task than under v4.3, with the median rising from 35k to 59k. The agentic evaluations are 55% of the weight but a median of about 90% of output tokens. A skill pipeline is an agentic workload, so the cost-per-task figures in this post are the closest public proxy for what a skill run costs.
+
+Second, effort. Within one model, effort settings now separate scores by more than the gaps between models. Claude Opus 5.5 scores 35 at low effort for $0.98 per task and 58 at max effort for $10.04. The Claude Sonnet 5.5 spread from low to max grew from 20 to 29 points, and GPT-6.1 Sol's doubled from 10 to 20. If your skill pins an effort level, that setting is a bigger decision than the model name.
+
+Third, the ordering at the top is not the ordering of the price list. Opus 5.5 leads at 58, GPT-6 Astra scores 57, GPT-6.1 Sol 55 and Sonnet 5.5 54, while Claude Fable 5.1 scores 49 at the same $10 and $50 list price as Astra. Gemini 4 Carbon was reported at 59 on October 28 but is rolling out to selected users only, so it is not a model you can route to today.
+
+{% figure src="https://cdn.sanity.io/images/6vfeftx9/articles/7f7856d5471b905e5226622fe85ca3b9f12d389e-1930x1280.png" alt="Scatter chart of Artificial Analysis Intelligence Index against cost per Intelligence Index task on a logarithmic axis, with each model's effort settings joined by lines and a highlighted most attractive quadrant for high score at low cost." caption="Intelligence Index against cost per Index task, by model release and effort level (log cost axis), from the v5 announcement, October 27, 2026. Each line is one model across effort settings, which is the picture a per-step routing plan has to read. Source: Artificial Analysis." /%}
+
+## The routing table, by skill type
+
+The table below maps common kinds of skill steps to a model to try first. "Start with" means a starting point that the evidence in this post supports, not a verdict. The skills named are real registry entries, and the tiers are recommendations that you should confirm on your own tasks using the test plan near the end. Scores are Artificial Analysis v5 as of October 27 to 28, 2026, at the effort level shown.
+
+| Skill type | Registry examples | Start with | Escalate to | Why, with dated evidence |
+|---|---|---|---|---|
+| Planning, design, decomposition | [writing-plans](https://agentskills.codes/skills/writing-plans), [brainstorming](https://agentskills.codes/skills/brainstorming) | Claude Opus 5.5 (medium or high) | Opus 5.5 at max | Leads v5 at 58 and FrontierCode 2.0 at 46.4%. A plan is one call whose errors multiply, so the higher rate is paid once. |
+| Implementation under a discipline skill | [test-driven-development](https://agentskills.codes/skills/test-driven-development), [systematic-debugging](https://agentskills.codes/skills/systematic-debugging) | GPT-6.1 Sol (high or xhigh) | Opus 5.5 | Sol scores 50 at $0.59 (high) and 52 at $0.76 (xhigh) per task. Many requests over a stable prefix is where its 5% cache rate pays. |
+| Review and verification | [code-review](https://agentskills.codes/skills/code-review), [verification-before-completion](https://agentskills.codes/skills/verification-before-completion) | Claude Opus 5.5 (high) | Opus 5.5 at max | Review is judgment about someone else's diff. Opus leads FrontierCode 2.0, the benchmark closest to whether a maintainer would merge. |
+| Orchestration | [dispatching-parallel-agents](https://agentskills.codes/skills/dispatching-parallel-agents), [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) | Coordinator on Sonnet 5.5 (high) or Sol, workers by task | Opus 5.5 for the coordinator when plans keep failing | A coordinator mostly reads results and writes short instructions, so it does not need the top output rate. |
+| Lookups, summaries, triage | Search, classification and compaction steps inside any skill | Claude Haiku 5.5 or GPT-6.1 Terra | Sol | Haiku scores 36 for $0.41 per task, Terra 51 for $0.96. Anthropic positions Haiku as a subagent under Opus or Sonnet (vendor-reported). |
+| Document extraction | [pdf](https://agentskills.codes/skills/pdf), [docx](https://agentskills.codes/skills/docx) | Haiku 5.5 or GPT-6 Luna | Terra | Mechanical, clear definition of correct, high volume. Luna scores 28 at $0.15 per task and is not meant for code changes. |
+| Terminal-heavy research | Long shell workflows | GPT-6 Astra, if cost is secondary | Sol at xhigh | Astra leads Terminal-Bench-Science at 63%. It costs $6.24 per task at max, so it is a step-specific choice. |
+| Authoring skills and tools | [skill-creator](https://agentskills.codes/skills/skill-creator), [mcp-builder](https://agentskills.codes/skills/mcp-builder) | Sol or Sonnet 5.5 (high) | Opus 5.5 | A flawed skill file or tool schema taxes every later run, so a stronger model for the authoring step is cheap insurance. |
+| Self-hosted or air-gapped steps | Any step with data residency limits | GLM-5.3-Flash | Hosted model after your own test | MIT weights published; no v5 score at capture, so quality is vendor-reported only. |
+
+The shortest summary of the table is that the model with the best score should write the plan and judge the result, a cheaper model that scores within a few points should do the long middle, and the smallest models should do work where a wrong answer is cheap to detect. The remaining sections explain each row.
+
+## Why cost per task decides the implementation tier
+
+The implementation row is where most of a skill run's tokens go, so it is where the choice of model changes the bill most. Two models can have identical list prices and very different bills. Sonnet 5.5 and GPT-6.1 Sol are both $2 per million input tokens and $10 per million output tokens. At max effort, Artificial Analysis measures Sonnet at $10.02 per Index task and Sol at $1.27. The prices are the same, so the difference is the number of tokens each model spends to reach its score: Sonnet scores 54 at max against Sol's 55.
+
+That gap collapses when you move Sonnet down. At high effort Sonnet scores 41 for $1.64 per task, and at xhigh it scores 50 for $4.09. Sol at high scores 50 for $0.59 and at xhigh 52 for $0.76. On these tasks, Sol at xhigh ties Opus 5.5 at high (both 52) at roughly a fifth of the cost per task ($0.76 against $3.46). That is a statement about Artificial Analysis's task set. Your own repository may spend tokens differently, which is the reason to measure cost per finished task and not trust a per-token rate.
+
+Anthropic's own Sonnet 5.5 page contains a footnote that fits this picture. It reports a FrontierCode 1.1 score of 46.2% at max effort against 52.1% at xhigh and ties the max-effort dip to how often the model triggered the Claude Code subagent-heavy review skill (vendor-reported, September 28). Whatever the cause, it is a documented case of a skill changing a benchmark outcome, and a reminder that effort and skills interact. A skill that asks for exhaustive review will cost more at higher effort and may not score better.
+
+For most skill pipelines, a sensible default for the implementation step is a cheap model at the highest effort level that stays inside your cost-per-task budget, with Opus 5.5 reserved for the retry. The alternative of running everything on the most capable model at max effort buys a few points on the Index for about eight times the bill, which only makes sense for the steps where a failure is expensive.
+
+{% figure src="https://cdn.sanity.io/images/6vfeftx9/articles/2cbd2a042cdf874cd1658349a2a882f34ed92c8c-2152x984.png" alt="Bar chart titled FrontierCode 2.0 Score, mean over three attempts per task, with Claude Opus 5.5 first at 46.4 percent followed by GPT-6 Astra 42.4, GPT-6.1 Terra 42.3, Claude Sonnet 5.5 41.7 and GPT-6.1 Sol 40.6, and Claude Fable 5.1 at 31.6." caption="FrontierCode 2.0, mean score over three attempts per task, independently benchmarked by Artificial Analysis and published October 27, 2026. Claude entries are shown with the fallback setting. Source: Artificial Analysis." /%}
+
+The chart shows why the middle of the table is a cost question. Astra, Terra, Sonnet and Sol sit between 40.6% and 42.4%, a spread that 132 tasks and three runs cannot resolve. Terra at $1 and $5 per million tokens lands within a tenth of a point of Astra at $10 and $50. When quality is that close, the cached rate and the token appetite of each model decide the tier, and those are the two things a skill pipeline controls.
+
+## Planning and brainstorming skills
+
+Planning skills such as [writing-plans](https://agentskills.codes/skills/writing-plans) and [brainstorming](https://agentskills.codes/skills/brainstorming) produce the artifact that every later step follows. A mistake in the plan is repeated by every worker that reads it. That asymmetry is the argument for the top-scoring model here: the step runs once per task, the output is short, and the price of a better plan is a few cents.
+
+Using the list prices and the budget model later in this post, a planning call of 30,000 uncached input tokens and 6,000 output tokens costs about $0.24 on Opus 5.5 and about $0.60 on Astra, which makes Astra 2.5 times more expensive for a step where Opus leads on the independent coding benchmark. The Astra case is narrower than it looks. Astra leads Terminal-Bench-Science at 63% and CritPt v2 at 72%, so a plan for a long scientific or terminal-research task is a reasonable place to try it. For ordinary repository work, start with Opus.
+
+One practical rule from the effort data: run planning at medium or high, not max. Opus 5.5 at medium scores 48 for $2.45 per task, at high 52 for $3.46, and at max 58 for $10.04. The jump from high to max costs nearly three times as much for six points. A plan is a judgment about structure more than a search over many attempts, so check whether the cheaper setting writes plans your workers can follow before paying for max.
+
+## Implementation under TDD and debugging skills
+
+Skills like [test-driven-development](https://agentskills.codes/skills/test-driven-development) and [systematic-debugging](https://agentskills.codes/skills/systematic-debugging) force a loop of reading, running a test, editing and running again. Each request in that loop carries the same long prefix: the skill text, the repository context and the history so far. That is the workload where cached input pricing matters most, so the cached rate relative to the input rate is worth comparing directly.
+
+| Model | Input per 1M | Cached input per 1M | Cached as share of input |
+|---|---:|---:|---:|
+| Claude Opus 5.5 | $4.00 | $0.20 | 5% |
+| Claude Sonnet 5.5 | $2.00 | $0.10 | 5% |
+| Claude Haiku 5.5 (prompts up to 100k) | $0.10 | $0.01 | 10% |
+| Claude Fable 5.1 | $10.00 | $0.25 | 2.5% |
+| GPT-6 Astra | $10.00 | $1.00 | 10% |
+| GPT-6.1 Sol | $2.00 | $0.10 | 5% |
+| GPT-6.1 Terra | $1.00 | $0.05 | 5% |
+| Kimi K3.1 Pro | $2.00 | $0.20 | 10% |
+| GLM-5.3-Flash | $0.15 | $0.03 | 20% |
+
+Prices are from the vendors' pricing pages read on October 28 to 29, 2026. Two things follow from the table. Fable 5.1 has the deepest cache discount, so its cost gap to Astra narrows in a cache-heavy loop, but Artificial Analysis's measured cost per task already includes caching as the tests ran and still puts Fable at $13.04 against Astra's $6.24. And Haiku 5.5 has a tier boundary: prompts over 100,000 tokens move to $0.50 input, $0.05 cached and $2.50 output. A long SKILL.md bundle plus a large repository can push a worker above that line without anyone noticing, so log prompt sizes for Haiku steps.
+
+For the loop itself, Sol is the first model to test. The GPT-6.1 Sol launch post says it nearly matches Astra on agentic coding at one fifth of the price (vendor-reported, September 29), and the independent numbers have the same shape: 55 against 57 at about a fifth of the cost per task. Sol also leads no single v5 evaluation, which is a reason to test it on your tasks and not assume it. Our earlier post on [GPT-6.1 Sol for coding agents](/blog/gpt-6-1-sol-agent-workloads) covers its benchmark configurations, and [Routing agent skills across GPT-6 Astra, Sol and Luna](/blog/gpt-6-model-routing-for-agent-skills) covers the OpenAI tiers in more depth than this post does.
+
+## Review and verification skills
+
+Review skills such as [code-review](https://agentskills.codes/skills/code-review) and [verification-before-completion](https://agentskills.codes/skills/verification-before-completion) check work another step produced. The reason to route review to the strongest model is not that review is harder than writing. It is that a reviewer who shares the author's blind spots adds little. If the same model family wrote the code and reviews it, the review is correlated with the work it checks.
+
+A simple pattern is to review with a different tier or family from the implementer. If Sol or Sonnet wrote the change, let Opus 5.5 review it at high effort. Opus leads FrontierCode 2.0 at 46.4%, and that benchmark grades changes on whether a maintainer would merge them, which is the question a reviewer asks. For a skill that reviews many small diffs, a cheaper reviewer at a first pass followed by an Opus pass on anything flagged keeps the expensive model on the minority of changes that need it.
+
+The effort lesson applies again: a review skill that tells the model to be exhaustive and run subagents will cost more at higher effort, and the Sonnet footnote above shows that more review activity did not raise one vendor-reported score. Put limits in the skill itself, such as a maximum number of files per review call, before raising effort.
+
+## Orchestration and subagent skills
+
+[dispatching-parallel-agents](https://agentskills.codes/skills/dispatching-parallel-agents) and [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) are where routing becomes literal, because a coordinator and its workers are separate model calls that can run on separate tiers. Where your client lets you set a model per subagent, the useful split is by what each role produces. A coordinator reads reports and writes short assignments, which suits a mid-priced model at high effort. Workers that write code need the implementation tier. Workers that search, summarize or classify need only the smallest tier.
+
+Anthropic's Claude Haiku 5.5 launch positions the model for this role, saying it pairs well with Opus 5.5 and Sonnet 5.5 as a subagent for summaries, compaction, database queries and classification, and that Sonnet and Opus remain better for complex agentic coding (vendor-reported, October 7). The independent figures agree: Haiku scores 36 on the Index, 34.9% on FrontierCode 2.0 and 20% on Terminal-Bench-Science. It also outscored Fable 5.1 on FrontierCode 2.0 (31.6%), a reminder that price tier does not predict rank.
+
+{% x id="2107894039626277339" /%}
+
+Parallelism also multiplies token spend. Ten workers on a $0.59 task cost $5.90, and if every worker re-reads a 20,000 token skill bundle, the cache hit rate becomes the line item to watch. [using-git-worktrees](https://agentskills.codes/skills/using-git-worktrees) keeps parallel workers from overwriting each other's files, but it does nothing for the bill. Budget for the fan-out before you enable it.
+
+## Lookups, extraction and triage
+
+Steps with a clear definition of correct are the safest to push to the smallest models, because a wrong answer is cheap to detect and retry. Extracting fields with [pdf](https://agentskills.codes/skills/pdf) or [docx](https://agentskills.codes/skills/docx), classifying an issue, summarizing a log and compacting history all fit. Haiku 5.5 at $0.10 input and $0.50 output, GPT-6.1 Terra at $1 and $5 and GPT-6 Luna at $0.10 and $0.50 are the candidates.
+
+GPT-6.1 Terra is the interesting one on the independent data. It scores 51 on the Index at max effort for $0.96 per task and 42.3% on FrontierCode 2.0, and Artificial Analysis names it the cheapest of the ten highest-scoring models, with a more than 13 times cost spread between Terra and Fable 5.1. That makes it a plausible implementation model for simple, well-specified tasks and not only a triage worker. GPT-6 Luna at 28 and $0.15 per task is for classification and routing. Keep it away from steps that edit code.
+
+The rule for this tier is to give each step a cheap, automatic check. A lookup that returns a file path can be verified by opening the file. An extraction can be validated against a schema. A summary can be spot-checked against the source. If you cannot write the check, the step probably does not belong on the smallest tier.
+
+## Authoring skills and tools
+
+[skill-creator](https://agentskills.codes/skills/skill-creator) and [mcp-builder](https://agentskills.codes/skills/mcp-builder) differ from the other rows because the thing they produce is read by every later run. A vague skill description makes a model load the wrong skill. An overbroad tool schema makes it burn tokens on arguments. Both costs recur on every request, which is why authoring deserves a stronger model than its token count suggests.
+
+Use Sol or Sonnet 5.5 at high effort for routine skills, and Opus 5.5 when a skill encodes a subtle policy, such as a security review checklist or a migration rule that must not be paraphrased. After authoring, run the new skill on a cheap model and read where it goes wrong. A skill that only works on the strongest model is a skill with a hidden dependency, and it will fail the first time you route a step down to save money.
+
+## A worked budget for one skill run
+
+To make the tiers concrete, the table prices one assumed skill run with four steps. Planning is one call with 30,000 uncached input tokens and 6,000 output tokens. Implementation is 20 requests carrying 200,000 uncached and 1,000,000 cached input tokens in total and 30,000 output tokens. Review is one call with 40,000 uncached and 100,000 cached input tokens and 8,000 output tokens. Lookups are ten small calls with 150,000 uncached input tokens and 10,000 output tokens in total. These are assumptions, not measurements. All dollar figures are list-price arithmetic.
+
+| Plan | Planning | Implementation | Review | Lookups | Total |
+|---|---|---|---|---|---|
+| Everything on Claude Opus 5.5 | $0.24 | $1.60 | $0.34 | $0.80 | $2.98 |
+| Everything on Claude Sonnet 5.5 or GPT-6.1 Sol | $0.12 | $0.80 | $0.17 | $0.40 | $1.49 |
+| Everything on GPT-6 Astra | $0.60 | $4.50 | $0.90 | $2.00 | $8.00 |
+| Opus plans and reviews, Sol implements, Haiku looks up | $0.24 | $0.80 | $0.34 | $0.02 | $1.40 |
+| Sol everywhere, Haiku looks up | $0.12 | $0.80 | $0.17 | $0.02 | $1.11 |
+| Opus plans and reviews, Terra implements, Haiku looks up | $0.24 | $0.40 | $0.34 | $0.02 | $1.00 |
+
+The routed plans are not dramatically cheaper than all-Sol on these assumptions, and that is the useful finding. Moving the lookups to Haiku saves about 30 cents of a $1.49 run. Putting Opus on planning and review adds back about 29 cents. The largest lever is the implementation step, and the largest hazard is Astra everywhere at $8.00, more than five times the Sol baseline. If you run a few hundred such runs a day, the difference between $1.00 and $8.00 per run is the difference between a rounding error and a budget line.
+
+Two caveats keep this honest. The table ignores the token appetite of each model: on Artificial Analysis's tasks, Sonnet at max effort spends far more per task than its list price implies, so the real Sonnet row could sit well above the Sol row. And it assumes every step succeeds the first time. A routed plan that retries on Opus 30% of the time has a different cost, so count the escalation rate before comparing plans.
+
+## Open weights inside a skill pipeline
+
+Some teams route steps to a model they host, because of data residency, offline operation or a fixed hardware budget. The picture this month is split. GLM-5.3-Flash, released August 26, has public MIT weights on Hugging Face, 320B total and 18B active parameters, and an API price of $0.15 input and $0.50 output per million tokens on Z.ai's pricing page. Z.ai reports 63.4 on DeepSWE v1.1 (vendor-reported, against an older Claude generation). The Artificial Analysis leaderboard we read listed it without a v5 score, so its quality for your skills is something to test, not to assume. Our [GLM-5.3-Flash for agent skills](/blog/glm-5-3-flash-for-agent-skills) post covers what it takes to run it.
+
+Kimi K3.1 Pro is the opposite case. Artificial Analysis scores it 46 on v5 at $3.68 per task, the top open-weights model, and lists it as the leader on Terminal-Bench 4.0 at 67%. Moonshot says weights are coming by November 4, 2026, and when we checked on October 29 the Hugging Face repository returned HTTP 401. Until the weights ship, Kimi is a hosted API model priced at $2 and $10, not an open-weights option. See [Kimi K3.1 Pro for agent skills](/blog/kimi-k3-1-pro-for-agent-skills) for how it behaves with skill files.
+
+{% x id="2113680701770068067" /%}
+
+The v5 data adds a reality check for self-hosters. Among models with released weights, DeepSeek V4.1 Flash 1017 and GLM-5.3 lead at 32, below Claude Haiku 5.5 at 36, and Artificial Analysis says the open-weights gap grew from 3 points to 12. If your reason for self-hosting is quality, v5 is unflattering. If it is control over where the data goes, it changes nothing, and a self-hosted model for extraction and triage steps is still a legitimate choice.
+
+## Failure modes when you route
+
+**Skill text written for one model.** A skill tuned on Opus can lean on inferences a smaller model does not make. Test each skill on the cheapest tier you plan to use, not only the one you wrote it on.
+
+**Effort pinned in the wrong place.** If a skill hardcodes high effort for a step that only classifies, you pay for reasoning nobody needs. If it pins low effort on planning, you pay for it later in retries. Keep effort in your routing configuration, not scattered through skill files.
+
+**Prompt tier cliffs.** Haiku 5.5's 100,000 token boundary is the visible one. Check your client and vendor documentation for any similar thresholds before assuming a flat rate across prompt sizes.
+
+**Escalation that never stops.** A rule of "retry on a stronger model" with no limit turns a cheap pipeline into an Opus pipeline in the hard cases. Cap escalations per task and log them.
+
+**Mixed harnesses.** Comparing Opus inside Claude Code with Sol inside Codex compares products as well as models. Artificial Analysis keeps its Coding Agent Index separate from model scores for that reason. When you test, use one harness for every candidate.
+
+**Stale leaderboards.** v5 reordered the field within four days of the previous ranking. Date every score in your own documentation and re-run your test set when a vendor ships or changes a price.
+
+## Testing a routing plan before you commit
+
+A proportionate check takes about a day. The goal is cost per finished task for each routing plan, measured on your tasks, with a way to compare plans fairly.
+
+```yaml
+# Illustrative routing plan, not a client schema. Adapt to your agent host.
+steps:
+  plan:    { model: claude-opus-5-5,   effort: high,   skills: [writing-plans] }
+  build:   { model: gpt-6.1-sol,       effort: xhigh,  skills: [test-driven-development, systematic-debugging] }
+  review:  { model: claude-opus-5-5,   effort: high,   skills: [code-review] }
+  lookup:  { model: claude-haiku-5-5,  effort: low,    skills: [] }
+limits:
+  max_escalations_per_task: 1
+  max_cost_per_task_usd: 3.00
+```
+
+Run the same 20 to 40 closed issues through each plan, with the failing test or acceptance check left intact. Record total tokens, cache hit rate, escalation count and the cost of each task that passes its check. Drop any plan whose cost per finished task is not lower than a single-model baseline by a margin you care about. Then change one thing at a time, such as moving build from Sol to Terra, so you know which change moved the number.
+
+Keep the task set. When the next model ships, rerun it. The Index will move again, and your own set is the only score that reflects your repository.
+
+## The practical verdict
+
+For a skill pipeline in October 2026, the independent evidence supports a three-tier shape. Use Claude Opus 5.5 where one call decides the quality of everything after it, which means planning, review and difficult retries. Use GPT-6.1 Sol or, for simpler work, GPT-6.1 Terra for the long implementation middle, at high or xhigh effort, because their cost per task is a fraction of the leaders'. Use Claude Haiku 5.5 or GPT-6 Luna for lookups, extraction and triage, with a cheap check on every output.
+
+Treat GPT-6 Astra as a deliberate choice for terminal-heavy research and not a default, treat Claude Fable 5.1 as a model that must earn its place on your tasks, and treat Gemini 4 Carbon as a name to watch until it is generally available. For self-hosting, GLM-5.3-Flash has weights today and no independent v5 score, and Kimi K3.1 Pro has a score and no weights yet. All of this is a starting hypothesis. The only number that counts is cost per finished task on your own repository.
+
+## FAQ
+
+### Which model should run my agent skills in October 2026?
+
+There is no single model. On Artificial Analysis Intelligence Index v5 (October 27, 2026), Claude Opus 5.5 leads at 58 and is the strongest choice for planning and review. GPT-6.1 Sol scores 55 at $1.27 per task against $10.04 for Opus, which makes it the first model to test for long implementation loops. Haiku 5.5 or Terra handle cheap lookups.
+
+### Is GPT-6.1 Sol better than Claude Sonnet 5.5 for skill-driven coding?
+
+They list at the same price, $2 and $10 per million tokens. On Artificial Analysis's tasks at max effort, Sol scores 55 at $1.27 per task and Sonnet 54 at $10.02, so Sol spends far fewer tokens for a similar score. At lower effort Sonnet drops faster: 41 at high for $1.64, against Sol's 50 at high for $0.59. Test both on your own tasks.
+
+### Should I use the cheapest model for every skill step?
+
+No. Use the smallest models only for steps with an automatic check, such as extraction, classification and lookups. Haiku 5.5 scores 36 on the Index and 20% on Terminal-Bench-Science, and Anthropic says Sonnet and Opus remain better for complex agentic coding (vendor-reported). Cheap models on planning or review tend to cost more later in retries.
+
+### How much does model routing save?
+
+It depends on your token counts. In this post's assumed four-step run at list prices, everything on Opus 5.5 costs $2.98, everything on Sol $1.49, everything on Astra $8.00, and a routed plan with Sol building and Haiku looking up $1.11 to $1.40. The largest saving is choosing the implementation model, not routing lookups. These are arithmetic, not measurements.
+
+### Does effort matter more than the model?
+
+For some models, yes. Opus 5.5 scores 35 at low effort and 58 at max, for $0.98 and $10.04 per task. The Sonnet 5.5 spread from low to max grew from 20 to 29 points under v5. Pin effort per step in your routing configuration, and treat a change in effort as a change of model when you compare plans.
+
+### Can I self-host a model for skill steps today?
+
+GLM-5.3-Flash has MIT weights on Hugging Face and costs $0.15 and $0.50 per million tokens on Z.ai's API, but Artificial Analysis showed no v5 score for it when we checked, so its quality is vendor-reported. Kimi K3.1 Pro has the top open-weights score at 46, but its weights were not released as of October 29; Moonshot promises them by November 4.
+
+### Is Gemini 4 Carbon a model I can route to?
+
+Not yet. Artificial Analysis reported it at 59 on Index v5 on October 28, but it said Google is rolling it out to selected users and it is not publicly available. We found no confirmed general-availability date. On its Coding Agent Index it scored 59 against 62 for Claude Code with Opus 5.5, so it does not unseat Opus for coding agents.
+
+## Sources
+
+Sources read October 28 to 29, 2026. Vendor-reported figures are labeled as such in the text.
+
+- [Announcing Artificial Analysis Intelligence Index v5](https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5) (October 27, 2026), with the [announcement post on X](https://x.com/ArtificialAnlys/status/2115265133467635877)
+- [Artificial Analysis model leaderboard](https://artificialanalysis.ai/leaderboards/models), captured October 28
+- [Artificial Analysis post on Gemini 4 Carbon](https://x.com/ArtificialAnlys/status/2115494553780367384) (October 28)
+- [Introducing Claude Opus 5.5](https://www.anthropic.com/claude-opus-5-5), [Claude Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5) and [Claude Haiku 5.5](https://www.anthropic.com/claude-haiku-5-5), with [Anthropic API pricing](https://platform.claude.com/docs/en/about-claude/pricing)
+- [Introducing GPT-6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol/) and [OpenAI API pricing](https://developers.openai.com/api/docs/pricing)
+- [Kimi K3.1 Pro release blog](https://www.kimi.ai/blog/kimi-k3-1-pro), [Kimi pricing](https://www.kimi.ai/resources/kimi-k3-1-pro-pricing) and the [launch post on X](https://x.com/Kimi_Moonshot/status/2113680701770068067)
+- [GLM-5.3-Flash release post](https://z.ai/blog/glm-5.3-flash), [Z.ai pricing](https://docs.z.ai/guides/overview/pricing) and the [Hugging Face repository](https://huggingface.co/zai-org/GLM-5.3-Flash)
+- [Claude Haiku 5.5 launch post on X](https://x.com/claudeai/status/2107894039626277339)
+
+{% callout type="warning" %}
+No score or benchmark in this article was independently reproduced by us. Artificial Analysis scores are from its v5 announcement and leaderboard as captured October 27 to 28, 2026, and they can change. The cost tables are this article's own arithmetic from the vendors' published list prices and assumed token counts, and are labelled as such wherever they appear.
+{% /callout %}

@@ -1,0 +1,21 @@
+{
+  "title": "Copilot AI Credits for agent skills: budgeting skills, subagents and custom agents",
+  "slug": "copilot-ai-credits-for-agent-skills",
+  "category": "Guides",
+  "description": "Price SKILL.md runs, subagent fan-out and custom agents under GitHub Copilot AI Credits: worked costs, the 30-credit CLI floor, budgets and Fusion.",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GitHub Copilot AI Credits",
+    "agent skills",
+    "SKILL.md",
+    "custom agents",
+    "subagents",
+    "Copilot CLI",
+    "Copilot cloud agent",
+    "Copilot Fusion",
+    "usage-based billing"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/copilot-ai-credits-for-agent-skills/hero.png"
+}
