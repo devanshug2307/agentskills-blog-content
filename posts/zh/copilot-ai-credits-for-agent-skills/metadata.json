@@ -1,0 +1,21 @@
+{
+  "title": "面向智能体 skill 的 Copilot AI Credits：为 skill、子智能体与自定义智能体做预算",
+  "slug": "copilot-ai-credits-for-agent-skills",
+  "category": "Guides",
+  "description": "在 GitHub Copilot AI Credits 下为 SKILL.md 运行、子智能体扇出和自定义智能体定价：测算成本、CLI 的 30 积分下限、预算与 Fusion。",
+  "publishedDate": "2026-10-29",
+  "author": "Agent Skills",
+  "keywords": [
+    "GitHub Copilot AI Credits",
+    "智能体 skill",
+    "SKILL.md",
+    "自定义智能体",
+    "子智能体",
+    "Copilot CLI",
+    "Copilot 云端智能体",
+    "Copilot Fusion",
+    "按用量计费"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/copilot-ai-credits-for-agent-skills/hero.png"
+}
