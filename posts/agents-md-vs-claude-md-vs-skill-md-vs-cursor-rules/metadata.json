@@ -1,0 +1,17 @@
+{
+  "title": "AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor Rules: Which File Does What?",
+  "slug": "agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules",
+  "category": "Guides",
+  "description": "Which AI coding agent reads which file? AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules, GEMINI.md, Copilot, Kiro and Hermes: precedence, limits, examples.",
+  "publishedDate": "2026-11-25",
+  "author": "Agent Skills",
+  "keywords": [
+    "agents.md vs claude.md",
+    "cursor rules vs agents.md",
+    "cursor rules vs skills",
+    "what is agent.md file",
+    "claude code hooks vs skills"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules/hero.png"
+}
