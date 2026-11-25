@@ -1,0 +1,716 @@
+Most "AI agent for ecommerce support" pages promise the same thing: fewer tickets. A store owner asks something narrower and more expensive after checkout: when a shopper writes "cancel my order", "send it to my new address", "this arrived broken" or "where is my refund", can the agent actually do it in Shopify, in the returns portal and at the carrier, or does it just draft a polite reply and hand the ticket to a human?
+
+This roundup sorts ten products by what they are documented to do after the order is placed. We read each vendor's own pricing pages and docs on November 25, 2026, and built an action matrix from those pages instead of from marketing summaries. The short version: Gorgias AI Agent and Intercom Fin have the clearest published Shopify actions, Narvar and AfterShip own delivery exceptions and returns, Loop and AfterShip now expose MCP servers for operators, and Chargeflow covers the dispute that a bad refund decision can create.
+
+{% youtube id="aSjHwsCwywU" title="The Future of Agentic Post-Purchase Starts Here (Narvar)" /%}
+
+*Narvar's own video on agentic post-purchase. It is vendor material, so read it as a statement of intent rather than evidence of results.*
+
+## Short answer: quick picks
+
+The picks below are about documented actions, not about which product has the biggest marketing budget. Each pick names the evidence it rests on.
+
+- **Best overall for Shopify order changes: Gorgias AI Agent.** Its docs list cancel order, edit shipping address, remove item, replace item, reship for free and add an order note as ready-made Shopify actions, with the exact conditions (for example, the order must be unfulfilled).
+- **Best for refunds with a quote step: Intercom Fin.** Intercom's Shopify data connector templates include Calculate Shopify Refund (a dry run), Create Shopify Refund and Refund Shopify Shipping, plus gift cards and one-time discount codes for goodwill.
+- **Best for delivery problems and WISMO at retailer scale: Narvar NAVI.** Narvar describes policy-aware claim approval, live-inventory exchanges and orchestration across existing helpdesks.
+- **Best for operators who want to work from Claude, Cursor or ChatGPT: AfterShip.** Its Post-purchase MCP server has 21 tools (9 read, 12 write) for tracking and returns, and every write waits for your confirmation.
+- **Best returns platform with an MCP door: Loop Returns.** The Loop MCP server is documented with OAuth, role-based permissions and a published rate limit.
+- **Best free option: Chargeflow Insights ($0) and Loop Checkout+ (free for eligible merchants).** Neither is a shopper-facing agent. Both cost nothing to start.
+- **Best open source: none.** All ten products are commercial SaaS. The open pieces in this space are the MCP protocol and the catalog skills listed near the end.
+- **Best for enterprise teams that want to define their own workflows: Decagon, Sierra or Zendesk AI agents.** These are platforms. They can do what you wire them to do, but we found no published, ready-made refund actions for them, so budget integration work.
+
+{% callout type="warning" %}
+"No" in the action matrix means "not documented in the sources we read", not "impossible". Several vendors (Sierra, Decagon, Siena) publish capability claims without per-action documentation. Ask for a demo of the exact action before you buy.
+{% /callout %}
+
+## Why post-purchase actions are different from support chat
+
+A support chatbot answers questions. A post-purchase agent changes records: an order status in Shopify, a refund on a payment, a return authorization in a returns portal, a shipment record at a tracking provider. Three consequences follow, and they shape every ranking below.
+
+**Actions have preconditions.** Cancelling is only safe before fulfillment. Gorgias documents that its cancel and address actions check that the order is `unfulfilled` first. If your warehouse or 3PL picks orders within minutes, a Shopify-side cancel that never reaches the 3PL is worse than no cancel. Gorgias says this plainly in its own docs and suggests an `Order Date` condition (for example, less than 2 hours ago) as a guard.
+
+**Actions move money.** A refund an agent issues by mistake is a chargeback waiting to happen if the customer then disputes anyway. Chargeflow's own blog (a vendor with an obvious interest) recommends capping AI-triggered refunds, checking for open disputes before refunding and logging every agent action with the order. That advice is sensible regardless of who wrote it.
+
+**Actions need identity.** Intercom's Shopify templates only return an order that belongs to the verified customer, or to an email address the customer confirmed with a one-time code, and refuse an order number that belongs to someone else. Any agent that looks up orders by order number alone is one prompt away from leaking another customer's address.
+
+### Three kinds of agent in this roundup
+
+The ten products fall into three groups, and mixing them up is the most common buying mistake.
+
+1. **Shopper-facing agents** talk to customers and act on their behalf: Gorgias AI Agent, Intercom Fin, Narvar NAVI, Siena AI, Sierra, Decagon and Zendesk AI agents.
+2. **Operator-facing assistants** let your team work through an AI client such as Claude or Cursor: the AfterShip Post-purchase MCP server and the Loop MCP server.
+3. **Back-office protection** that cleans up when an action goes wrong: Chargeflow.
+
+A mature stack often combines one of each. For example, a shopper-facing agent on the helpdesk, a returns portal behind it, a tracking layer feeding it delivery status, and a dispute tool downstream.
+
+## Master comparison table
+
+Prices are list prices from each vendor's pricing page on November 25, 2026. "Open source" is "No" for all ten, since every product is commercial SaaS.
+
+| Product | Type | Starting price (as of Nov 25, 2026) | Free tier or trial | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/gorgias-ai-agent.png" name="Gorgias AI Agent" size=24 /%} Gorgias AI Agent | Shopper-facing | Helpdesk from $10/mo (Starter); AI Agent $0.90 to $1.00 per automated interaction | No free plan confirmed | No | Replaces one item at a time; cancel does not reach a 3PL | Most explicit Shopify action list |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/intercom-fin.png" name="Intercom Fin" size=24 /%} Intercom Fin | Shopper-facing | $0.99 per outcome | Free trial on seat plans | No | Fin for Ecommerce is Shopify-only and needs Intercom | Refund quote plus refund templates |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/narvar-navi.png" name="Narvar NAVI" size=24 /%} Narvar NAVI | Shopper-facing | Not published | Not published | No | No public pricing or action docs | Policy-aware claims and exchanges |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/aftership.png" name="AfterShip" size=24 /%} AfterShip | Operator-facing plus tracking and returns | Tracking from $49/mo (annual); Returns from $205/mo (annual) | Free trial | No | MCP writes can't be undone; plan required per product | 21-tool Post-purchase MCP server |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/sierra.png" name="Sierra" size=24 /%} Sierra | Shopper-facing platform | Outcome-based, no public price | None listed | No | No published refund actions | Single agent across chat, SMS, WhatsApp, email, voice, ChatGPT |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/decagon.png" name="Decagon" size=24 /%} Decagon | Shopper-facing platform | Not published | None listed | No | No published refund actions | Natural-language Agent Operating Procedures |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/zendesk-ai-agents.png" name="Zendesk AI agents" size=24 /%} Zendesk AI agents | Shopper-facing, built on a helpdesk | Support Team $19/agent/mo (annual); resolutions $1.50 to $2.00 | 14-day Suite trial | No | Actions are build-your-own | Included in every Suite and Support plan |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/loop-returns.png" name="Loop Returns" size=24 /%} Loop Returns | Returns platform plus MCP | Returns plan $340/mo; Checkout+ free if eligible | Free for eligible merchants | No | MCP write tools not verified | OAuth MCP server with role-based permissions |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/siena-ai.png" name="Siena AI" size=24 /%} Siena AI | Shopper-facing | $750/mo platform fee plus $0.90 per automated ticket | Unlimited sandbox | No | Action claims are marketing copy only | Ecommerce-focused flows |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/chargeflow.png" name="Chargeflow" size=24 /%} Chargeflow | Back-office disputes | Insights $0; Prevent $0.10 per scan; Alerts $29 per alert; Automation 25% of recovered | Insights free forever | No | Not a refund-request agent | Pay-for-performance dispute recovery |
+
+## 1. Gorgias AI Agent
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/gorgias-ai-agent.png" name="Gorgias AI Agent" size=40 /%}
+
+**What it is.** The AI layer of the Gorgias ecommerce helpdesk. For this topic, the important part is its Actions feature: prebuilt templates that let the agent change a Shopify order instead of only describing the policy.
+
+**Who it is for.** Shopify brands that already run support in Gorgias, or are willing to move there.
+
+**Documented post-purchase actions** (Gorgias docs page "AI Agent Actions: make changes to Shopify orders", read November 25, 2026):
+
+- **Cancel order:** checks that the order is `unfulfilled`, cancels it, restocks the product, refunds the full amount paid and sends a confirmation email.
+- **Edit shipping address:** checks that the order is unfulfilled, asks the shopper to confirm the new address, then updates it in Shopify.
+- **Remove order item:** confirms the item with the shopper, removes and restocks it, refunds the amount of the removed item and emails the updated order.
+- **Replace order item:** swaps one item for another after a stock check. If the total goes down it refunds the difference. If the total goes up, it hands the ticket to your team.
+- **Reship order for free:** duplicates a previous order when the agent judges a package lost in transit or the shopper reports damage.
+- **Add to order note:** writes a note such as "address updated by AI Agent" so humans can audit the change.
+
+**Pros**
+
+- The action list is concrete and public, including the preconditions.
+- Every change step has a built-in shopper confirmation or a human handover, for example when payment increases.
+- Setup is template-based: AI Agent, Actions, See all templates, pick Shopify, Create and Enable.
+
+**Cons**
+
+- Cancel and address edits only change Shopify. Gorgias says the change is not passed to 3PL or fulfillment apps, and points to separate Actions for ShipStation, ShipMonk and ShipBob.
+- The replace action handles one item out, one item in. Two or more items go to a human.
+- Address edits cannot recalculate tax or shipping, so the agent will not refund or charge the difference.
+
+**Benefits for post-purchase.** The minutes right after checkout are when most cancel and address requests arrive, and a human may be offline. Gorgias frames the 24/7 availability for exactly that window.
+
+**Pricing (as of November 25, 2026).** Gorgias sells the helpdesk and the AI Agent separately.
+
+| Helpdesk plan | Price | Tickets included |
+| --- | --- | --- |
+| Starter | $10 per month, monthly billing only | 50 |
+| Basic | $50 per month billed annually, $60 monthly | 300 |
+| Pro | $300 billed annually, $360 monthly | 2,000 |
+| Advanced | $750 billed annually, $900 monthly | 5,000 |
+| Enterprise | Custom quote | Over 5,000 conversations a month |
+
+AI Agent interactions are priced at $0.90 each on annual plans or $1.00 on monthly plans, and each one also counts as a helpdesk ticket, according to the pricing FAQ. The page's structured data adds that overage above a plan's included automated interactions is billed at $1.50 per interaction, so the effective rate depends on how many interactions your plan already includes. Confirm your rate with sales. Included automated interactions run from 30 on Starter and Basic to 190 on Pro and 530 on Advanced.
+
+**Free tier or trial.** We confirmed no free plan. Starter is the cheapest entry at $10 per month.
+
+**Standout use case.** A 2,000-ticket Shopify store that wants "cancel within two hours, otherwise route to a human" without writing code.
+
+**Skip it if** your fulfillment starts within minutes and you cannot add a 3PL cancel step, or your store is not on Shopify.
+
+{% figure src="https://cdn.prod.website-files.com/5e4ff204e7b6f80e402d407a/6aa2ba63d7afdad6e0137880_OG-image.png" alt="Gorgias AI Agent page social image" caption="Gorgias AI Agent product page image. Source: Gorgias (gorgias.com/ai-agent)." /%}
+
+{% x id="2079636276530037009" /%}
+
+*The post above, from Romain Lapeyre's account, announces "Gorgias AI Agent 3.0" and says Gorgias has raised over $100M. It is a launch claim, not a measured result.*
+
+## 2. Intercom Fin
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/intercom-fin.png" name="Intercom Fin" size=40 /%}
+
+**What it is.** Intercom's AI agent. For ecommerce, Intercom ships "Fin for Ecommerce" with Procedures (multi-step workflows) and a library of Shopify data connector templates that read and change orders.
+
+**Who it is for.** Shopify merchants that use Intercom, and larger teams that want Fin on top of another helpdesk such as Salesforce (Intercom's pricing FAQ says that works).
+
+**Documented post-purchase actions** (Intercom Help articles read November 25, 2026):
+
+- **Look-ups:** order status, items, shipping address and tracking, payment transactions, refunds already issued, order timeline (up to 50 events per order), gift card balance and discount code validity.
+- **Quote a refund first:** Calculate Shopify Refund and Calculate Shopify Shipping Refund return what a refund would be without moving money. The quote is order-level and shipping-level, not per line item, and the currency must match the order exactly.
+- **Change an order:** Cancel Shopify Order and Update Shopify Order (note, tags, email, shipping address).
+- **Refund:** Create Shopify Refund and Refund Shopify Shipping.
+- **Goodwill:** Issue Shopify Gift Card, Disable Shopify Gift Card, and one-time fixed-amount or percentage discount codes.
+- **Procedures:** Intercom lists where-is-my-order, returns, refunds, exchanges and order updates or cancellations as common Procedure use cases. Intercom's Fin ecommerce solutions page says Fin can verify the order, check eligibility against your policy, generate return labels, issue refunds and confirm the outcome, and escalate with context when manual approval is needed.
+
+**Pros**
+
+- The refund quote step lets a Procedure tell the shopper the exact amount before anything is issued.
+- Identity guard: Fin returns only orders that belong to the verified customer, or to an email verified with a one-time code.
+- Intercom documents the risky bits openly. Cancel, Update and Create Refund templates ship without a confirmation step, and Intercom tells you to add one in the connector description or the Procedure.
+
+**Cons**
+
+- Fin for Ecommerce is Shopify-only, requires Intercom, and is not sold standalone, per Intercom's own FAQ. WooCommerce, Magento, BigCommerce and custom storefronts are out.
+- Gift card templates need `read_gift_cards` and `write_gift_cards` scopes that Shopify Support must grant; until then they return authorization errors.
+- Preview mode does not make live data connector calls, so you must test connectors in a real conversation.
+
+**Benefits for post-purchase.** Procedures plus templates cover the full sequence: verify the customer, check policy, quote, confirm, refund, hand off if unsure.
+
+**Pricing (as of November 25, 2026).** Fin is priced at $0.99 per outcome, or $1.99 per outcome for Fin Voice. An outcome counts when a customer confirms the issue is resolved, does not ask for more help after Fin responds, or Fin completes a Procedure (including handoffs). Using Fin with an existing helpdesk carries no seat costs and a minimum monthly commitment (Intercom's example is 50 outcomes). Intercom's own helpdesk seats are listed at $85 per seat per month (Advanced) and $132 (Expert); the Essential plan shows $29 struck through to $19 per seat per month with a "New customers save 35%" note, so $19 appears to be the new-customer price.
+
+**Free tier or trial.** The Essential, Advanced and Expert plans show "Start free trial" on the pricing page.
+
+**Standout use case.** A Procedure that says: look up the order, run the refund quote, confirm the amount with the shopper, then call Create Shopify Refund, escalating if the order is already fulfilled.
+
+**Skip it if** you are not on Shopify or you want a per-ticket price instead of per-outcome billing.
+
+{% callout type="info" %}
+A contradiction between sources: Chargeflow's November 2026 blog says Fin's order cancellations "stay with your team", while Intercom's own help center lists a Cancel Shopify Order template. The likely reconciliation is that cancellation is available as a template you must configure, not a default behavior. We did not test it.
+{% /callout %}
+
+{% figure src="https://cdn.sanity.io/images/4bgok82s/monorepo-static-assets/c6a08c512ed22b89503aaf59e7488612c102dfac-2400x1260.jpg" alt="Fin for Ecommerce page social image" caption="Fin for Ecommerce social image. Source: Intercom (fin.ai/ecommerce)." /%}
+
+## 3. Narvar NAVI
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/narvar-navi.png" name="Narvar NAVI" size=40 /%}
+
+**What it is.** NAVI is the consumer-facing agent in Narvar's "agentic post-purchase" offering, powered by what Narvar calls IRIS, its identity, policy and signal layer.
+
+**Who it is for.** Mid-market and enterprise retailers that already use Narvar for tracking and returns, and run a helpdesk such as Gladly, Kustomer, Salesforce, Zendesk or Microsoft Dynamics.
+
+**Documented capabilities** (Narvar's agentic page, read November 25, 2026, all vendor-reported):
+
+- Answers where-is-my-order questions with a tracking card (status, live map, actions) on the retailer site, in-app, or inside agentic assistants.
+- Delivery issue resolution: evaluates a missing-package claim, approves it if eligible, and orchestrates replacement actions across the helpdesks listed above.
+- Proactive exchanges: when a shopper says an item does not fit, it checks inventory in real time and offers an exchange.
+- Fraud and abuse controls: a "Unified Policy Control" layer applies return, claim and service policies across channels, and NAVI communicates a trust score.
+- Admin recommendations: IRIS suggests policy changes, such as enabling proactive exchanges, with projected outcomes.
+
+The page says NAVI can "approve or deny claims, check inventory, apply retailer policies, and trigger downstream workflows inside existing systems."
+
+**Pros**
+
+- Policy-first design: retailers set return, claim and risk rules and the agent enforces them across channels, including in-store and call center.
+- Sits above the helpdesk, so it does not require replacing it.
+- Exchange-first logic aims at keeping revenue instead of refunding.
+
+**Cons**
+
+- No public pricing, no public action reference and no independent results that we could find. Narvar's page spells MCP as "Modern Content Protocol", which is not the standard expansion (Model Context Protocol). We treat the page's MCP claims as unverified.
+- Narvar's own NAVI product page URL that we guessed returned 404. Everything here comes from the agentic page.
+
+**Benefits for post-purchase.** If your pain is WISMO volume and "lost package" claims at scale, Narvar's pitch targets exactly that, with policy control rather than free-form generation.
+
+**Pricing.** Not published (as of November 25, 2026). Contact sales.
+
+**Free tier or trial.** None found.
+
+**Standout use case.** Auto-approving a lost-package claim that meets policy, then triggering a replacement in the retailer's existing helpdesk.
+
+**Skip it if** you are a small Shopify store that wants to see a price and a doc page before talking to anyone.
+
+{% figure src="https://cdn.prod.website-files.com/67925857df43acae16e8d057/69617fb571c46669179406cf_Agentic_Meta-Image.png" alt="Narvar agentic post-purchase page social image" caption="Narvar agentic post-purchase page image. Source: Narvar (corp.narvar.com/agentic-ai-post-purchase)." /%}
+
+## 4. AfterShip (agent and Post-purchase MCP)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/aftership.png" name="AfterShip" size=40 /%}
+
+**What it is.** AfterShip sells tracking, returns and shipping products. It now also runs an MCP server for post-purchase data, and its pricing page lists AI features by plan.
+
+**Who it is for.** Brands that use AfterShip Tracking or Returns and want an operator to ask Claude, Cursor or ChatGPT things like "show me exception shipments from the last 7 days".
+
+**The MCP server** (AfterShip docs, read November 25, 2026):
+
+- Server URL: `https://mcp.aftership.com/post-purchase`. Transport: Streamable HTTP only; SSE and stdio are not supported.
+- 21 tools: 9 read your data, 12 change it.
+- Tracking: search shipments, open a checkpoint timeline, edit shipment details, retrack a stalled shipment, or mark one delivered, lost or returned to sender.
+- Returns: search returns, open an RMA, approve it, record received items with a grade, resolve it, comment, and manage allowlist and blocklist rules.
+- Writes confirm first: the agent shows the record, field and old and new values and waits for approval. It must not invent a value, and it must not promise that a refund has landed if the tool did not say so.
+- The agent can do only what your AfterShip role allows, and tools need an active plan for the product they touch.
+
+**Pros**
+
+- The write rules are specific and conservative.
+- The workflow maps the real RMA lifecycle: approve, receive, resolve, and it cannot skip steps.
+- Plan tiers are public with a volume table.
+
+**Cons**
+
+- This is an operator tool, not a shopper-facing refund agent.
+- Some writes cannot be undone through the server: no undo for an approved return, no reopening a resolved or rejected return, no reversing a manually marked shipment status.
+- The shopper-facing agent features (exception handling, Order Edits for shoppers) sit on the Premium Tracking tier, and we did not find an action reference for them.
+
+**Benefits for post-purchase.** One conversation can find the stalled parcel, retrack it, and tell you which returns are waiting on approval, without opening three admin screens.
+
+**Pricing (as of November 25, 2026, from AfterShip's pricing page).**
+
+| Product and plan | Price | Included volume |
+| --- | --- | --- |
+| Tracking Essentials | $49 per month annual, $59 monthly | 1,000 shipments |
+| Tracking Premium | $99 per month annual, $118 monthly | 1,000 shipments |
+| Returns Essentials | $205 per month annual, $245 monthly | 500 returns |
+| Returns Premium | $420 per month annual, $499 monthly | 500 returns |
+| Shipping Essentials | $39 per month | 1,000 shipments |
+| Enterprise | Custom | Above 5,000 per month |
+
+Usage above the quota is billed as overage at 1.3x the unit price. Tracking Premium adds "AI agent for exception handling", AI delivery date estimates and Order Edits for shoppers. Essentials plans include an "AI Agent for setup and Q&A".
+
+**Free tier or trial.** The pricing page says "Start with a free trial."
+
+**Standout use case.** A weekly clean-up prompt for expired and exception shipments, with the agent proposing retracks you approve one by one.
+
+**Skip it if** you want an agent that talks to shoppers and issues refunds on its own.
+
+```json
+{
+  "mcpServers": {
+    "aftership-post-purchase": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.aftership.com/post-purchase"]
+    }
+  }
+}
+```
+
+*The snippet above is our adaptation of the `mcp-remote` bridge pattern that Loop documents for Claude Desktop, pointed at AfterShip's published URL. We did not test it. Follow AfterShip's own client setup steps for your client.*
+
+## 5. Loop Returns
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/loop-returns.png" name="Loop Returns" size=40 /%}
+
+**What it is.** A returns and exchanges platform for Shopify brands, now with a hosted MCP server.
+
+**Who it is for.** Brands that want exchanges and store credit to win over refunds, and ops teams who want to query returns through an AI client.
+
+**The MCP server** (Loop docs, read November 25, 2026):
+
+- Endpoint: `https://api.loopreturns.com/mcp`, with authentication negotiated through OAuth discovery.
+- Clients listed as supported without extra setup: Claude (desktop and web), Cursor, VS Code Copilot, ChatGPT, Perplexity and Microsoft Copilot Studio.
+- Read tools documented: `list-returns-tool`, `get-return-tool` and `get-return-timeline-tool`. You can filter by status, label status, outcome (refund, credit, exchange and combinations), a fraud-risk flag and warranty returns.
+- Role-based permissions: the MCP server enforces the same roles as the Loop Admin.
+- Rate limits: 600 tool calls per hour per authenticated user.
+
+**Pros**
+
+- Clear permission model and rate limits are published.
+- Outcome filters (exchange, credit, refund) match how returns teams actually triage.
+- Loop is listed in the Claude connector directory, so setup is a few clicks.
+
+**Cons**
+
+- The documentation page we read covers read-only tools. We did not confirm any MCP tool that approves, processes or refunds a return. The return detail card shows buttons for Process, Cancel, Close, Reject and Timeline, but that is an interface element, not a documented write tool.
+- No shopper-facing AI agent is part of what we read.
+
+**Benefits for post-purchase.** Ask which returns are flagged for review, which delivered returns have not been processed, or what happened on one return, in plain language.
+
+**Pricing (as of November 25, 2026).** The Returns plan is $340 per month and includes up to 1,000 returns annually, Shop Now, Instant Exchange, Bonus Credit and fraud prevention. A Checkout+ tier is free software plus return shipping, but "not every merchant qualifies"; eligibility depends on order and return volume.
+
+**Free tier or trial.** Checkout+ is free for eligible merchants. No trial was listed.
+
+**Standout use case.** A Monday prompt: "List returns delivered in the last 7 days that haven't been processed yet."
+
+**Skip it if** you need an agent that writes refunds through MCP today, or you are not on Shopify.
+
+{% figure src="https://cdn.sanity.io/images/t78kdlc0/production/3e5cc014ea2f5cf05a8c4a349a1647569f7184ed-1200x640.png" alt="Loop Returns website social image" caption="Loop Returns site image. Source: Loop (loopreturns.com)." /%}
+
+## 6. Sierra
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/sierra.png" name="Sierra" size=40 /%}
+
+**What it is.** An enterprise AI agent platform. Sierra's homepage says you can deploy a single agent across chat, SMS, WhatsApp, email, voice and ChatGPT, and that pricing is outcome-based ("you only pay for the value Sierra delivers").
+
+**Who it is for.** Large consumer brands with engineering and CX operations teams, and the budget for a custom deployment.
+
+**What we could verify.** The homepage, its channel list and its outcome-based pricing statement. We did not find a public list of post-purchase actions, a pricing sheet or a docs page describing refund, exchange or address-change tools. Anything Sierra does in a Shopify or OMS integration is therefore set up per customer and is not something we can document.
+
+**Pros**
+
+- Outcome-based pricing aligns cost with a resolved conversation instead of a seat.
+- One agent definition across many channels, including ChatGPT.
+- The homepage says a single agent deploys across chat, SMS, WhatsApp, email, voice and ChatGPT, which can reduce per-channel duplication of policy logic (our inference, untested).
+
+**Cons**
+
+- No public price and no public action reference.
+- A platform, not a template library: expect integration work for every post-purchase action.
+
+**Benefits for post-purchase.** If you already know you need voice and messaging for a large catalog and order volume, a platform vendor can build the refund, exchange and tracking flows against your own systems.
+
+**Pricing.** Outcome-based; no public numbers as of November 25, 2026. Contact sales.
+
+**Free tier or trial.** None listed.
+
+**Standout use case.** One agent handling the same order-status question over SMS, WhatsApp and voice with one set of rules.
+
+**Skip it if** you are a small or mid-size Shopify store, or you want to read an action list before a sales call.
+
+{% youtube id="n4E4xNYCkYM" title="Bret Taylor of Sierra on AI agents, outcome-based pricing, and the OpenAI board (Stripe)" /%}
+
+*A Stripe-hosted interview with Sierra's co-founder that discusses outcome-based pricing. It is a conversation about the idea, not a product demo of refunds.*
+
+## 7. Decagon
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/decagon.png" name="Decagon" size=40 /%}
+
+**What it is.** A customer support AI agent platform built around Agent Operating Procedures (AOPs): workflows written in natural language that define what the agent should do, with testing, observability and an analytics suite around them. It covers chat, voice and email in one intelligence layer.
+
+**Who it is for.** Support and CX operations teams at mid-market and enterprise companies that want to own workflow logic without engineering sprints.
+
+**What we could verify.** Decagon's homepage describes AOPs, the three channels and a results panel with figures such as 70% chat and voice resolution, 80% deflection and $1M revenue from fully AI-handled conversations. These are vendor-reported marketing figures from unnamed customers and we did not verify any of them. We did not find a post-purchase action reference or public pricing page (our guessed pricing URL returned 404).
+
+**Pros**
+
+- AOPs let non-engineers edit refund, return and exchange logic in plain language.
+- One layer for voice, chat and email.
+- Testing and observability are part of the pitch, which matters when an agent is allowed to move money.
+
+**Cons**
+
+- No public pricing and no public per-action documentation.
+- The homepage metrics are unattributed and cannot be reproduced.
+
+**Benefits for post-purchase.** Return and refund policies are exactly the kind of branching business rules AOPs are designed to express. Whether Decagon ships prebuilt Shopify, Loop or AfterShip connectors is something to ask for in a demo.
+
+**Pricing.** Not published as of November 25, 2026.
+
+**Free tier or trial.** None listed.
+
+**Standout use case.** Encoding "refund if within 30 days and item not final sale, otherwise offer store credit" in a procedure that a support lead can edit.
+
+**Skip it if** you want transparent self-serve pricing, or want prebuilt Shopify action templates you can read about in advance.
+
+{% youtube id="ckEQXDTmLSk" title="Decagon Product Overview" /%}
+
+*Decagon's own product overview. Vendor material.*
+
+{% figure src="https://cdn.prod.website-files.com/683e5da0b6d8a19de4875ae7/69f0e96abfe89169f04f1d06_decagon-opengraph.webp" alt="Decagon website social image" caption="Decagon site image. Source: Decagon (decagon.ai)." /%}
+
+## 8. Zendesk AI agents
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/zendesk-ai-agents.png" name="Zendesk AI agents" size=40 /%}
+
+**What it is.** The AI agents built into Zendesk's Support and Suite plans. For post-purchase work, the relevant feature is actions: Zendesk documents four types: configured actions, API integrations, action flows and custom actions.
+
+**Who it is for.** Teams already on Zendesk who want an agent that can read and write to Shopify, a returns portal or an OMS through APIs they configure.
+
+**How actions work** (Zendesk help article "About actions in AI agents", read November 25, 2026):
+
+- **Custom actions** let the agent call an API you specify to fetch or change data outside Zendesk. Zendesk recommends them for new integrations; older integration-builder API integrations remain available.
+- **Action flows** are multi-step sequences that perform actions in Zendesk and external systems, for integrations that need several calls.
+- **Configured actions** update session parameters, add labels or send conversation details to a CRM.
+- Branching in an action flow leaves the agent with only Success and Fallback scenarios, so you pass a parameter at the end of the flow to tell it what to do next.
+
+Zendesk's pricing page also lists an AI agent builder that creates agents from natural-language procedure descriptions, 80+ languages and "Integrations and actions" on every Suite plan. We did not find prebuilt, documented "cancel order" or "issue refund" templates; you build the integration yourself.
+
+**Pros**
+
+- AI agents are included in every Suite and Support plan. Billing is per automated resolution, which Zendesk defines as a request resolved by the AI agent without escalation to a human.
+- Custom actions work with any REST API, so Shopify, Loop and AfterShip are reachable with effort.
+- Narvar's page names Zendesk as one of the helpdesks it orchestrates replacement actions across, so it combines with a specialist.
+
+**Cons**
+
+- Build-your-own: no ready-made refund action to point to.
+- Action flow outputs cannot be tested in the dialogue builder, per Zendesk's article.
+
+**Benefits for post-purchase.** If your support operation already runs on Zendesk, you avoid a platform migration and can wire a refund call into your own policy checks.
+
+**Pricing (as of November 25, 2026, Zendesk pricing page).**
+
+| Plan | Annual, per agent per month | Monthly, per agent per month | Included automated resolutions |
+| --- | --- | --- | --- |
+| Support Team | $19 | $25 | 5 per agent per month |
+| Suite Team | $55 | $69 | 5 per agent per month |
+| Suite Professional | $115 | $149 | 10 per agent per month |
+
+Extra resolutions cost $1.50 each on a committed volume or $2.00 each pay-as-you-go. Copilot (the agent-assist add-on) is listed at $50 per agent per month billed annually. Voice AI agents require Zendesk voice, and the QA product is an add-on.
+
+**Free tier or trial.** A 14-day trial with access to Suite Professional features, per the pricing FAQ.
+
+**Standout use case.** A custom action that calls your returns portal's API, wrapped in a condition that keeps refunds above a threshold on a human queue.
+
+**Skip it if** you are not on Zendesk, or you want prebuilt Shopify order actions without building them.
+
+## 9. Siena AI
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/siena-ai.png" name="Siena AI" size=40 /%}
+
+**What it is.** An AI customer service agent aimed at ecommerce brands. Siena's homepage says it handles everything from "where's my order?" to "I want to start my return", including updating addresses, generating labels, issuing refunds and sending replacements in a single flow.
+
+**Who it is for.** DTC brands that want an agent from a vendor focused on ecommerce, and are fine paying a platform fee.
+
+**What we could verify.** The pricing page and a sample chat on the homepage in which the agent applies a missed discount code and refunds the difference. These are marketing statements; we did not find a docs page that lists each action or the order systems it connects to.
+
+**Pros**
+
+- Pricing is public and simple: a platform fee plus a per-ticket automation price.
+- An unlimited sandbox is included in the platform fee, so you can test before routing real tickets.
+- Broad claimed action coverage in one flow: addresses, labels, refunds, replacements.
+
+**Cons**
+
+- The $750 per month platform fee is a floor that smaller stores may not clear.
+- No public action documentation and no independently verifiable results; the homepage quote of "50% of conversations at 90%+ CSAT" is one customer's statement.
+
+**Benefits for post-purchase.** If the homepage claims hold in your store, one agent covers tracking, returns, address changes and replacements without stitching vendors together.
+
+**Pricing (as of November 25, 2026).** A platform fee of $750 per month for the core AI engine and unlimited sandbox, an Automation Pack at $0.90 per automated ticket, and a support and implementation package (onboarding plus Slack support) with no price shown.
+
+**Free tier or trial.** The sandbox is unlimited, but no free plan or trial was listed.
+
+**Standout use case.** A "forgot my discount code" refund-the-difference flow, which is the example Siena itself shows.
+
+**Skip it if** your volume is too low to justify $750 a month, or you need documented action-level controls before signing.
+
+## 10. Chargeflow
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-ai-agents-for-post-purchase-2026/logos/chargeflow.png" name="Chargeflow" size=40 /%}
+
+**What it is.** A chargeback and dispute platform for ecommerce. It is the odd one out on this list: it does not take refund requests from shoppers. It handles what happens when a refund, a cancel or an address change did not satisfy the customer and a dispute arrives.
+
+**Who it is for.** Merchants whose AI agents (or humans) refund, cancel and re-ship at volume, and who want a downstream safety net.
+
+**What it does** (Chargeflow pricing page and its November 12, 2026 blog post, read November 25, 2026, vendor material):
+
+- **Insights:** analytics across stores and processors, repeat-disputer flags, weekly summaries.
+- **Prevent:** scores transactions post-checkout and before fulfillment so you can auto-approve, verify or cancel risky orders.
+- **Alerts:** real-time chargeback alerts matched to a transaction and refunded automatically, with credit claims filed for duplicate or invalid alerts.
+- **Automation:** AI-built evidence and submission for disputes, with a 4x ROI guarantee on pay-for-performance pricing.
+
+**Pros**
+
+- Pay-for-performance on recovery: no fee until a chargeback is recovered.
+- A free analytics tier with no credit card.
+- The blog's guardrails (cap AI-triggered refunds, check for open disputes first, log every agent action against the order) are practical for anyone deploying an action agent.
+
+**Cons**
+
+- It does not answer shoppers, so it complements rather than replaces the others.
+- The headline claims (up to 90% fraud reduction, up to 98% lower dispute rate, a 4x ROI guarantee) are vendor-reported.
+- The comparison blog it wrote about this topic ranks its own product on the list, which is a conflict of interest we have accounted for by cross-checking each competitor claim against that competitor's own docs.
+
+**Benefits for post-purchase.** After an agent refunds, a dispute can still be filed on the same order. Chargeflow's Alerts product is designed to intercept those before they become formal chargebacks.
+
+**Pricing (as of November 25, 2026).**
+
+| Product | Price |
+| --- | --- |
+| Insights | $0, free forever |
+| Prevent | $0.10 per scanned transaction; first 1,000 free |
+| Alerts | $29 per alert, fully handled |
+| Automation | 25% of each recovered chargeback; no payment until recovery |
+
+The 25% fee does not include the dispute fee. Chargeflow also advertises up to 70% off for eligible startups.
+
+**Free tier or trial.** Insights is free forever, and the first 1,000 Prevent scans are free.
+
+**Standout use case.** Refund agents cause some disputes by refunding too late. Alerts are meant to catch the pre-dispute notice and refund before the formal chargeback.
+
+**Skip it if** your dispute volume is negligible, or you are looking for a shopper-facing agent.
+
+{% youtube id="OThcgGgWlrU" title="Chargeflow: AI-Powered Chargeback Management for eCommerce (Product Demo)" /%}
+
+*Chargeflow's product demo. Vendor material.*
+
+{% figure src="https://cdn.prod.website-files.com/66eafaec075d9e2e60131e26/6950f022c2fbbfc0980920e4_Pricing_OpenGraph_1.png" alt="Chargeflow pricing page social image" caption="Chargeflow pricing page image. Source: Chargeflow (chargeflow.io/pricing)." /%}
+
+## Pricing table (as of November 25, 2026)
+
+All figures are list prices from each vendor's own pricing page or help center. Taxes, overage and annual discounts vary, and several vendors show both an annual and a monthly rate.
+
+| Product | Entry price | Usage price | Notes |
+| --- | --- | --- | --- |
+| Gorgias AI Agent | Helpdesk Starter $10/mo; Basic $50/mo annual ($60 monthly) | $0.90 per AI interaction annual, $1.00 monthly; a $1.50 overage rate also appears on the page | Each AI interaction also counts as a helpdesk ticket |
+| Intercom Fin | No seat cost when used with another helpdesk | $0.99 per outcome; $1.99 per Fin Voice outcome | Minimum monthly commitment applies (example given: 50 outcomes) |
+| Narvar NAVI | Not published | Not published | Contact sales |
+| AfterShip | Tracking Essentials $49/mo annual; Returns Essentials $205/mo annual | Overage 1.3x unit price | Plan needed per product the MCP touches |
+| Sierra | Not published | Outcome-based | Contact sales |
+| Decagon | Not published | Not published | Contact sales |
+| Zendesk AI agents | Support Team $19/agent/mo annual | $1.50 committed or $2.00 pay-as-you-go per automated resolution | 5 to 10 resolutions per agent per month included |
+| Loop Returns | Returns plan $340/mo | Up to 1,000 returns annually included | Checkout+ free for eligible merchants |
+| Siena AI | $750/mo platform fee | $0.90 per automated ticket | Unlimited sandbox included |
+| Chargeflow | Insights $0 | Prevent $0.10 per scan; Alerts $29 per alert; Automation 25% of recovered | First 1,000 Prevent scans free |
+
+A worked example, using only the published numbers. Suppose 500 shopper requests a month are fully resolved by the agent, and your helpdesk is already paid for. On Intercom's published rate that is 500 x $0.99 = $495. On Siena's published terms it is $750 + (500 x $0.90) = $1,200. On Zendesk's pay-as-you-go rate it is 500 x $2.00 = $1,000, before any included resolutions are subtracted. These are list-price arithmetic only. They ignore what each vendor counts as an outcome, a resolution or an automated ticket, and those definitions differ, so treat the comparison as an order of magnitude and not as a quote.
+
+## Action matrix: which agent can do what
+
+This is the table most readers came for. "Yes" means we found the action in the vendor's own docs or product pages. "Partial" means it is documented with limits, only claimed on a marketing page, or achievable through a build-it-yourself integration. "No" means we found no documentation of it. It does not mean the product cannot do it.
+
+| Product | Cancel order | Edit address | Refund | Return label or exchange | Reship or replace | Tracking (WISMO) | MCP server | Disputes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Gorgias AI Agent | Yes | Yes | Partial (as part of cancel, remove and replace) | Partial (item replace; Loop link per a third-party blog) | Yes | Partial (reads Shopify shipping info) | No | No |
+| Intercom Fin | Yes (template, add your own confirmation) | Yes (Update Shopify Order) | Yes (with quote step) | Yes (vendor-stated labels and Procedures) | No | Yes | No | No |
+| Narvar NAVI | No | No | Partial (claim approvals) | Yes (proactive exchanges) | Partial (replacements via helpdesk) | Yes | Partial (claimed, unverified) | No |
+| AfterShip | No | Partial (shipment record, and Order Edits on Premium) | Partial (resolve a return, no refund promise) | Yes (return approval and receiving) | No | Yes | Yes (21 tools) | No |
+| Sierra | No | No | No | No | No | No | No | No |
+| Decagon | No | No | No | No | No | No | No | No |
+| Zendesk AI agents | Partial (custom actions) | Partial (custom actions) | Partial (custom actions) | Partial (custom actions) | Partial (custom actions) | Partial | No | No |
+| Loop Returns | No | No | Partial (outcome filters, no confirmed write tool) | Yes | No | Partial (label status) | Yes (read tools confirmed) | No |
+| Siena AI | No | Partial (claimed) | Partial (claimed) | Partial (claimed) | Partial (claimed) | Partial (claimed) | No | No |
+| Chargeflow | No | No | Partial (auto refund from alerts) | No | No | No | No | Yes |
+
+For Sierra and Decagon, every cell reads "No" because their public pages are generic. That is a documentation gap, not a capability verdict.
+
+## Feature matrix
+
+| Feature | Gorgias | Fin | Narvar | AfterShip | Loop | Zendesk | Siena | Chargeflow |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Public pricing | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes |
+| Shopify-native actions documented | Yes | Yes | No | Partial | Partial | No | Partial | Partial |
+| Shopper confirmation step documented | Yes | Partial | No | Yes (operator) | No | No | No | No |
+| Human handover documented | Yes | Yes | Partial | Yes | No | Yes | Partial | Partial |
+| Verified-identity check documented | Partial | Yes | Partial | Yes (role-based) | Yes (role-based) | No | No | No |
+| Works with other helpdesks | No | Yes | Yes | Partial | Partial | n/a | Partial | Yes |
+| Free tier or trial | No | Yes | No | Yes | Partial | Yes | Partial | Yes |
+| Outcome or usage pricing | Yes | Yes | No | Yes | No | Yes | Yes | Yes |
+
+Sierra and Decagon are left out of the second matrix because their public pages do not document any of these rows.
+
+## Head-to-head: the three closest pairs
+
+### Gorgias AI Agent vs Intercom Fin: which to pick
+
+Both act on Shopify orders, but they package it differently.
+
+| | Gorgias AI Agent | Intercom Fin |
+| --- | --- | --- |
+| Action style | Prebuilt actions (cancel, edit address, remove, replace, reship, note) | Data connector templates plus Procedures |
+| Refund control | Refunds as a side effect of other actions | Quote first (Calculate Shopify Refund), then Create Shopify Refund |
+| Safety defaults | Unfulfilled check; confirmation steps in the action | Verified-identity lookup; add your own confirmation to write templates |
+| Platform coupling | Gorgias helpdesk | Intercom, or Fin on another helpdesk |
+| Platforms | Shopify | Shopify only for Fin for Ecommerce |
+| Pricing | Per AI interaction plus helpdesk tickets | Per outcome ($0.99) |
+
+**Pick Gorgias** if you want a ready list of actions with the preconditions already written, and your support lives in Gorgias. **Pick Fin** if you want a quote-then-refund sequence and are willing to add confirmation steps yourself. Both need a test conversation before you trust them.
+
+### Narvar NAVI vs AfterShip: which to pick
+
+| | Narvar NAVI | AfterShip |
+| --- | --- | --- |
+| Who it serves | Shoppers, through the retailer's channels | Operators, through an AI client over MCP |
+| Documented depth | Marketing page only | Docs with a 21-tool reference |
+| Writes | Claim approvals and exchange offers (claimed) | 12 write tools, each behind a confirmation |
+| Price visibility | Contact sales | Public tiers |
+
+**Pick Narvar** if you are a larger retailer who wants a policy engine across channels and will negotiate. **Pick AfterShip** if you want something you can read, price and try this week.
+
+### Loop Returns vs AfterShip Returns: which to pick
+
+Both sell returns software with AI-client access. Loop's documented MCP surface that we could confirm is read-only (list, detail, timeline) with outcome filters. AfterShip documents approve, receive and resolve as write tools with a confirmation rule and an irreversible-actions warning. If you want an assistant that moves a return through its lifecycle, AfterShip's documentation is further along. If you want a polished read-and-triage view with strict role-based permissions and a published rate limit, Loop's is clearer. Entry prices are close: Loop Returns $340 per month versus AfterShip Returns Essentials $205 per month on annual billing (500 returns a month), though plan contents differ.
+
+## Skills and MCP servers that work with these tools
+
+The agentskills.codes catalog is a registry of installable skills. When we searched the catalog API for gorgias, aftership, narvar, loop returns and chargeflow, it returned no matches, and the intercom query returned only unrelated skills, so none of these vendors publishes a skill there that we found. What the catalog does have is the building blocks you would use if you wire your own refund or support workflow. We confirmed each link below returned HTTP 200 on November 25, 2026.
+
+- [Shopify Admin refund and reorder](https://agentskills.codes/skills/shopify-admin-refund-and-reorder): processes a full or partial refund on a Shopify order and can create a replacement draft order. The closest catalog match to the actions in this article.
+- [Shopify automation via Rube MCP](https://agentskills.codes/skills/shopify-automation-fiscfed9): automates Shopify tasks (products, orders, customers, inventory, collections) through Rube MCP from Composio.
+- [Shopify development](https://agentskills.codes/skills/shopify-development): for building Shopify apps and extensions with the GraphQL Admin API, useful if you write your own refund action.
+- [Zendesk](https://agentskills.codes/skills/zendesk): Zendesk Support REST API for tickets, users and organizations. A reference for the custom actions described in the Zendesk section.
+- [Freshdesk automation](https://agentskills.codes/skills/freshdesk-automation): helpdesk operations through Rube MCP, for teams outside Zendesk and Gorgias.
+- [Ticket triage](https://agentskills.codes/skills/ticket-triage): categorizes incoming support tickets, assigns priority P1 to P4 and recommends routing, which fits the "decide what the agent may do" step.
+- [Policy oracle](https://agentskills.codes/skills/policy-oracle): answers customer policy questions about shipping, returns, exchanges, refunds and warranty, aimed at DeskClaw. Read it for how a policy-first answer step is structured.
+- [Webhook security](https://agentskills.codes/skills/webhook-security): signature verification, replay protection and idempotency for webhooks, relevant to dispute, refund and carrier events.
+- [MCP builder](https://agentskills.codes/skills/mcp-builder) and [MCP CLI](https://agentskills.codes/skills/mcp-cli): for building and exercising MCP servers such as the ones AfterShip and Loop expose.
+
+Related reading on this site: [Claude Code remote control for skill workflows](https://agentskills.codes/blog/claude-code-remote-control-for-skill-workflows) covers running agent skills across machines, and [Desktop Commander MCP with agent skills](https://agentskills.codes/blog/desktop-commander-mcp-with-agent-skills) covers how MCP servers and skills combine. For the general support-agent market, our sister site's [best AI customer support agents](https://agentpedia.codes/blog/best-ai-customer-support-agents-2026) post covers helpdesk-wide agents, while this one is about post-purchase actions only.
+
+## Best for X: decision table
+
+| If you need | Start with | Why |
+| --- | --- | --- |
+| Cancels and address changes within minutes of an order | Gorgias AI Agent | Documented actions with an unfulfilled check |
+| A refund quoted before it is issued | Intercom Fin | Calculate Shopify Refund is a dry run |
+| Lost-package claims at retailer scale | Narvar NAVI | Claim approval and policy control are the pitch |
+| An operator assistant in Claude or Cursor for tracking and RMAs | AfterShip | 21-tool MCP with confirm-before-write |
+| Returns triage with outcome and fraud filters | Loop Returns | Documented list, detail and timeline tools |
+| A tool tuned to ecommerce flows with a sandbox | Siena AI | Public price and unlimited sandbox |
+| Disputes that follow refunds | Chargeflow | Alerts, automation and a free analytics tier |
+| A platform you control and extend | Zendesk AI agents, Decagon or Sierra | Custom actions or natural-language procedures |
+
+## Common mistakes
+
+1. **Trusting "the agent issues refunds" without reading the preconditions.** The useful details are the ones in the limitations section: unfulfilled only, one item at a time, no 3PL sync.
+2. **Skipping a confirmation step.** Intercom's own docs state that its Shopify cancel, update and refund templates ship without one. If you add none, the agent acts on the first request it parses.
+3. **Letting order numbers stand in for identity.** An order number is not a credential. Prefer an agent that verifies the customer first, as Intercom's templates are documented to do.
+4. **Ignoring the fulfillment lag.** A cancellation in Shopify does not stop a package already sent to a 3PL. Add a time window condition or a 3PL cancel step.
+5. **Treating an MCP server as a shopper product.** AfterShip's and Loop's MCP servers are for authenticated staff, bounded by each user's own role.
+6. **Forgetting the downstream dispute.** A customer who gets a refund can still file a chargeback if the refund is late. Pair a refund agent with dispute alerts.
+7. **Comparing per-outcome and per-ticket prices directly.** Each vendor defines the billable unit differently. Count what you expect to be billed for, not what is quoted.
+
+## Buying and setup checklist
+
+- List your ten most common post-purchase requests, and mark which need a write action (cancel, refund, address) and which only need a read (status).
+- For each write action, record the precondition: unfulfilled only, within a time window, under a refund cap.
+- Ask every vendor for a live demo of your exact top three actions on a test store, not a recorded video.
+- Confirm where the agent hands over, and that the human sees the full context.
+- Check how identity is verified before the agent looks up or changes an order.
+- Decide your refund cap and your auto-approve threshold, and write them down before configuring the agent.
+- Log every agent action against the order, for example with an order note, so disputes can be answered.
+- Test connectors in a real conversation. Intercom says its preview mode does not make live connector calls.
+- Add a dispute step: alerts for pre-dispute notices and a response process for formal chargebacks.
+- Set rate and scope limits on any MCP connection: Loop publishes 600 tool calls per hour per user, and both vendors tie access to the signed-in user's role.
+
+## How we evaluated
+
+This is a documentation review, not a lab test. On November 25, 2026 we read the pricing pages and docs for each product: Gorgias (AI Agent page, pricing page and the Shopify Actions help article), Intercom (pricing page, Fin for Ecommerce and three data connector help articles), Narvar (the agentic post-purchase page), AfterShip (pricing page and the Post-purchase MCP docs), Loop (pricing page and MCP docs), Zendesk (pricing page and the AI agent actions help article), Siena, Sierra, Decagon and Chargeflow (pricing page and a competitor-comparison blog). We built the action matrix only from what those pages state.
+
+What we did not do: we did not connect any agent to a store, issue any refund, install any MCP server, or measure any resolution rate. All performance figures on vendor pages are vendor-reported and we did not reproduce them. We found no neutral benchmark of post-purchase action accuracy for these products, so none is cited. The only independent-looking source on this exact topic, the Chargeflow comparison blog, is written by a vendor that appears in the list, so we used it only to find leads and corroborated each product claim against the product's own pages where we could. Where a source contradicted another we say so in the text: Chargeflow's blog says Fin cancellations stay with your team while Intercom's help center lists a cancel template.
+
+No sponsorship or affiliate relationship shaped the order of this list.
+
+## FAQ
+
+### Which AI agent can actually issue refunds, not just draft a reply?
+
+Intercom Fin has the most explicit documentation: Create Shopify Refund and Refund Shopify Shipping templates, plus a Calculate Shopify Refund dry run. Gorgias AI Agent refunds as part of its cancel, remove-item and replace-item actions. Narvar and Siena describe claim approval and refunds on their marketing pages, but we found no action reference to confirm them.
+
+### Can an AI agent cancel an order or change a shipping address?
+
+Yes, for Shopify, in two documented cases. Gorgias AI Agent has Cancel order and Edit shipping address actions that check the order is unfulfilled first. Intercom Fin has Cancel Shopify Order and Update Shopify Order templates. Neither passes the change to a 3PL, and Gorgias says so explicitly.
+
+### What does "unfulfilled" mean for a cancellation?
+
+In Shopify, an unfulfilled order has not been marked as shipped. Gorgias's actions check for this before cancelling. If your warehouse picks orders before Shopify marks them fulfilled, add a time window condition (Gorgias suggests `Order Date` less than 2 hours ago) or a 3PL cancel step.
+
+### Is there an MCP server for post-purchase actions?
+
+Yes, two documented ones for operators. AfterShip's Post-purchase MCP server is at `https://mcp.aftership.com/post-purchase` with 21 tools, 9 read and 12 write. Loop's is at `https://api.loopreturns.com/mcp`, with documented read tools for listing returns, getting a return and reading its timeline. Narvar's page mentions an MCP orchestrator, but we could not verify its design.
+
+### Do these agents work with WooCommerce or BigCommerce?
+
+It depends on the vendor. Intercom states Fin for Ecommerce is Shopify-only and not available for WooCommerce, Magento, BigCommerce or custom storefronts. Gorgias's documented actions are for Shopify. Intercom's general Data connector templates also cover WooCommerce and BigCommerce for non-Fin-for-Ecommerce use, per its help article. Check each vendor for your platform before a trial.
+
+### What is the cheapest way to start?
+
+Chargeflow Insights is free forever, Loop Checkout+ is free for eligible merchants, and Gorgias Starter is $10 per month. For a shopper-facing agent with a published per-use price, Intercom Fin at $0.99 per outcome has no seat cost when used with another helpdesk, subject to a minimum monthly commitment. Prices are as of November 25, 2026.
+
+### How is "resolution" or "outcome" defined, and does it matter?
+
+It matters a lot because each vendor bills a different unit. Intercom counts an outcome when a customer confirms resolution, stops asking for help after Fin responds, or Fin completes a Procedure including handoffs. Zendesk counts an automated resolution as a request resolved without escalation. Gorgias counts an automated interaction as a request fully resolved without a human agent. Gorgias also notes that a human reply within 72 hours of an AI resolution changes the billing to a helpdesk ticket only.
+
+### Are AI agents safe to give refund access to?
+
+They are as safe as the guardrails you add. The documented safeguards worth requiring are a precondition check (unfulfilled), a shopper confirmation, a verified identity, a handover to a human for exceptions, and a refund cap. Intercom warns that some of its Shopify write templates ship without a confirmation step. AfterShip's MCP server requires confirmation before every write and cannot undo some of them.
+
+### Can an agent trigger a chargeback?
+
+Indirectly. A cancellation, an address change or a refund that comes too late can leave a customer filing a dispute anyway. Chargeflow's blog, a vendor source, recommends capping AI-triggered refunds, checking for open disputes before refunding and logging every agent action with the order. These are sensible controls whoever wrote them.
+
+### Which tools suit enterprise teams that want custom workflows?
+
+Decagon (natural-language Agent Operating Procedures), Sierra (one agent across chat, SMS, WhatsApp, email, voice and ChatGPT with outcome-based pricing) and Zendesk AI agents (custom actions and action flows). None of the three publishes a ready-made refund action list, so expect integration work and ask for a demo of your exact flows.
+
+### Is there an open-source option?
+
+Not for the products in this roundup: all ten are commercial. The open parts of the stack are the Model Context Protocol itself and community skills in the [agentskills.codes catalog](https://agentskills.codes/skills/mcp-builder) that you can adapt to write your own refund or support actions.
+
+### How current is this information?
+
+Prices and capabilities are as of November 25, 2026. Vendors in this space change plans often, and Gorgias, Intercom and AfterShip all show annual, monthly or promotional price points on their pages, so re-check the live pages before you buy.
+
+## Sources
+
+Fetched November 25, 2026 unless noted.
+
+- Gorgias: [AI Agent](https://www.gorgias.com/ai-agent), [pricing](https://www.gorgias.com/pricing), [AI Agent Actions: make changes to Shopify orders](https://docs.gorgias.com/en-US/ai-agent-actions-make-changes-to-shopify-orders-757792)
+- Intercom: [pricing](https://www.intercom.com/pricing), [Fin for Ecommerce](https://fin.ai/ecommerce), [Fin for Ecommerce solutions page](https://fin.ai/learn/solutions-ecommerce), [Set up Fin for Ecommerce on a Shopify store](https://www.intercom.com/help/en/articles/14420740-set-up-fin-for-ecommerce-on-a-shopify-store), [Use Data connector templates](https://www.intercom.com/help/en/articles/9909996-use-data-connector-templates), [Shopify compensation templates for Fin](https://www.intercom.com/help/en/articles/17102998-shopify-compensation-templates-for-fin)
+- Narvar: [Agentic post-purchase](https://corp.narvar.com/agentic-ai-post-purchase)
+- AfterShip: [Post-purchase MCP overview](https://www.aftership.com/docs/post-purchase-mcp/overview) and pricing page (read via cached fetch; the page returned 403 to a plain HTTP check)
+- Loop Returns: [pricing](https://loopreturns.com/pricing), [MCP getting started](https://docs.loopreturns.com/mcp/getting-started), [MCP returns read tools](https://docs.loopreturns.com/mcp/tools/returns-read)
+- Zendesk: [pricing](https://www.zendesk.com/pricing/), [About actions in AI agents](https://support.zendesk.com/hc/en-us/articles/10783053154202-About-actions-in-AI-agents)
+- Siena AI: [pricing](https://www.siena.cx/pricing), [home](https://www.siena.cx/)
+- Sierra: [home](https://sierra.ai/)
+- Decagon: [home](https://decagon.ai/)
+- Chargeflow: [pricing](https://www.chargeflow.io/pricing), [Which AI Agents Manage Post-Purchase Actions?](https://www.chargeflow.io/blog/ai-agents-post-purchase-actions) (vendor blog, published November 12, 2026)
+- agentskills.codes catalog skills linked above, and sister-site post [best AI customer support agents (2026)](https://agentpedia.codes/blog/best-ai-customer-support-agents-2026)
