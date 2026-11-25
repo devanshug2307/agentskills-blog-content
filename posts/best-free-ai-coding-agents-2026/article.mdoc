@@ -1,0 +1,572 @@
+"Free" means five different things in AI coding right now: a hosted model the vendor gives away, an ad-funded allowance, a weekly quota nobody will put a number on, a free harness that needs your own API key, and a limited-time promotion that can vanish on a Monday. Most roundups blur them together. This post keeps them apart and puts the limit next to every product, checked against the vendor's own pricing or docs page on November 25, 2026. Where a vendor only says "limited" or "light", the table says the number is unpublished instead of guessing one.
+
+The short version: Freebuff is the one tool here that states a daily allowance in hours with no key and no card, though the figures come from its own comparison post. OpenCode and Kilo Code hand out rotating free hosted models. GitHub Copilot Free and Google Antigravity are the picks if you want a big vendor behind a $0 plan. Gemini CLI and Qwen Code, two names that used to top every "free" list, no longer have a free hosted tier, and Amazon Q Developer stopped taking new Free Tier signups in May, which is why Kiro is the AWS entry now.
+
+{% youtube id="6rbd1uK_pEk" title="Freebuff: Free AI Coding Agent (Deepseek, GPT, Minimax)" /%}
+
+*A third-party Freebuff walkthrough from the Stackagen channel (title confirmed through YouTube oEmbed on November 25, 2026). Free model lists change often, so use the limits table below for current numbers rather than the video.*
+
+## Short answer: quick picks
+
+- **Best free coding agent overall:** [Freebuff](https://freebuff.com). No card, no API key, and an allowance published in hours per day (up to 30 in the US, per Freebuff's own comparison post). The cost is text ads and an allowance that shrinks outside a handful of countries.
+- **Best free and open source:** [OpenCode](https://opencode.ai) (MIT, 229,110 GitHub stars as of November 25, 2026). Free hosted models plus 200+ providers when you bring a key. The free list rotates and has no published request limit.
+- **Best inside VS Code or JetBrains:** [Kilo Code](https://kilo.ai) (MIT). Auto Free routes to free models, and it works with your own key at no markup.
+- **Best from a large vendor with a real free plan:** [GitHub Copilot Free](https://github.com/features/copilot/plans) (2,000 completions a month plus limited chat and agent use) and [Google Antigravity](https://antigravity.google/pricing) (weekly agent quota, number unpublished).
+- **Best bring-your-own-key harness:** [Cline](https://cline.bot/pricing) (Apache-2.0, 71,891 stars). Free software, you pay for inference.
+- **Best for trying a spec-driven workflow:** [Kiro](https://kiro.dev/pricing/), 50 credits a month on the free plan.
+- **Skip for free hosted inference in 2026:** Gemini CLI and Qwen Code. Both are still free software, but their free sign-in tiers are gone.
+
+{% callout type="warning" %}
+**What changed in 2026, as of November 25.** Google moved Gemini CLI's free individual access to Antigravity CLI on June 18, 2026. Qwen Code's Qwen OAuth sign-in now requires a Plus or Pro subscription from chat.qwen.ai. Amazon Q Developer stopped accepting new Free Tier signups on May 15, 2026. Google's Antigravity pricing page says several free-plan models, including Gemini 3.8 Flash, "will be removed on November 30, 2026", five days from today. Free tiers in this market move monthly, so treat every number here as a dated snapshot.
+{% /callout %}
+
+## Free limits at a glance (checked November 25, 2026)
+
+This is the table most "best free" posts skip. "Unpublished" means the vendor's page says "limited" or "light" without a number. "Not stated" means the pages I read did not say.
+
+| Tool | Published free limit | Models on the free tier | Card required | Source |
+| --- | --- | --- | --- | --- |
+| Freebuff | Up to 30 h/day (US), 21 (Canada, UK, Germany), 12 (France, Spain, Italy), 5 elsewhere; 1-hour sessions, unlimited messages | DeepSeek V4.1 Flash recommended; Solar Mini 4 and Solar Pro 4 currently do not use the allowance | No (homepage: "No card, no credits to watch") | Freebuff comparison post, Nov 23, 2026 (vendor-authored) |
+| OpenCode free models | No published limit; each free model is "for a limited time" | Rotating list, such as Big Pickle, DeepSeek V4.1 Flash Free, Hy4 flash Free, MiMo-V2.6-Flash Free | Not stated | opencode.ai/docs/zen |
+| Kilo Code | 200 requests an hour per IP when signed out (Freebuff's comparison, not on Kilo's own pages) | Auto Free routes to the best available free models | "No hosted credit required" | kilo.ai/pricing |
+| GitHub Copilot Free | 2,000 completions a month; limited chat and agent usage | Auto model selection only | Plans page carries a "No credit card required" line in the Free block | docs.github.com plans page |
+| Google Antigravity (free plan) | Baseline agent quota refreshed weekly, number unpublished | Pricing page: Gemini 4 Hydrogen, Gemini 3.8 Flash, Claude Sonnet 4.6, Claude Opus 4.6 and GPT-OSS-120b, with the last four marked "will be removed on November 30, 2026". The docs plans page names only Gemini 4 Hydrogen and Gemini 3.8 Flash (until Nov 30). Google's two pages disagree. | Not stated | antigravity.google/pricing and /docs/plans |
+| Cline | Free software; limited-time free model promotions up to an unpublished quota (Freebuff's comparison) | Your own keys, or promo models | No for the software; inference is usage-billed | cline.bot/pricing |
+| Kiro | 50 credits a month, subject to rate limits | Claude Sonnet 4.5 plus open-weight models (DeepSeek 3.2, MiniMax M2.5, GLM-5, Qwen3 Coder Next) | Not stated | kiro.dev/pricing |
+| Codex (ChatGPT Free and Go) | No published number; "subject to rollout" | GPT-6 Luna at Standard speed in the desktop app | Not stated | developers.openai.com/codex/pricing |
+| Windsurf Free | "Light quota to code with agents", unlimited Tab and inline edits, 2 concurrent sessions in Free mode | "Limited model availability" | Not stated | windsurf.com/pricing |
+| Cursor Free | "Limited" agent and chat requests, no number | Agent, Chat and Tab with Cursor models (Grok and Composer); third-party models not included | Not stated | cursor.com/pricing and docs |
+| Qwen Code | No free hosted tier; free with your own key or a local model | Whatever you connect | n/a | Qwen Code auth docs |
+| Gemini CLI | None: no free tier since June 18, 2026 | n/a (free access moved to Antigravity CLI) | n/a | Gemini CLI README |
+
+## Master comparison table
+
+Ranked by how usable the free tier is today, not by overall product quality. Prices are as of November 25, 2026.
+
+| Product | Paid plans | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/freebuff.png" name="Freebuff" size=24 /%} Freebuff | None found; ad-supported | Yes, hours per day by country | Agents Apache-2.0 | Allowance falls to 5 h/day outside the listed countries | Published allowance, no key, no card |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/opencode.png" name="OpenCode" size=24 /%} OpenCode | Go $10, Go Plus $40, Go Teams $20 per member | Yes, rotating free models | Yes (MIT) | Free models are limited-time, no published cap | 200+ providers; desktop, terminal and phone |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/kilo-code.png" name="Kilo Code" size=24 /%} Kilo Code | Kilo Pass $19, Teams $15 per user | Yes, Auto Free | Yes (MIT) | Auto Free may route to providers that log prompts | VS Code, JetBrains, CLI and desktop |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/github-copilot-free.png" name="GitHub Copilot Free" size=24 /%} GitHub Copilot Free | Pro $10, Pro+ $39, Max $100 | Yes | No | 2,000 completions a month, Auto model only | Editors, CLI, GitHub.com and mobile |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/google-antigravity.png" name="Google Antigravity" size=24 /%} Google Antigravity | Google AI Pro, Ultra (prices not on the pages read) | Yes, weekly quota | No | Quota number unpublished; model list shrinks Nov 30 | Free CLI, app and IDE extensions with Gemini models |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/cline.png" name="Cline" size=24 /%} Cline | ClinePass $9.99 a month (Cline docs); Enterprise custom | Software free, models paid | Yes (Apache-2.0) | You pay for inference | Plan mode, MCP marketplace, any provider |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/kiro.png" name="Kiro" size=24 /%} Kiro | Pro $20, Pro+ $40, Pro Max $100, Power $200 | Yes, 50 credits a month | No | Credits, not requests | Specs, hooks, steering files |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/codex.png" name="Codex" size=24 /%} Codex | Pro $100, $200 or $500; Plus and Go (see section) | Yes, desktop app | CLI Apache-2.0 | No published Free number | OpenAI's agent inside the ChatGPT Free plan |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/windsurf.png" name="Windsurf" size=24 /%} Windsurf | Pro $20, Max $200, Team $80 | Yes, light quota | No | Quota number unpublished | Unlimited Tab and inline edits on Free |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/cursor-free.png" name="Cursor Free" size=24 /%} Cursor Free | Plus $8, Premium $30, Super $100, Ultra $200 | Yes, limited | No | No number, no third-party models | The familiar editor, now sold with Grok and X |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/qwen-code.png" name="Qwen Code" size=24 /%} Qwen Code | Plus or Pro (chat.qwen.ai), Coding Plan, Token Plan | No free hosted tier | Yes (Apache-2.0) | Free sign-in removed | Runs on local models and many providers |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/gemini-cli.png" name="Gemini CLI" size=24 /%} Gemini CLI | Code Assist licences (price not on the page read) | No hosted free tier | Yes (Apache-2.0) | Free use ended June 18, 2026 | 109,100 stars; Apache-2.0 CLI |
+
+## Freebuff: the free tier with a published allowance
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/freebuff.png" name="Freebuff" size=40 /%}
+
+Freebuff is a free, ad-supported coding agent from the team behind Codebuff. It runs in the terminal, as desktop apps for macOS, Windows and Linux, in a browser workspace, and on iOS and Android. The homepage pitch is "The best coding models, funded by ads instead of a subscription. No card, no credits to watch." The agents live in a public Apache-2.0 repository, CodebuffAI/freebuff, which had 14,305 GitHub stars on November 25, 2026.
+
+{% x id="2034784332569878618" /%}
+
+*Launch post from the @jahooma account, which posts the Freebuff announcements, March 20, 2026, verified through X syndication on November 25, 2026.*
+
+**Who it is for:** anyone who wants an agent with hosted models and no key, card or credit meter, and who accepts text ads in exchange.
+
+**Key features:**
+- Parallel agents locally on desktop, plus a CLI, a web workspace and mobile apps.
+- Work split across 9 specialized subagents, including a code reviewer (per Freebuff's comparison post).
+- A model picker that recommends DeepSeek V4.1 Flash. Freebuff's October and May launch posts list other free models, so the list changes.
+
+**Pros**
+- The only entry here that states its free allowance in hours: up to 30 a day in the US, 21 in countries such as Canada, the UK and Germany, 12 in France, Spain and Italy, and 5 elsewhere. Sessions last an hour with unlimited messages inside.
+- No API key and no card on the homepage.
+- Open-source agents.
+
+**Cons**
+- The allowance numbers come from Freebuff's own blog, not an independent test, and I could not load the docs site during this session.
+- Text ads, and messages are used to personalize ads. Only models labeled "May use data for AI training" are used for training, per the same post.
+- Outside the listed countries the allowance drops to 5 hours a day.
+
+**Benefits for you:** you can budget a working day. Hours per day is easier to plan around than "limited", and the October 9 launch post says "Sessions always refund partial usage", so a session that ends early should not burn the full hour.
+
+{% x id="2108686918892638595" /%}
+
+*"The New Freebuff" announcement, October 9, 2026, verified through X syndication.*
+
+**Pricing (as of November 25, 2026):** free. I found no paid plan on the pages read.
+
+**Setup**
+
+```bash
+npm install -g freebuff
+freebuff
+```
+
+**Standout use case:** day-long free coding sessions in the US, with the agent handling review through a separate subagent.
+
+**Skip it if:** you cannot send code through an ad-supported service, or you live outside the 30, 21 and 12 hour countries and need a full workday of agent time.
+
+{% figure src="https://freebuff.com/opengraph-image.png?v=2026-10-05" alt="Freebuff social preview image from the project homepage" caption="Freebuff's own social preview image. Source: freebuff.com" /%}
+
+## OpenCode: free hosted models plus 200 providers
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/opencode.png" name="OpenCode" size=40 /%}
+
+OpenCode is an MIT-licensed open-source coding agent. Its homepage says "Start with free models or bring any of 200+ providers" and lists a desktop app for macOS, Windows and Linux, a terminal UI, and says you can use OpenCode "from your desktop, the terminal, your phone or your own code". The repository, anomalyco/opencode, had 229,110 GitHub stars on November 25, 2026. The homepage also claims "22M+ developers", which is a vendor-reported figure I could not verify. The npm package opencode-ai was at version 1.19.6.
+
+**Who it is for:** developers who want one open client that can switch between free hosted models, their own keys and local models.
+
+**Pros**
+- Free models need no account on Zen's free tier according to Freebuff's comparison post (OpenCode's own page only says they are free for a limited time).
+- The Zen page labels several free models, among them Big Pickle, DeepSeek V4.1 Flash Free, Hy4 flash Free, MiMo-V2.6-Flash Free and Nemotron 3.5 variants. It states the data policy per model: some follow zero retention, others retain data for 30 days for safety.
+- Works in VS Code and forks such as Cursor, Windsurf and VSCodium through an extension that wraps the terminal UI.
+- Skills load from `.opencode/skills` and also from `.claude/skills` and `.agents/skills`, so shared SKILL.md folders work.
+
+**Cons**
+- Every free model is described as "for a limited time" with no published request cap. A model you rely on can disappear.
+- Some free models are blocked in listed countries (Beam Free, for one).
+- Its docs now say the current pages are for OpenCode V1 and that V2 docs live elsewhere, so check which version you run.
+
+**Benefits for you:** the harness stays the same while the model changes. When a free model ends, you switch in `/models` and keep your skills, commands and sessions.
+
+{% x id="2119982381021192354" /%}
+
+*OpenCode's account announcing MiniMax M3.1 Flash as free, November 10, 2026, verified through X syndication.*
+
+**Pricing (as of November 25, 2026):** free client. Optional OpenCode Go: Go $10 a month, Go Plus $40 a month, Go Teams $20 per member a month with a 2-member minimum. Go is a model subscription and the page says it is optional.
+
+**Setup**
+
+```bash
+npm i -g opencode-ai
+opencode
+/models        # pick a free model (inside the terminal UI)
+/connect       # add a provider key or an OpenCode Go key
+```
+
+**Skip it if:** you need a fixed, published daily allowance. OpenCode does not publish one.
+
+{% figure src="https://opencode.ai/files/site/og/home-98637499f6.png" alt="OpenCode homepage social preview image" caption="OpenCode's social preview image. Source: opencode.ai" /%}
+
+## Kilo Code: Auto Free inside your editor
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/kilo-code.png" name="Kilo Code" size=40 /%}
+
+Kilo Code is an MIT-licensed agent that runs as a VS Code extension, a JetBrains plugin, a CLI and a desktop app (editor and desktop coverage per Freebuff's comparison post and Kilo's pricing page). Kilo-Org/kilocode had 28,124 GitHub stars on November 25, 2026, and the CLI package @kilocode/cli was at version 7.8.32.
+
+**Who it is for:** editor-first developers who want free models without leaving VS Code or JetBrains, with the option to use their own keys later.
+
+**Pros**
+- Kilo's free-model docs describe Auto Free (`kilo-auto/free`) as a tier that "automatically routes your requests to the best available free models". No configuration.
+- You can also filter the model picker by typing `free`.
+- The pricing page says "No hosted credit required" for the free path.
+- Freebuff's comparison post says Kilo charges no markup on inference when you use your own key.
+
+**Cons**
+- Kilo's docs warn that Auto Free "may route your requests to providers that log prompts and outputs and use them to improve their services", and name NVIDIA's free endpoints as one example. Kilo tells users not to submit personal or confidential data.
+- Some free models are rate limited by the upstream provider.
+- The free model list "changes over time".
+- The 200-requests-an-hour-per-IP figure for signed-out users comes from Freebuff's post, not from Kilo's pages.
+
+**Benefits for you:** you get a real agent in your editor at $0, and a clear way up. Kilo Pass is $19 a month with up to 50% bonus credits, and Teams is $15 per user a month.
+
+**Pricing (as of November 25, 2026):** Free and open source (usage billed separately), pay-as-you-go through Kilo Gateway, Kilo Pass $19 a month, Teams $15 per user a month, Enterprise custom.
+
+**Setup**
+
+```bash
+npm install -g @kilocode/cli
+```
+
+**Skip it if:** the code is private and you cannot accept prompt logging by free-model providers.
+
+## GitHub Copilot Free: the large-vendor option
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/github-copilot-free.png" name="GitHub Copilot Free" size=40 /%}
+
+Copilot Free is GitHub's $0 plan for individuals who do not get Copilot through an organization. All plans include the Copilot CLI and the Copilot app, and the plans page says the Free plan supports the CLI and agent mode.
+
+**Who it is for:** developers already on GitHub who want a vendor-supported free tier across editors, the CLI, github.com and mobile.
+
+**Pros**
+- Published number: "Limited to 2000 completions per month on Copilot Free."
+- Included in editors and IDEs, the CLI and GitHub including mobile; agent mode in VS Code, Visual Studio, JetBrains, Eclipse and Xcode; MCP servers; and custom instructions and agents.
+- The plans page carries a "No credit card required" line in the Free block.
+- GitHub's docs say agent skills work in the Copilot CLI and in agent mode in the IDEs, stored in `.github/skills`, `.claude/skills` or `.agents/skills`. The page does not say which plan tiers get them.
+
+**Cons**
+- Chat and agent use is only "limited" with an allowance of GitHub AI Credits that the page does not quantify.
+- Models: Auto model selection only. No model picker on Free.
+- Copilot in the cloud and most code review are paid features, and "Copilot Chat skills in IDEs" is marked not available on Free.
+- App modernization for Java and .NET is not included.
+
+**Benefits for you:** the lowest-risk free tier here. It is a mainstream vendor product with clear plan boundaries, and the paid ladder is on the same page.
+
+**Pricing (as of November 25, 2026):** Free $0; Pro $10 a month (1,000 base credits plus 500 flex); Pro+ $39 (3,900 base plus 3,100 flex); Max $100 (10,000 base plus 10,000 flex). Business $19 and Enterprise $39 per seat.
+
+**Skip it if:** you want to pick the model yourself, or run long agent sessions. The free allowance is a trial-sized quota.
+
+{% figure src="https://images.ctfassets.net/8aevphvgewt8/4KxWJH8PVVXdqBLs1V3UJ8/7b7f6e8405daa24565374f993c0fca68/github-copilot-open-graph-img.jpg" alt="GitHub Copilot social preview image from github.com/features/copilot" caption="GitHub's Copilot social preview image. Source: github.com/features/copilot" /%}
+
+## Google Antigravity: Gemini models on a weekly quota
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/google-antigravity.png" name="Google Antigravity" size=40 /%}
+
+Antigravity is Google's agent product, with an app, a CLI (`agy`), IDE extensions and a Python SDK. Since June 18, 2026 it is where Google's free individual coding access lives: the Gemini CLI README says free individual access and Google AI Pro and Ultra moved to Antigravity CLI that day.
+
+**Who it is for:** developers who want Google's models at $0 and can live with a quota they cannot see in advance.
+
+**Pros**
+- The $0 plan covers the app, CLI, IDE extensions and SDK, with parallel background agents, subagents, browser use and scheduled tasks.
+- Unlimited Tab completions on all plans, per the docs.
+- Skills use the standard SKILL.md folder format, defaulting to `.agents/skills`.
+
+**Cons**
+- The quota is a "baseline agent quota refreshed weekly" with no published number. Google says limits track capacity and the amount of work the agent does, so easy tasks get more prompts than hard ones.
+- Google's pricing page and docs disagree about the free model list (see the limits table), and the pricing page says four of the five listed models are removed on November 30, 2026.
+- Workspace accounts do not get the personal plans.
+- Google says usage limits "are subject to modification".
+
+**Benefits for you:** you can test the Gemini family and a full multi-agent setup without paying, and the upgrade path to Google AI Pro raises quotas and refreshes them every 5 hours.
+
+**Pricing (as of November 25, 2026):** $0 for individuals. Google AI Pro and Ultra are paid tiers; their prices were not on the Antigravity pages I read.
+
+**Skip it if:** you need predictable capacity, or you use a Google Workspace account.
+
+{% figure src="https://antigravity.google/og/index.png" alt="Google Antigravity social preview image" caption="Antigravity's social preview image. Source: antigravity.google" /%}
+
+## Cline: free software, bring your own key
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/cline.png" name="Cline" size=40 /%}
+
+Cline is an Apache-2.0 agent that runs as a VS Code extension, a CLI, and extensions for JetBrains and Cursor (the pricing page lists JetBrains under Enterprise, while the docs describe a JetBrains plugin, so check current availability). cline/cline had 71,891 GitHub stars on November 25, 2026, and the npm package `cline` was at 3.0.75.
+
+**Who it is for:** developers who want the most flexible open harness and are fine paying a provider for inference.
+
+**Pros**
+- Cline's pricing page says it is "completely free for individual developers" and you pay only for inference, with no subscription.
+- Providers include Anthropic, Gemini, OpenAI, OpenRouter, AWS Bedrock, GCP Vertex, Groq, Cerebras, DeepSeek and more.
+- Plan mode, an MCP marketplace and multi-root workspaces.
+- Skills load on demand: metadata costs about 100 tokens per skill, and the body loads when triggered.
+
+**Cons**
+- Not free in the "hosted models included" sense. The model bill is yours.
+- Freebuff's comparison post says Cline offers limited-time free model promotions up to an unpublished quota, and that Cline says free usage may be used to improve model performance. I could not confirm that on Cline's own pricing page.
+
+**Benefits for you:** pair Cline with a free OpenRouter model or a local model and you get a $0 stack you control. Freebuff's post cites OpenRouter's `:free` models at 20 requests a minute and 50 a day, rising to 1,000 a day after $10 of credits.
+
+**Pricing (as of November 25, 2026):** Open Source free; Enterprise custom. Cline's docs describe ClinePass as a flat $9.99 a month subscription with 2 to 5 times the usage on popular open coding models compared with standard API rates; it does not appear on the pricing page I read.
+
+**Setup**
+
+```bash
+npm i -g cline
+```
+
+**Skip it if:** you want hosted models with no key and no billing relationship at all.
+
+{% figure src="https://cline.bot/cline_og_img.png" alt="Cline social preview image" caption="Cline's social preview image. Source: cline.bot" /%}
+
+## Kiro: the AWS option now that Amazon Q Developer is closed
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/kiro.png" name="Kiro" size=40 /%}
+
+Kiro is AWS's agentic IDE and CLI built around spec-driven development. AWS announced on April 30, 2026 that new Amazon Q Developer signups, including Free Tier accounts, were blocked starting May 15, 2026, and that Q Developer IDE plugins and paid subscriptions reach end of support on April 30, 2027. Kiro is AWS's stated replacement.
+
+**Who it is for:** developers who want structure (requirements, design, tasks) rather than a chat box, and who had planned to use Amazon Q's free tier.
+
+**Pros**
+- A perpetual free tier of 50 credits a month.
+- Free-tier users who sign in with social login or AWS Builder ID get Claude Sonnet 4.5 and open-weight models such as DeepSeek 3.2, MiniMax M2.5, GLM-5 and Qwen3 Coder Next, subject to rate limits.
+- Specs, hooks, steering files, custom subagents and powers.
+- Skills work from `.kiro/skills/` in a workspace and `~/.kiro/skills/` globally (Kiro's skills page lists global skills for the IDE and CLI).
+
+**Cons**
+- Credits, not requests. Kiro's FAQ defines a credit as "a unit of work in response to user prompts": simple prompts can use less than 1 credit, and a spec task typically costs more than 1.
+- Different models burn credits at different rates, so Sonnet runs through 50 credits faster than Auto.
+- Credits are metered per prompt and per model, so a heavy spec session can use a large share of the 50 in one sitting.
+
+**Benefits for you:** the first upgrade to Pro gives the rest of that month free plus 500 trial credits to use within 12 months, so you can test a heavier workload without a bill.
+
+**Pricing (as of November 25, 2026):** Free $0 (50 credits); Pro $20; Pro+ $40; Pro Max $100; Power $200 a month. Add-on credits are $0.04 each.
+
+**Skip it if:** you work in short chat-style edits. Spec mode spends credits quickly and 50 a month will not stretch far.
+
+{% figure src="https://kiro.dev/images/opengraph/home.png" alt="Kiro social preview image" caption="Kiro's social preview image. Source: kiro.dev" /%}
+
+## Codex on ChatGPT Free and Go: a small free taste of a big agent
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/codex.png" name="Codex" size=40 /%}
+
+OpenAI includes Codex in its ChatGPT plans. The pricing page says "ChatGPT Work and Codex are included in your ChatGPT Free, Go, Plus, Pro, Business, Edu, or Enterprise plan" and that they share pricing, credits and usage limits. The Codex CLI is Apache-2.0 (openai/codex had 136,420 stars on November 25, 2026; npm `@openai/codex` was at 0.172.0, modified that same day).
+
+**Who it is for:** anyone with a ChatGPT account who wants to try an OpenAI agent without paying.
+
+**Pros**
+- The Free plan is described as "Explore Codex capabilities on quick coding tasks": GPT-6 Luna at Standard speed in the desktop app, "subject to rollout". Go is described as lightweight coding tasks with the same model line.
+- Plus adds Codex on the web, in the CLI, in the IDE extension and on iOS, plus cloud integrations such as automatic code review.
+- Skills work in the ChatGPT desktop app, the Codex CLI and the IDE extension.
+
+**Cons**
+- No published Free limit. For comparison, OpenAI estimates Plus at 350 to 3,000 local GPT-6 Luna messages per five-hour period, and says those are estimates, not fixed limits.
+- The CLI, IDE extension and web start at Plus on OpenAI's page, so the free path is the desktop app only.
+- Image generation is not available on Free.
+- "Subject to rollout" means you may not have it yet.
+
+**Benefits for you:** a quick way to see whether OpenAI's agent fits your workflow before paying. Our own [Codex usage limits guide](https://agentskills.codes/blog/codex-usage-limits-agent-workflows) covers how those shared limits behave in long agent runs.
+
+**Pricing (as of November 25, 2026):** Free $0. Go and Plus prices were not on the pages I read, so I am not quoting them. Pro is $100, $200 or $500 a month.
+
+**Skip it if:** you work in the terminal or an IDE and do not want to pay. OpenAI's page lists those surfaces from Plus up, although the CLI also accepts an OpenAI API key (billed at API rates) per Freebuff's comparison post.
+
+## Windsurf Free: unlimited Tab, a light agent quota
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/windsurf.png" name="Windsurf" size=40 /%}
+
+Windsurf's pricing page now sits under the "Devin Plans and Pricing" heading, and its customization docs describe a "Devin Local" agent in Devin Desktop. The Free plan is $0 and the page lists it as light quota to code with agents, limited model availability, unlimited inline edits and unlimited Tab completions.
+
+**Who it is for:** developers who mainly want fast autocomplete and inline edits, with occasional agent runs.
+
+**Pros**
+- Unlimited Tab and inline edits on Free is a stronger autocomplete offer than most free tiers here.
+- Skills, rules, plugins, MCP servers and hooks are supported in the local agent, and skills are model-invoked or user-invoked.
+- Pro includes free use of SWE-2 (Windsurf's own model).
+
+**Cons**
+- The agent quota is "light" and unpublished, and model availability is limited.
+- Free mode allows 2 concurrent sessions per user.
+- The branding and product names are in flux (Windsurf, Devin Desktop, Devin Local), which makes docs harder to match to the app.
+
+**Pricing (as of November 25, 2026):** Free $0; Pro $20 a month; Max $200; Team $80. Paid plans have allowances that refresh daily and weekly, and extra usage is billed at API pricing.
+
+**Skip it if:** you need agents more than autocomplete. The agent quota on Free is "light" with no number, so you cannot plan a task around it.
+
+## Cursor Free: limited, and now tied to Grok models
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/cursor-free.png" name="Cursor Free" size=40 /%}
+
+Cursor's pricing page now sells plans under The X Subscription, which bundles Cursor with Grok features. The Free plan is $0 with "limited" agent and Chat requests. Cursor's docs say Free gives access to Agent, Chat and Tab completions with Cursor models (Grok and Composer), and that the legacy Hobby plan works the same way.
+
+**Who it is for:** developers who want to try Cursor's editor and agent without paying and are fine with Cursor's own models.
+
+**Pros**
+- A familiar full editor with agent, chat and Tab.
+- Skills follow the open standard and are discovered automatically from skill directories.
+- The Free plan has no trial clock: it is a standing $0 plan.
+
+**Cons**
+- No published request count: "Limited" everywhere in the plan table.
+- Third-party models are not included in plan usage; on Premium and above they bill at API list price. Plus runs Cursor models at fixed settings and has no third-party models; Cloud Agents and Automations start at Premium.
+- Plan names have been reshaped around X. Cursor's docs call the older Hobby plan "legacy" and say it works the same way, so older "Cursor Hobby" guides map onto Free.
+
+**Pricing (as of November 25, 2026):** Free $0; Plus $8; Premium $30; Super $100; Ultra $200 a month; Teams from $30 per user. Premium is 4x Plus usage, Super 15x, Ultra 50x.
+
+**Skip it if:** you want Claude or GPT models at no cost. Free does not include them.
+
+## Gemini CLI: still open source, no longer free to use
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/gemini-cli.png" name="Gemini CLI" size=40 /%}
+
+Gemini CLI is Google's Apache-2.0 terminal agent (109,100 GitHub stars on November 25, 2026; npm `@google/gemini-cli` 0.71.1). Its README now carries a notice that it is designed for Gemini Code Assist Standard or Enterprise licences and Code Assist for GitHub, and that there is "no free tier or Google AI plans": free individual access moved to Antigravity CLI (`agy`) on June 18, 2026. The README still lists "Sign in with Google" and Gemini API key options; I did not verify what an API key costs or whether it carries any free quota, so check Google's API pricing before assuming either. Skills are supported through an `activate_skill` flow with a consent prompt.
+
+**Pros:** open source, mature, and skills support. **Cons:** no hosted free tier. **Skip it if:** you want free hosted models; use Antigravity CLI instead. **Pricing:** Code Assist licence prices were not on the page I read.
+
+## Qwen Code: free software, free sign-in removed
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-free-ai-coding-agents-2026/logos/qwen-code.png" name="Qwen Code" size=40 /%}
+
+Qwen Code is an Apache-2.0 terminal agent from the Qwen team (QwenLM/qwen-code, 30,934 stars on November 25, 2026; npm `@qwen-code/qwen-code` 0.28.4). Its auth docs list five first-run options. The first, Qwen OAuth, now reads "Qwen Account with Subscription" and requires "an active Plus or Pro subscription from chat.qwen.ai". The others are QwenCloud (Token Plan or pay-as-you-go keys), Alibaba ModelStudio (Coding Plan with a weekly quota), third-party providers by API key, and a custom provider. Freebuff's comparison post says the free tier is gone and that it still works free with your own key or a local model through Ollama or vLLM.
+
+**Pros:** Apache-2.0, many provider options, skills supported through a `/skills` panel. **Cons:** no hosted free tier any more. **Skip it if:** you were relying on the old free OAuth allowance. **Pricing:** Plus, Pro and Coding Plan prices are on Alibaba's pages, which I did not read.
+
+## Pricing table (as of November 25, 2026)
+
+Only prices that appeared on a page I read are listed. A dash means the vendor page I read did not show a price for that tier.
+
+| Product | Free | Entry paid tier | Higher tiers | Billing model for free use |
+| --- | --- | --- | --- | --- |
+| Freebuff | $0, ad-supported | None found | None found | Hours per day by country |
+| OpenCode | $0 client, rotating free models | Go $10 a month | Go Plus $40; Go Teams $20 per member (2-member minimum) | Free models "for a limited time", no cap published |
+| Kilo Code | $0 with Auto Free, BYOK or local | Kilo Pass $19 a month (up to 50% bonus credits) | Teams $15 per user a month; Enterprise custom | No hosted credit needed for the free path |
+| GitHub Copilot | $0 | Pro $10 a month | Pro+ $39; Max $100; Business $19 and Enterprise $39 per seat | 2,000 completions a month plus an unquantified AI Credits allowance |
+| Google Antigravity | $0 | Google AI Pro (price not on the pages read) | Google AI Ultra (price not on the pages read) | Weekly baseline quota |
+| Cline | $0 software | ClinePass $9.99 a month (Cline docs page, not the pricing page) | Enterprise custom | You pay your provider |
+| Kiro | $0, 50 credits a month | Pro $20 | Pro+ $40; Pro Max $100; Power $200; add-on credits $0.04 each | Credits per month, no rollover |
+| Codex | $0 in ChatGPT Free, desktop app | Go and Plus (prices not on the pages read) | Pro $100, $200 or $500 | Shared ChatGPT allowance, no number |
+| Windsurf | $0 | Pro $20 | Max $200; Team $80 | Light agent quota, unlimited Tab |
+| Cursor | $0 | Plus $8 | Premium $30; Super $100; Ultra $200; Teams $30+ per user | "Limited" usage |
+| Qwen Code | No hosted free tier | Plus or Pro from chat.qwen.ai (prices not on the pages read) | Coding Plan, Token Plan | Your own key or a local model |
+| Gemini CLI | No hosted free tier | Code Assist licences (prices not on the page read) | Enterprise | n/a |
+
+## Feature matrix
+
+"Yes", "No" and "Partial" follow what each vendor's own page says. "Not verified" means I did not find a statement on the pages I read, which is different from "No".
+
+| Product | Hosted free models | Published free number | Open source | Terminal CLI | Editor extension | Desktop app | Skills documented |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Freebuff | Yes | Yes (hours per day) | Partial (agents Apache-2.0) | Yes | Not verified | Yes | Not verified |
+| OpenCode | Yes | No | Yes (MIT) | Yes | Partial (VS Code and forks, wraps the terminal UI) | Yes | Yes |
+| Kilo Code | Yes | Partial (figure from Freebuff's post only) | Yes (MIT) | Yes | Yes | Yes | Yes |
+| GitHub Copilot Free | Yes (Auto only) | Partial (completions only) | No | Yes | Yes | Yes (Copilot app) | Yes |
+| Google Antigravity | Yes | No | No | Yes (`agy`) | Yes (IDE extensions) | Yes | Yes |
+| Cline | No | No | Yes (Apache-2.0) | Yes | Yes | Partial (per Freebuff's post) | Yes |
+| Kiro | Yes | Yes (50 credits) | No | Yes | No (its own IDE) | Yes (IDE) | Yes |
+| Codex | Yes (desktop app only on Free) | No | Partial (CLI Apache-2.0) | Partial (Plus and up, or API key) | Partial (Plus and up) | Yes | Yes |
+| Windsurf | Yes | No | No | Not verified | Not verified | Yes | Yes |
+| Cursor Free | Yes (Cursor models only) | No | No | Not verified | No (its own editor) | Yes | Yes |
+| Qwen Code | No | No | Yes (Apache-2.0) | Yes | Partial (per Freebuff's post) | Partial (per Freebuff's post) | Yes |
+| Gemini CLI | No | No | Yes (Apache-2.0) | Yes | Not verified | No | Yes |
+
+## Head-to-head: which to pick
+
+### Freebuff vs OpenCode
+
+Pick **Freebuff** when you want a number you can plan around. Its allowance is published in hours and the sessions are long, so you can estimate a working day, and it needs no key or card. Pick **OpenCode** when you want an open client that is not tied to one vendor's allowance. OpenCode's free models rotate and carry no cap, which is generous until the model you chose disappears. Freebuff's own comparison post lists OpenCode as the baseline it is compared against, so treat Freebuff's framing of the trade-off as vendor-authored. A reasonable setup is to run both: Freebuff for the long free session, and OpenCode with your own provider key when a free model goes away.
+
+### GitHub Copilot Free vs Google Antigravity
+
+Pick **Copilot Free** for predictability and for completions: 2,000 a month is a hard published number, and it works in editors, the CLI, github.com and mobile. You give up model choice, because Free is Auto only. Pick **Antigravity** for agentic work on Gemini models. It includes parallel agents, subagents, browser use and scheduled tasks at $0, but the weekly quota has no number and Google's own pricing and docs pages disagree on which models are free. Antigravity is the better test bed for multi-agent workflows. Copilot Free is the safer default for a team that mostly wants autocomplete and light chat.
+
+### Kilo Code vs Cline
+
+Both are open source and both live in your editor. Pick **Kilo Code** when you want hosted free models through Auto Free and a path to a subscription with bonus credits. Pick **Cline** when you already have a provider key, or a local model, and want the longest-running open harness (71,891 stars against Kilo's 28,124 on November 25, 2026). Cline's own pages sell it as free software with no hosted free tier of its own; any free-model promotions are described only by Freebuff's comparison post.
+
+## Skills and MCP servers that work with these tools
+
+Eleven of the twelve tools in this post document support for the open SKILL.md format (see the feature matrix; Freebuff is the one I could not verify). That means a skill from the agentskills.codes catalog is not tied to one agent. Free tiers are small, so a focused skill that tells the agent exactly what to do is worth more here than on an unmetered plan. Each entry below was confirmed to return HTTP 200 on November 25, 2026, and the install counts come from the catalog API the same day.
+
+- [code-review](https://agentskills.codes/skills/code-review) (agno-agi, 26 installs): linting, style checks and best-practice review. A cheap way to spend a small allowance on a review pass instead of an open-ended chat.
+- [github-code-review](https://agentskills.codes/skills/github-code-review) (ruvnet, 13 installs): GitHub-oriented review with swarm coordination. Useful with Copilot Free, where review features are limited.
+- [mcp-builder](https://agentskills.codes/skills/mcp-builder) (anthropics, 136 installs): a guide for building MCP servers. The most installed entry I found, and useful for any agent that speaks MCP.
+- [browser-automation](https://agentskills.codes/skills/browser-automation) (browserbase, 39 installs): browser tasks through CLI commands. Works well with agents that have no built-in browser.
+- [refactor](https://agentskills.codes/skills/refactor) (github, 8 installs): surgical refactors that keep behavior unchanged. Good for short, well-scoped sessions.
+- [debugging](https://agentskills.codes/skills/debugging) (mrgoonie, 4 installs): a root-cause debugging framework. Keeps a small-quota agent from guessing.
+- [conventional-commit](https://agentskills.codes/skills/conventional-commit) (carbon-design-system, 3 installs): consistent commit messages with project linting rules.
+
+Where each client looks for skills, per its own docs: OpenCode reads `.opencode/skills`, `.claude/skills` and `.agents/skills` (plus global `~/.config/opencode/skills` and `~/.claude/skills`); Antigravity defaults to `.agents/skills`; Copilot reads `.github/skills`, `.claude/skills` and `.agents/skills`; Kiro reads `.kiro/skills/` and `~/.kiro/skills/`. A single project-level `.agents/skills/<name>/SKILL.md` is therefore picked up by OpenCode, Antigravity and Copilot at once. Install one like this:
+
+```bash
+mkdir -p .agents/skills
+curl -s 'https://agentskills.codes/api/v1/skills?q=code-review&limit=5' | head -c 400   # find the id in the JSON
+curl -L https://agentskills.codes/api/skills/download/ID -o skill.zip && unzip skill.zip -d .agents/skills/code-review   # ID from the API output
+```
+
+For budgeting skills against a quota, the agentskills.codes guides on [Codex usage limits for agent workflows](https://agentskills.codes/blog/codex-usage-limits-agent-workflows) and [Copilot AI Credits for agent skills](https://agentskills.codes/blog/copilot-ai-credits-for-agent-skills) cover two of the allowances in this post, and [best models for agent skills](https://agentskills.codes/blog/best-models-for-agent-skills-october-2026) is a routing table by skill type if you are choosing among free models.
+
+## Best for X
+
+| If you want | Pick | Why | Watch out for |
+| --- | --- | --- | --- |
+| A free allowance you can plan around | Freebuff | Published in hours per day, sessions refund partial usage | Ads; 5 h/day outside listed countries |
+| Open source with free models | OpenCode | MIT, 200+ providers, free models listed on Zen | Free models are limited-time |
+| Free inside VS Code or JetBrains | Kilo Code | Auto Free, no hosted credit needed | Prompt logging by some free-model providers |
+| A mainstream vendor | GitHub Copilot Free | 2,000 completions a month in editors and CLI | Auto model only |
+| Gemini models without paying | Google Antigravity | $0 plan with CLI, app and IDE extensions | Weekly quota unpublished; model list changes Nov 30 |
+| Full control of the model bill | Cline | Any provider, free software | Not a hosted free tier |
+| Spec-driven work | Kiro | Specs, hooks, steering files, 50 free credits | Credits go fast in spec mode |
+| A free taste of OpenAI's agent | Codex on ChatGPT Free | GPT-6 Luna in the desktop app | No published limit, "subject to rollout" |
+| Autocomplete first | Windsurf Free | Unlimited Tab and inline edits | Light agent quota |
+| Trying the Cursor editor | Cursor Free | Familiar editor with agent and Tab | Cursor models only, no number |
+| A local, self-hosted stack | Qwen Code or Cline with a local model | No hosted dependency | You bring the model |
+
+## Common mistakes
+
+- **Treating "free" as stable.** Gemini CLI, Qwen Code and Amazon Q Developer each lost their free hosted tier in 2026. If a workflow depends on one free model, keep a second option configured.
+- **Comparing request counts across vendors.** Freebuff counts hours, Kiro counts credits, Copilot counts completions and an unquantified credit pool, and Antigravity counts agent work. There is no common unit, which is why the limits table does not rank by number.
+- **Sending private code to a free hosted model.** Kilo says Auto Free may route to providers that log prompts. Freebuff says messages personalize ads and some models may use data for training. OpenCode's Zen page states a data policy per model, and they differ. Read the policy for the model you pick.
+- **Believing a third-party limit.** Several numbers in this space come from competitors' comparison posts. This post flags every one that came from Freebuff's own post instead of the vendor it describes.
+- **Skipping the version.** OpenCode's docs now carry a V1 and V2 notice, Windsurf's pricing page is branded Devin, and Cursor's plans are under The X Subscription. Check you are reading the docs for the version you run.
+- **Ignoring the date.** Antigravity's pricing page says several free models go away on November 30, 2026. Re-check before you plan a project around any free model.
+
+## Setup checklist
+
+1. Decide whether the code can go through a free hosted model. If not, use your own key or a local model with Cline, Kilo Code or Qwen Code.
+2. Pick the surface: terminal (Freebuff, OpenCode, Gemini CLI/Antigravity CLI), editor (Kilo Code, Cline, Copilot), or a full IDE (Kiro, Windsurf, Cursor).
+3. Check the country: Freebuff's allowance depends on it, and some OpenCode free models are blocked in listed countries.
+4. Put shared skills in `.agents/skills` so more than one agent can use them.
+5. Open the usage dashboard on day one. Kiro, Copilot, Codex and Antigravity all expose usage somewhere.
+6. Note the date next to any free model you rely on, and set a calendar reminder for the vendor's stated end date.
+
+## How we evaluated
+
+I read each vendor's pricing page, docs and repository on November 25, 2026, and recorded exactly what the page said, including where it only said "limited" or "light". For GitHub star counts I called the GitHub API, and for package versions I ran `npm view` on the public packages. I confirmed the YouTube video through YouTube oEmbed, confirmed the four X posts through X's syndication endpoint, and requested every image and link in this post to check for a 200 response. I confirmed each catalog skill and each internal blog post by loading its page.
+
+What I did not do: I did not install these agents or run any of them against a task, so there are no latency, quality or real-world quota measurements here. I did not measure how many prompts a free allowance actually lasts. Where Freebuff's own comparison post is the only source for a competitor's number (Kilo's 200 requests an hour, Cline's promotions, OpenRouter's free limits), I say so in the text. Freebuff's own docs site would not load for me, so its hour allowances rest on its comparison post and homepage. There is no neutral benchmark that compares free tiers, so none is quoted.
+
+## FAQ
+
+### What is the best free AI coding agent in 2026?
+
+It depends on which kind of free you need. Freebuff is the best fit if you want a published daily allowance with no key and no card. OpenCode is the best open-source option with free hosted models. GitHub Copilot Free is the safest big-vendor choice. None of them publishes an independent benchmark, so the ranking is about limits and access, not output quality.
+
+### Is Gemini CLI still free?
+
+No. The Gemini CLI README says there is no free tier or Google AI plans, and that free individual access and Google AI Pro and Ultra moved to Antigravity CLI on June 18, 2026. Gemini CLI itself is still open source under Apache-2.0.
+
+### Is Qwen Code still free?
+
+The software is free and open source (Apache-2.0), but the hosted free sign-in is gone. Qwen's auth docs say Qwen OAuth now needs a Plus or Pro subscription from chat.qwen.ai. You can still use Qwen Code with your own API key or a local model.
+
+### Is Cursor free?
+
+There is a Cursor Free plan at $0 with limited agent and Chat requests and Tab completions on Cursor models (Grok and Composer). Cursor publishes no request count. Third-party models are not included in plan usage. Cursor's docs say the legacy Hobby plan works the same way.
+
+### What is Freebuff?
+
+Freebuff is a free, ad-supported coding agent from the Codebuff team. It runs in the terminal, on desktop, in a browser workspace and on iOS and Android. Per Freebuff's comparison post it has been live since February 2026, and its allowance is up to 30 hours a day in the US, 21 in Canada, the UK and Germany, 12 in France, Spain and Italy, and 5 elsewhere. The agents are Apache-2.0 on GitHub.
+
+### Is there a free AI coding agent for VS Code?
+
+Yes, several. Kilo Code (MIT) and Cline (Apache-2.0) are VS Code extensions. GitHub Copilot Free works in VS Code and other editors with 2,000 completions a month. OpenCode has a VS Code extension that wraps its terminal UI. Kilo Code's Auto Free gives hosted models without a key; Cline needs your own key.
+
+### What is the best free CLI coding agent?
+
+For a hosted free tier, Freebuff, OpenCode and Antigravity CLI (`agy`) are the choices. Gemini CLI and Qwen Code are still good open-source CLIs but need your own key or a paid plan. Codex's CLI starts at Plus on OpenAI's page, and also accepts an API key.
+
+### Do any of these need a credit card?
+
+Freebuff's homepage says "No card, no credits to watch", and Kilo's pricing page says "No hosted credit required". GitHub's plans page carries a "No credit card required" line in the Free block. For OpenCode, Antigravity, Kiro, Codex, Windsurf and Cursor, the pages I read did not say either way, so check at sign-up.
+
+### What happened to Amazon Q Developer's free tier?
+
+AWS blocked new Q Developer Free Tier signups on May 15, 2026 and says IDE plugins and paid subscriptions reach end of support on April 30, 2027. AWS points developers to Kiro, which has its own free tier of 50 credits a month.
+
+### Are free coding agents safe for private code?
+
+It depends on the provider. Kilo warns that Auto Free may route to providers that log prompts and outputs, and tells users not to submit confidential data. Freebuff says messages are used to personalize ads and some models may use data for training. OpenCode lists a policy per free model, with some zero-retention and some retaining data for 30 days. If the code is private, use your own key or a local model.
+
+### Can I use agent skills with a free plan?
+
+Skills are a file format, so the agent's plan matters less than whether the client supports it. OpenCode, Kilo Code, Cline, Antigravity, Kiro, Codex, Cursor, Qwen Code, Gemini CLI and Windsurf's local agent all document skill support. GitHub's docs say Copilot supports skills but do not say whether every plan tier gets them, and Copilot Chat skills in IDEs are marked not available on Free. Browse the [agentskills.codes catalog](https://agentskills.codes/skills) for ready-made ones.
+
+### Why do the numbers differ between Google's pages?
+
+Antigravity's pricing page lists five models on the free plan and marks four of them for removal on November 30, 2026. Its docs plans page names Gemini 4 Hydrogen and Gemini 3.8 Flash for free users. Both are Google's, and I could not tell which is more current, so this post shows both.
+
+### How often do free limits change?
+
+Often. Between the Freebuff comparison post on November 23 and November 25, the sources I read already disagreed on details such as free model lists. Gemini CLI, Qwen Code and Amazon Q each changed in 2026, and OpenCode's free models are described as limited-time. Treat any figure here as valid on November 25, 2026.
+
+## Sources
+
+All pages were fetched on November 25, 2026 unless a different date is shown.
+
+- Freebuff homepage: https://freebuff.com
+- Freebuff GitHub repository (14,305 stars): https://github.com/CodebuffAI/freebuff
+- Freebuff, OpenCode alternatives in 2026 (published and checked by Freebuff on November 23, 2026): https://freebuff.com/blog/opencode-alternatives
+- Freebuff launch posts on X: https://x.com/jahooma/status/2034784332569878618 and https://x.com/jahooma/status/2108686918892638595
+- OpenCode: https://opencode.ai, Zen docs https://opencode.ai/docs/zen/, Go docs https://opencode.ai/docs/go/, IDE docs https://opencode.ai/docs/ide/, skills docs https://opencode.ai/docs/skills/
+- OpenCode repository (229,110 stars): https://github.com/anomalyco/opencode
+- OpenCode on X, MiniMax M3.1 Flash: https://x.com/opencode/status/2119982381021192354
+- Kilo Code pricing: https://kilo.ai/pricing, using Kilo for free: https://kilo.ai/docs/getting-started/using-kilo-for-free, skills: https://kilo.ai/docs/customize/skills
+- Kilo Code repository (28,124 stars): https://github.com/Kilo-Org/kilocode
+- GitHub Copilot plans: https://docs.github.com/en/copilot/get-started/plans and https://github.com/features/copilot/plans; agent skills: https://docs.github.com/en/copilot/concepts/agents/about-agent-skills
+- Google Antigravity pricing: https://antigravity.google/pricing, plans: https://antigravity.google/docs/plans, skills: https://antigravity.google/docs/skills
+- Gemini CLI repository (109,100 stars): https://github.com/google-gemini/gemini-cli; skills docs: https://geminicli.com/docs/cli/skills/
+- Cline pricing: https://cline.bot/pricing, skills: https://docs.cline.bot/features/skills; repository (71,891 stars): https://github.com/cline/cline
+- Kiro pricing: https://kiro.dev/pricing/, skills: https://kiro.dev/docs/skills/
+- Amazon Q Developer end-of-support announcement (April 30, 2026): https://aws.amazon.com/blogs/devops/amazon-q-developer-end-of-support-announcement/
+- OpenAI Codex pricing: https://developers.openai.com/codex/pricing, skills: https://developers.openai.com/codex/skills; repository (136,420 stars): https://github.com/openai/codex
+- Windsurf pricing: https://windsurf.com/pricing; usage docs: https://docs.windsurf.com/windsurf/accounts/usage
+- Cursor pricing: https://cursor.com/pricing; skills: https://cursor.com/docs/skills
+- Qwen Code authentication docs: https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/; repository (30,934 stars): https://github.com/QwenLM/qwen-code
+- YouTube: https://www.youtube.com/watch?v=6rbd1uK_pEk
+- agentskills.codes catalog and guides: https://agentskills.codes/skills, https://agentskills.codes/blog/codex-usage-limits-agent-workflows, https://agentskills.codes/blog/copilot-ai-credits-for-agent-skills, https://agentskills.codes/blog/best-models-for-agent-skills-october-2026
