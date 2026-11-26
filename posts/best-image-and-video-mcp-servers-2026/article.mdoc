@@ -1,0 +1,695 @@
+Search for "higgsfield mcp" and you will find a dozen setup posts that all skip the same question: what else can an AI assistant reach through MCP when you want images, video, voice and design, and what does each option really cost once the credits run out? In the last two months nearly every creative platform has shipped a hosted connector for Claude, ChatGPT or Cursor, and the details differ in ways that matter: who needs an API key, which plan unlocks which tool, whether the server is official, and whether "unlimited" survives the trip through MCP.
+
+This guide compares ten options: Higgsfield, fal, Replicate, Runway, ElevenLabs, Luma, Kling, Stability AI, Canva and the OpenAI image tooling. Short version: Higgsfield is the most complete studio you can drive from chat, fal is the best pick for developers who want hundreds of models behind one OAuth login, and a few names on the list (Stability AI, Kling, OpenAI) do not ship the kind of hosted generation server their brand suggests, so we say exactly what exists instead. Every price below is dated November 26, 2026.
+
+{% youtube id="RNpoF1c44u0" title="How To Connect Claude + Higgsfield To Create Real AI Videos | Complete Tutorial" /%}
+
+*A third-party Higgsfield and Claude walkthrough from the Mo Decodes AI channel (title confirmed through YouTube oEmbed on November 26, 2026). Menus and plans change quickly, so use the written steps and pricing tables below for current details.*
+
+## Short answer: quick picks
+
+- **Best overall for creators working inside a chat:** [Higgsfield](https://higgsfield.ai/mcp). One connector for image, video, characters, audio and ad workflows, with official routes into Claude, ChatGPT and Cursor. The catch is that MCP always spends credits and needs a paid subscription.
+- **Best for developers and the widest model catalog:** [fal](https://fal.ai/docs/documentation/setting-up/mcp). One OAuth login, no API key in your client, a one-line installer for nine coding agents, and per-model pricing you can check before you generate.
+- **Best free way to try:** ElevenLabs (a $0 plan with 10,000 credits per month, per its pricing page) or Stability AI's 25 free API credits. Higgsfield's Free plan carries no monthly credits.
+- **Best open source:** Replicate's `replicate-mcp` npm package, or the community Stability server (MIT licence, but last pushed in June 2025).
+- **Best for ad variants from one product photo:** Luma's connector, which wraps preset workflows such as product shots, camera angles, background swap and relight.
+
+{% callout type="warning" %}
+Credits are the real cost of every server on this list. Higgsfield's help center states that MCP "always uses credits" regardless of plan, ElevenLabs warns that retrying a running generation starts and charges a new one, and fal's docs say the "ask for approval first" prompt is a request to the model, not a server-side approval gate. Set a spending cap on the vendor side before you give an agent a long task.
+{% /callout %}
+
+## Master comparison table
+
+| Product | MCP server | Sign-in | Entry price (as of Nov 26, 2026) | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/higgsfield.png" name="Higgsfield" size=24 /%} Higgsfield | Official, hosted | OAuth | Starter $19/mo (270 credits) | Free plan, 0 credits, one generation at a time | No | MCP always deducts credits; unlimited access works only on the website | 35+ models, Marketing Studio, Soul characters |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/fal.png" name="fal" size=24 /%} fal | Official, hosted | OAuth | Pay per generation from prepaid credits | None found on pricing page | No | You pay per model, no server-side spend gate | Model search, schema and price lookup inside chat |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/replicate.png" name="Replicate" size=24 /%} Replicate | Official, hosted and local | API token | Pay per second or per output | None found on pricing page | Local package on npm | Needs an API token, hosted URL uses SSE | Runs any public model by name |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/runway.png" name="Runway" size=24 /%} Runway | Official, hosted | OAuth | Standard $15/mo (625 credits) | Free plan, one-time 125 credits | No | Credits drain fast on video | Generation inside chat plus a separate developer MCP |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/elevenlabs.png" name="ElevenLabs" size=24 /%} ElevenLabs | Official, hosted | OAuth | Starter $6/mo (30k credits) | Free $0, 10k credits/mo | Local server is MIT but deprecated | Directory connector in Claude is a restricted version | Voice, sound, music, image and video on one Flow canvas |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/luma.png" name="Luma" size=24 /%} Luma | Official, hosted | OAuth | Plus $30/mo (10,000 credits) | None listed on pricing page | No | Preset workflows, ChatGPT and Claude documented | Product photo to full ad set |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/kling.png" name="Kling" size=24 /%} Kling | Official "Kling MCP" announced | Not verified | API from $0.094/s (Kling 4.0 Flash, 720p) | Not verified | No | Server URL not confirmed in public docs we could read | Native 4K and motion control |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/stability-ai.png" name="Stability AI" size=24 /%} Stability AI | Docs-only official; generation via community server | None (docs) or API key (community) | $0.01 per credit | 25 free credits | Community server MIT | Community server not affiliated and stale | Cheap Core model at 3 credits per image |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/canva.png" name="Canva" size=24 /%} Canva | Official, hosted | OAuth | Plan prices not verified | Core tools on all plans, some need Pro | No | Brand templates and autofill need Pro or above | Editable designs and exports |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/openai-image-api.png" name="OpenAI Image API" size=24 /%} OpenAI Image API | No hosted image MCP server; image tool in Responses API | API key | $8 input and $30 output per 1M image tokens (standard) | None | No | Not an MCP server you connect to | Precise editing with GPT Image |
+
+## Higgsfield: the full creative studio in a connector
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/higgsfield.png" name="Higgsfield" size=40 /%}
+
+**What it is.** Higgsfield's MCP connector links its image and video platform to Claude, ChatGPT, Cursor and any MCP-compatible client. The help center lists generation across the Higgsfield model lineup, Marketing Studio (paste a product link and get video ads built on presets), Ad Multiplier, Genjutsu (motion transfer, object swap and restyle for video), upscaling, Soul characters trained from photos, Higgsfield Audio, credit balance checks and an asset library. The MCP page describes "35+ models and tools" and names Seedance 2.5, Google Omni Flash and Kling 3.0 for video, and Nano Banana Pro, GPT-Image 2.5 and Seedream 5.0 for images.
+
+**Who it is for.** Marketers, content creators and small studios who want to say "make a 14-second product video" in Claude and get a finished asset in their library. If your question was "higgsfield mcp claude" or "higgsfield ai mcp url", this is the product you were looking for.
+
+**The URL, verified.** The help center states the connector URL as `https://mcp.higgsfield.ai/mcp`, and the MCP page uses the same address in its "Add Higgsfield to Claude" button. Authentication is OAuth, with no API key. The same help article says the MCP connector is not the Higgsfield API, which is a separate developer product.
+
+**Key features.**
+
+- Image and video generation with results saved to your Assets.
+- Marketing Studio and Ad Multiplier for turning one product link or reference ad into many variants.
+- Genjutsu for remaking a reference video with your own characters, locations and products.
+- Soul characters you train once and reuse across generations.
+
+**Pros.**
+
+- Broadest set of media workflows of any server in this list, including ad-specific ones.
+- Official routes for each major client: custom connector for Claude, the official plugin for ChatGPT, the marketplace entry for Cursor.
+- No API key to leak; OAuth ties usage to your account.
+
+**Cons.**
+
+- MCP always deducts credits, even where your plan includes "Unlimited" access on the website. The help center is explicit that unlimited and free generations work only on higgsfield.ai.
+- An active paid subscription is the stated prerequisite, so there is no meaningful free MCP use beyond whatever promotion is running.
+- Audio generation and the Website Building skill are not available in ChatGPT, according to the help center.
+- Higgsfield's pages disagree with each other on trials (see the free tier note below).
+
+**Benefits for your use case.** If your work is short-form video ads, social clips or character-consistent content, the preset workflows spare you the prompt engineering a raw model API would demand. The skill [higgsfield-seedance](https://agentskills.codes/skills/higgsfield-seedance) in the agentskills catalog adds cinematography prompt structure for Seedance on top of the connector.
+
+**Pricing (as of November 26, 2026, from higgsfield.ai/pricing).**
+
+| Plan | Credits per month | Monthly billing | Annual billing |
+| --- | --- | --- | --- |
+| Free | 0 | Free | Free |
+| Starter | 270 | $19/mo | $19/mo, billed $228 yearly |
+| Plus | 1,200 | $40 first month, then $59/mo | $30/mo, billed $360 yearly |
+| Ultra | 3,000 | $75 first month, then $129/mo | $45/mo, billed $540 yearly |
+| Ultra | 6,000 | $140 first month, then $250/mo | $83/mo, billed $996 yearly |
+| Ultra | 9,000 | $199 first month, then $375/mo | $117/mo, billed $1,404 yearly |
+
+**Free tier and trial.** The Free plan is "limited access to selected AI models, no monthly credits, and one generation at a time," per the pricing page. That answers "how to use higgsfield ai for free" in a narrow way: you can use the website free within those limits, but MCP spends credits and the help center asks for an active subscription. Separately, Higgsfield's November 18 launch post for MCP 2.0 says "Try it free for 3 days with unlimited generations in MCP 2.0." That sits awkwardly beside the help-center statement that unlimited access does not apply through MCP. We cannot tell which is current, so check the offer on the page when you connect.
+
+{% x id="2123188968472948999" /%}
+
+**Limits.** Credits per month by plan, one generation at a time on Free, and the Developer Terms in Higgsfield's Terms of Use apply to MCP use (you are responsible for anything an agent generates through your account).
+
+**Skip it if** you want a model-catalog API with per-call pricing and no subscription (look at fal or Replicate), or you need unlimited generations at a flat rate through an agent. Also skip it if you need audio inside ChatGPT.
+
+**Setup.** In Claude, add a custom connector with the URL above. For Claude Code, OpenClaw and Hermes, Higgsfield's help center gives the agent this message to run, which installs a CLI and companion skills:
+
+```text
+Set up Higgsfield for me so I can generate images and videos from here.
+1. Install the CLI: npm i -g @higgsfield/cli
+2. Authenticate: higgsfield auth login
+3. Install the companion skills: npx skills add higgsfield-ai/skills
+```
+
+{% x id="2098409362041753708" /%}
+
+## fal: one login, a huge model catalog
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/fal.png" name="fal" size=40 /%}
+
+**What it is.** fal's docs describe an MCP server that lets an assistant "find models, check schemas and pricing, upload inputs, and run generations," covering images, video and audio. It is an official, hosted server using Streamable HTTP transport and OAuth, so you sign in through your browser and never create an API key or add an authorization header for these connections.
+
+**Who it is for.** Developers and technical creators who want to try many models (Kling, Seedance, FLUX, Nano Banana, Grok Imagine, MiniMax and others appear on fal's pricing page) without leaving the chat, and teams that want one prepaid balance across all of them.
+
+**The URL, verified.** From fal's docs: `https://mcp.fal.ai/mcp-relay`. The docs also describe two separate servers: a Platform MCP for account operations and serverless debugging, and a documentation-only MCP that does not access your account. Do not mix them up when you paste a URL.
+
+**Key features.**
+
+- Model search, schema lookup and price lookup before you run anything.
+- Uploads for reference inputs and a media library you can reach from ChatGPT.
+- An "Active MCP account" setting in the fal dashboard so uploads and new generations bill the account you pick across connected apps.
+- Official plugins for ChatGPT and Cursor, a connector flow for Claude, and a one-line installer for coding agents.
+
+**Pros.**
+
+- OAuth only; the docs say no API key is needed.
+- Biggest breadth of third-party models of any server here, with a published price per model.
+- The installer covers Claude Code, Codex CLI, Cursor, VS Code, Devin Desktop (formerly Windsurf), Gemini CLI, Grok Build and opencode, and it does not write an API key.
+- fal posted on October 6, 2026 that it is available in ChatGPT and Codex, so the ChatGPT route is first party.
+
+**Cons.**
+
+- Every generation spends prepaid credits, and the approval prompt in the docs is advice to the model, not a gate on the server. The docs say so directly.
+
+**Pricing (as of November 26, 2026, from fal.ai/pricing).** Model APIs are "priced per output, per model, and drawn from prepaid credits," with no charge for server errors or queue time. A selection from fal's list:
+
+| Model (endpoint family) | Price on fal |
+| --- | --- |
+| Kling Video v3 Standard or Pro, image or text to video | $0.14 per second |
+| Kling Video v2.5 Turbo Pro, image to video | $0.07 per second |
+| MiniMax H3 Max, text, image or reference to video | $0.05 per second |
+| MiniMax H3 Max Turbo | $0.025 per second |
+| Grok Imagine Video | $0.05 per second |
+| FLUX 3 Max, text or image to video | $0.085 per second |
+| Seedance 2.0 Fast | $0.0112 per 1,000 tokens |
+| Nano Banana 2 (image) | $0.08 per image |
+| Nano Banana Pro (image) | $0.15 per image |
+
+Serverless GPU list prices run from $4.00 per hour (RTX PRO 6000) to $12.99 per hour (B300), with H100 at $4.50 per hour, billed per second. The exact current price of any model is published at `fal.ai/models/<endpoint-id>/llms.txt`, per fal.
+
+**Free tier.** Not found on the pricing page. Treat it as pay as you go.
+
+{% x id="2107556391757979985" /%}
+
+**Limits.** Prepaid credits; per-model rate and queue behavior; the Active MCP account must be set if you have several accounts.
+
+**Skip it if** you want a curated, ad-focused workflow with presets (Higgsfield or Luma), or you want voice and design tools in the same server.
+
+**Setup.** On macOS or Linux, fal documents a one-command installer for coding agents, and a manual command for Claude Code:
+
+```bash
+curl -fsSL https://fal.ai/mcp/install.sh | bash
+```
+
+Or by hand in Claude Code:
+
+```bash
+claude mcp add --transport http --scope user fal https://mcp.fal.ai/mcp-relay
+```
+
+## Replicate: run any public model by name
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/replicate.png" name="Replicate" size=40 /%}
+
+**What it is.** Replicate calls its server the official hosted MCP server for its HTTP API. It also publishes a local server as the `replicate-mcp` npm package that you start with `npx`. The docs say the server works with Claude Desktop, Claude Code, Cursor, Codex, Gemini and VS Code.
+
+**Who it is for.** Developers who already have a Replicate account and API token, want to run open-source and community models (including fine-tunes), and prefer pay-per-use billing to a monthly plan.
+
+**The URL, verified.** Replicate's hosted page lists `https://mcp.replicate.com/sse` for Claude custom connectors and Claude Code (with `--transport sse`). You create a Replicate API token, paste it when asked, and then approve access. Replicate's docs describe a remote versus local choice: the remote server is the quick start, while the local npm package needs your token in an environment variable.
+
+**Key features.**
+
+- Access to Replicate's HTTP API through tools: search models, run them, and read your account.
+- A remote server for chat clients and a local server for editors.
+
+**Pros.**
+
+- Pay only for what you use; no subscription needed.
+- Easy to run niche models that curated platforms will not host.
+
+**Cons.**
+
+- Requires an API token, unlike the OAuth-only servers above.
+- The hosted URL uses SSE, a transport some newer clients are moving away from. Check that your client supports it.
+
+**Benefits for your use case.** If you need an upscaler, a specific LoRA or a research model, Replicate is the shortest path to calling it from an agent. Nothing is gated behind a plan.
+
+**Pricing (as of November 26, 2026, from replicate.com/pricing).** Most public models are billed by the time they run, and some by input and output. Example hardware rates on the page: CPU at $0.000100 per second ($0.36 per hour) and an Nvidia A100 (80GB) at $0.001400 per second ($5.04 per hour). The pricing page carried a banner that MiniMax H3 Lite and Highspeed are 50% off until the end of the year. Every model page gives an estimate.
+
+**Free tier.** None found on the pricing page. Replicate's own docs say you only pay for what you use.
+
+{% figure src="https://replicate.com/_content/assets/mcp-claude-tools.CutSK3Lq_ZRke3J.webp" alt="Claude Desktop showing the Replicate MCP server listed under Search and Tools" caption="Screenshot from Replicate's MCP docs showing the server in Claude Desktop's tool list. Source: replicate.com/docs/reference/mcp" /%}
+
+**Limits.** API token required, usage billed per model, remote server uses SSE.
+
+**Skip it if** you want a managed creative workflow, or you cannot store an API token in your client.
+
+**Setup.** For Claude Code, from Replicate's hosted page:
+
+```bash
+claude mcp add replicate https://mcp.replicate.com/sse --transport sse --scope user
+```
+
+For a local server in an editor, from Replicate's docs:
+
+```json
+{
+  "mcpServers": {
+    "replicate": {
+      "command": "npx",
+      "args": ["-y", "replicate-mcp"],
+      "env": { "REPLICATE_API_TOKEN": "your-token-here" }
+    }
+  }
+}
+```
+
+## Runway: generation in chat, plus a separate developer server
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/runway.png" name="Runway" size=40 /%}
+
+**What it is.** Runway runs two different MCP servers, and its docs are careful to keep them apart. The generation server at `https://mcp.runwayml.com/mcp` "creates media in chat" and asks you to sign in with your Runway account. The Runway Dev server at `https://dev.runwayml.com/mcp` is for coding agents working against your Developer Portal account: looking up tasks, managing model routers and reading docs. Runway says OAuth is the only authentication and that no API key goes in the client config.
+
+**Who it is for.** Filmmakers and video marketers who already pay for Runway and want to generate clips from Claude or Cursor, and developers building on Runway's API who want their agent to read docs and inspect tasks.
+
+**Key features.**
+
+- Generation MCP that sign-in-gates to your Runway account, usable from claude.ai Connectors, Cursor or any MCP client, per the landing page at mcp.runwayml.com.
+- Runway Dev MCP with an install plugin for Codex, Cursor, Grok Bot and Claude Code that bundles skills.
+- API access to third-party models inside Runway's own catalog (Kling 3.0 appears in Runway's API price list).
+
+**Pros.**
+
+- Official, OAuth only, with clear docs and one-click "Add to Claude" link for the developer server.
+- Free plan exists, so you can test the sign-in flow without paying.
+- Runway publishes per-model API credit prices ($0.01 per credit), which helps with estimates.
+
+**Cons.**
+
+- Two servers with similar names; picking the wrong URL is the most likely setup mistake.
+- Video generation is credit hungry. The Free plan is a one-time deposit that does not renew.
+
+**Pricing (as of November 26, 2026, from runwayml.com/pricing).**
+
+| Plan | Monthly billing | Yearly billing | Credits per month |
+| --- | --- | --- | --- |
+| Free | $0 | $0 | One-time 125 credits that do not expire |
+| Standard | $15/mo | $144/year ($12/mo) | 625 |
+| Pro | $35/mo | $336/year ($28/mo) | 2,250 |
+| Max | $95/mo | $912/year ($76/mo) | 9,500 |
+
+For the API, Runway's docs say credits cost $0.01 each, and the price list shows examples such as Kling 3.0 Standard at 9 credits per second without audio and 13 with audio, and Kling 3.0 Pro at 12 and 17 credits per second.
+
+**Free tier.** Yes, the Free plan with a one-time 125-credit deposit.
+
+**Limits.** Credits; separate server for developer tasks; Characters cannot be created through the Claude-specific Runway Dev path.
+
+**Skip it if** you need audio, voiceover and design assets from the same server (ElevenLabs covers more media types), or you want one connector that can pick from dozens of third-party video models (fal).
+
+**Setup.** For the developer server in Cursor, from Runway's docs:
+
+```json
+{
+  "mcpServers": {
+    "Runway Dev": {
+      "url": "https://dev.runwayml.com/mcp"
+    }
+  }
+}
+```
+
+For the generation server, add `https://mcp.runwayml.com/mcp` as a custom connector in Claude or as a remote server in any MCP client that supports OAuth.
+
+## ElevenLabs: voice, sound, music, image and video on one canvas
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/elevenlabs.png" name="ElevenLabs" size=40 /%}
+
+**What it is.** ElevenLabs' hosted MCP server at `https://api.elevenlabs.io/v1/mcp` gives an assistant access to your workspace. Its docs say an assistant such as Claude, ChatGPT or Cursor can generate speech, images, video and sound, design voices and build agents. Everything lands on a Flow, an editable canvas with prompts, references and results, and the assistant returns a link to it. Authentication is OAuth: you choose a workspace, review permissions and authorize, and generations use that workspace's credits.
+
+**Who it is for.** Creators who need voiceover, sound effects or music attached to image and video, and teams building voice agents who also want their assistant to manage them.
+
+**Key features.**
+
+- Speech from any voice in your workspace, transcription, sound effects and music through Flow nodes.
+
+**Pros.**
+
+- The only server here that handles voice and audio natively, not as an afterthought.
+- A real $0 plan with 10,000 credits per month.
+- OAuth, with no key copied into your client.
+
+**Cons.**
+
+- The ElevenLabs connector in Claude's directory is a restricted version without image, video and music generation. For the full set of tools you must add the custom connector with the URL yourself.
+- Retrying a running generation starts and bills a new one, so impatient prompts cost money.
+- The older local server (`elevenlabs-mcp`, run with `uvx`) is deprecated. Its repository says it is no longer actively maintained and points users to the hosted server.
+
+**Pricing (as of November 26, 2026, from elevenlabs.io/pricing).** The page showed a Black Friday banner ("up to 55% off, ends December 1") and a first month for $1 on Starter, so the discounted numbers below are time-limited.
+
+| Plan | Price | Credits per month | Notes |
+| --- | --- | --- | --- |
+| Free | $0/mo | 10,000 | Build for free |
+| Starter | $6/mo regular, $5/mo billed yearly ($60/year) | 30,000 | First month $1 until Dec 1 |
+| Creator | $22/mo regular, $8.25/mo first year on the Black Friday yearly deal ($99 first year, then $220/year) | 121,000 | Black Friday pricing ends Dec 1 |
+| Pro | $99/mo regular | Not captured | $445.50 first year on the yearly deal |
+
+**Free tier.** Yes, 10,000 credits per month. The pricing page lists a Commercial License under paid tiers, so check licence terms before using Free output in client work.
+
+**Limits.** Credits shared with the ElevenLabs app; restricted directory connector in Claude; workspace selection at sign-in.
+
+**Standout use case.** "Turn the second image into a five-second video with a slow push-in, write a 20-second voiceover in a warm British voice and add it to the same flow," which is one of ElevenLabs' own example prompts.
+
+**Skip it if** you only need silent video or stills. The extra surface area is wasted, and Higgsfield, Luma or fal give you more video models.
+
+**Setup.** In Claude, go to Settings, Connectors, Add custom connector, name it ElevenLabs, paste the URL, then complete OAuth and choose a workspace:
+
+```text
+https://api.elevenlabs.io/v1/mcp
+```
+
+## Luma: preset creative workflows inside Claude and ChatGPT
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/luma.png" name="Luma" size=40 /%}
+
+**What it is.** Luma announced its MCP connector on November 3, 2026, bringing "Luma's creative intelligence and workflows" into Claude and ChatGPT. The announcement lists the Luma Agent (a creative partner that orchestrates whole projects from a prompt), Product Shots, Camera Angles, Background swap, Relight Studio and short promo clips. It uses your Luma credits, so there is no separate bill.
+
+**Who it is for.** In-house and agency creative teams that need many variants of one winning asset, and e-commerce teams turning one product photo into a set of campaign images and short videos.
+
+**The URL, verified.** The "Add to Claude" button on lumalabs.ai/mcp opens Claude's connector dialog with the URL `https://agents.lumalabs.ai/mcp` pre-filled. For ChatGPT, Luma's page says to go to chatgpt.com/plugins, search for Luma AI, click Install plugin, sign in, then type `@Luma AI` in a chat and attach your product photo.
+
+**Key features.**
+
+- Preset workflows rather than raw model access, so the assistant does less prompt engineering.
+- Finished images and video come back in the chat.
+- Works with the Luma subscription you already have.
+
+**Pros.**
+
+- Aimed at a clear job (one photo to a full ad set) and documented for both Claude and ChatGPT.
+- Credit-based plans from $30 per month with commercial use on every individual tier.
+- Luma's own X account promoted the connector on November 5, 2026 with the product photo to finished creative flow (post embedded below).
+
+**Cons.**
+
+- No free plan appears on the pricing page we fetched.
+- You work inside Luma's preset workflows; if you need a model Luma does not host, look at fal or Replicate.
+
+**Benefits for your use case.** If you are a marketer with last week's best ad and a deadline, the "restyle the winning ad into new scenes, angles and lighting" flow is more direct than writing prompts for a raw video model.
+
+**Pricing (as of November 26, 2026, from lumalabs.ai/pricing).**
+
+| Plan | Monthly | Yearly (per month) | Credits |
+| --- | --- | --- | --- |
+| Plus | $30/mo | $25/mo, $300 billed yearly | 10,000 |
+| Pro | $90/mo | $75/mo, $900 billed yearly | 40,000, 4x usage with Luma Agents |
+| Ultra | $300/mo | $250/mo, $3,000 billed yearly | 150,000, 15x usage with Luma Agents |
+| Team | Contact sales | | Shared team credits, SSO |
+
+**Free tier.** None listed on the pricing page.
+
+{% figure src="https://cdn.sanity.io/images/2ylxvaa2/production/a59ffcf2c28c97733f19a3fff60993c96e00cc00-600x338.gif" alt="Animated preview of the Luma MCP connector working in Claude and ChatGPT" caption="Luma's announcement graphic for its MCP connector. Source: lumalabs.ai/news/new-luma-mcp" /%}
+
+{% x id="2118372770547487117" /%}
+
+**Limits.** Credits; preset workflows; plan-based usage multipliers for the Luma Agent.
+
+**Standout use case.** "Which of last week's ads performed best? Restyle it into three new scenes with different camera angles and lighting."
+
+**Skip it if** you need audio, a free tier, or arbitrary third-party models.
+
+## Kling: an MCP exists, but the public server URL is not documented where we could read it
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/kling.png" name="Kling" size=40 /%}
+
+**What it is.** Kling published a guide to "Kling MCP" on August 27, 2026, titled "Model Context Protocol MCP: Hands-On with Agentic AI Videos." It describes connecting Kling AI to a compatible assistant, reusing an approved creative setup and generating multiple variations. The post points to a "Kling MCP & CLI Guide" at kling.ai/app/mcp/guide and says Claude users can add a remote MCP server through custom connector settings and then authenticate.
+
+**What we could not verify.** The guide page loads, but it renders client-side, and our text extraction did not return the server URL, plan requirements or tool list. We therefore do not print a URL for Kling. Open the guide in your browser and copy the address from there rather than from a third-party site. This is the one entry in the list where we are describing an announced product, not a confirmed setup.
+
+**Who it is for.** Creators already using Kling for video who want an assistant to run approved batches with a consistent character and style.
+
+**Pros.**
+
+- Official first-party guide with a workflow (set direction, build reusable instructions, test, scale).
+- Strong video models. Kling 3.0 is available inside Higgsfield, fal and Runway, so you can reach it indirectly through those servers.
+
+**Cons.**
+
+- No verified server URL or tool list in the pages we could read.
+- Pricing for the consumer plans was not captured. Only API pricing was.
+
+**Pricing (as of November 26, 2026, from kling.ai/document-api/pricing/base/video).** The API charges by output duration in seconds, with a surcharge when you provide reference video. Kling 4.0 is listed at 1.0 unit ($0.157) per second at 720p, 1.5 units ($0.235) at 1080p and 3.5 units ($0.549) at 4K. Kling 4.0 Flash is 0.6 units ($0.094) per second at 720p. HDR output adds a fee per second of output.
+
+**Free tier.** Not verified.
+
+**Benefits for your use case.** If you want Kling output today with a verified connection, use it through fal, Runway or Higgsfield. Catalog skill [klingai-async-workflows](https://agentskills.codes/skills/klingai-async-workflows) helps if you are calling the API directly.
+
+**Skip it if** you need a documented URL and step list before you commit, which today means picking another server.
+
+## Stability AI: official docs server, generation through a community project
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/stability-ai.png" name="Stability AI" size=40 /%}
+
+**What it is.** Stability AI's official MCP server is documentation only. Its docs describe a hosted, public, no-key server at `https://docs.stability.ai/mcp` that lets a coding agent read the API reference while it writes code. It "does not call the Stability AI API, so it never spends credits." That is useful for developers but it does not generate images.
+
+If you want generation in chat, the option we found is `tadasant/mcp-server-stability-ai` on GitHub. It describes itself as an MCP server integrating clients with Stability's image functions: generate, edit, upscale and more. Its README says it is NOT officially affiliated with Stability AI. As of November 26, 2026, GitHub reports 84 stars, an MIT licence, no archive flag and a last push on June 24, 2025. It uses your own Stability API key.
+
+**Who it is for.** Developers who prefer Stable Diffusion models and want either the docs server in their editor or a community server wired to their own API key.
+
+**Pros.**
+
+- Cheap, transparent API pricing: 1 credit equals $0.01, and Stable Image Core costs 3 credits per image.
+- 25 free credits on signup, per Stability's docs.
+- The docs server needs no key and cannot spend money.
+
+**Cons.**
+
+- No official generation MCP that we could find, and the community server has not been updated in about 17 months.
+- A community server holding your API key is a trust decision. Read the code before you run it.
+
+**Pricing (as of November 26, 2026, from docs.stability.ai/pricing).**
+
+| Service | Credits | Approx. cost |
+| --- | --- | --- |
+| Stable Image Core | 3 | $0.03 |
+| Stable Diffusion 3.5 Large | 6.5 | $0.065 |
+| Stable Image Ultra | 8 | $0.08 |
+| Stable Audio 3.0 | 8 | $0.08 |
+
+**Free tier.** 25 free credits.
+
+**Benefits for your use case.** The docs server lets your agent write correct Stability API code without hallucinating parameter names, which is where many integrations go wrong.
+
+**Skip it if** you want an officially maintained generation connector, or need video.
+
+**Setup.** Add the docs server in Cursor or any client that accepts a remote URL:
+
+```json
+{
+  "mcpServers": {
+    "stability-docs": { "url": "https://docs.stability.ai/mcp" }
+  }
+}
+```
+
+## Canva: editable designs, not just pixels
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/canva.png" name="Canva" size=40 /%}
+
+**What it is.** Canva describes its MCP offering as "Canva for AI assistants," built on a remote Canva MCP server. Its developer docs list design generation and editing, design search, asset and brand management, export (PDF, PNG, JPG, PPTX, MP4) and commenting as MCP-compatible tools. The Canva Developers SDK page says the Apps SDK, Connect APIs and MCP are now unified.
+
+**Who it is for.** Marketers and small teams who want an assistant to create social posts, decks and brand-consistent layouts they can still edit in Canva, then export.
+
+**The URL, with a caveat.** Canva's own help pages returned HTTP 403 to our fetcher, so we could not read the user guide directly. Two third-party guides (connectorsguide.com and mcp.so) list the endpoint as `https://mcp.canva.com/mcp` with OAuth, and an unauthenticated request to it returned HTTP 401, which is what a live OAuth-protected server does. Treat the URL as third-party sourced and check Canva's own connector listing in your client first.
+
+**Pros.**
+
+- Output is a real Canva design, so humans can edit and brand it.
+- Per-tool rate limits are public on canva.dev: for example `generate-design` and `export-design` at 20 requests per minute, `search-designs` at 100.
+- Each user signs in individually, so the assistant can only do what that person could do.
+
+**Cons.**
+
+- Brand template tools (search, create from template, autofill) need Pro or above, per Canva's rate-limit table.
+- Not a video model: Canva's strength is layout, not generative footage.
+- We could not verify Canva's current plan prices, so none are listed here.
+
+**Free tier.** Canva's tool table on canva.dev marks most tools (design generation, search, export) as available on all plans, with resize, brand templates, brand kits and autofill needing Pro or above and a limited resize trial on Free.
+
+**Skip it if** you need cinematic video or photoreal generation.
+
+## OpenAI image generation: a tool in the API, not a server you connect to
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-image-and-video-mcp-servers-2026/logos/openai-image-api.png" name="OpenAI Image API" size=40 /%}
+
+**What it is.** The topic record called this "OpenAI image (via MCP)." We could not find a hosted OpenAI MCP server for image generation. What OpenAI does document is an `image_generation` tool you add to a Responses API request, backed by GPT Image models. The docs name `gpt-image-2.5-sunburst` for precise editing and `gpt-image-2.5-flare` for fast, high-quality generation, and state that `gpt-image-1` was shut down on October 23, 2026. Separately, OpenAI's Responses API can call remote MCP servers with an `mcp` tool type and a `server_url`, so you can combine the two: your own agent code calls image generation and also connects to servers such as the ones in this article.
+
+**Who it is for.** Developers building their own agents who want tightly integrated image generation and editing without adding another vendor.
+
+**Pros.**
+
+- First-party models and one API key.
+- `quality` accepts `xhigh` and `max` on the 2.5 models, according to the docs.
+- Also reachable through the other servers: Higgsfield lists GPT-Image 2.5, and fal lists GPT Image 2.
+
+**Cons.**
+
+- Not a connector for Claude, ChatGPT or Cursor in the sense of the other nine.
+- Every request is billed per token.
+
+**Pricing (as of November 26, 2026, from developers.openai.com/api/docs/pricing).** On the standard tier, `gpt-image-2.5-sunburst` and `-flare` are listed at $8.00 per 1M image input tokens, $30.00 per 1M image output tokens and $2.00 cached input, with text input at $5.00 per 1M. The batch tier lists half those rates ($4.00 and $15.00). The page also lists `gpt-image-2.6` variants at the same rates.
+
+**Free tier.** None on the API.
+
+**Skip it if** you want a no-code connector for a chat assistant. Use the options above. The catalog skill [ai-image](https://agentskills.codes/skills/ai-image) wraps OpenAI image generation for coding agents.
+
+**Setup.** A minimal Responses API call with the image tool, from OpenAI's docs:
+
+```python
+response = client.responses.create(
+    model="gpt-6.2-astra",
+    input="Generate an image of gray tabby cat hugging an otter with an orange scarf",
+    tools=[{"type": "image_generation", "model": "gpt-image-2.5-sunburst"}],
+)
+```
+
+## Pricing table (as of November 26, 2026)
+
+| Product | Entry paid price | Billing model | Free tier | Source |
+| --- | --- | --- | --- | --- |
+| Higgsfield | Starter $19/mo (270 credits) | Monthly credits; MCP always deducts | Free plan, 0 credits | higgsfield.ai/pricing |
+| fal | Prepaid credits, per output | Per second, image or token by model | None found | fal.ai/pricing |
+| Replicate | Pay per use | Hardware time or input and output | None found | replicate.com/pricing |
+| Runway | Standard $15/mo ($12/mo yearly), 625 credits | Monthly credits; API credits $0.01 each | One-time 125 credits | runwayml.com/pricing |
+| ElevenLabs | Starter $6/mo regular (first month $1 until Dec 1) | Monthly credits | $0, 10,000 credits | elevenlabs.io/pricing |
+| Luma | Plus $30/mo ($25/mo yearly), 10,000 credits | Monthly credits | None listed | lumalabs.ai/pricing |
+| Kling (API) | Kling 4.0 Flash $0.094/s at 720p | Per second of video | Not verified | kling.ai API pricing |
+| Stability AI (API) | 1 credit = $0.01; Core 3 credits | Per call | 25 credits | docs.stability.ai/pricing |
+| Canva | Not verified | Plan based | Core tools on all plans, brand tools need Pro | canva.dev tool table |
+| OpenAI image models | $8 in, $30 out per 1M image tokens | Per token | None | developers.openai.com pricing |
+
+## Feature matrix
+
+"Partial" means the capability exists but we could not confirm it in the vendor pages we were able to read, or it is limited. "No" means not offered or not documented.
+
+| Product | Official hosted MCP | OAuth, no API key | Claude steps documented | ChatGPT steps documented | Cursor steps documented | Images | Video | Audio |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Higgsfield | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes (not in ChatGPT) |
+| fal | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Replicate | Yes | No (API token) | Yes | No | Yes | Yes | Yes | Yes |
+| Runway | Yes | Yes | Partial | No | Yes | Partial | Yes | No |
+| ElevenLabs | Yes | Yes | Yes | Partial | Partial | Yes | Yes | Yes |
+| Luma | Yes | Yes | Yes | Yes | No | Yes | Yes | No |
+| Kling | Partial | Partial | Partial | No | No | Partial | Partial | No |
+| Stability AI | Partial (docs only) | Yes (docs server) | Partial | No | Yes (docs server) | Partial (community) | No | No |
+| Canva | Yes | Yes | Partial | Partial | Partial | Partial | Partial | No |
+| OpenAI image tool | No | No | No | No | No | Yes (API) | No | No |
+
+## Head-to-head: which to pick
+
+### Higgsfield vs fal
+
+Pick Higgsfield if you want finished workflows (ads from a product link, character consistency, motion transfer) and are happy with a monthly subscription. Pick fal if you want to choose among many models, see a price before each run and pay only for outputs. Higgsfield's connector bills credits from a plan; fal's draws prepaid credits per model. Both use OAuth, both have official routes into Claude, ChatGPT and Cursor, and both warn that generation spends money. If you are undecided, connect fal first: there is no subscription to cancel.
+
+### Runway vs Luma
+
+Runway's generation server is a general video tool with a free plan and a $15 entry price. Luma's connector is narrower and more opinionated: product shots, camera angles, background swap and relight, from $30 a month. Pick Luma when the job is "one product photo into a set of ads." Pick Runway when you want open-ended clips and a cheap way to test.
+
+## How to connect: Claude, ChatGPT and Cursor
+
+These steps come from each client's own documentation, dated November 26, 2026. Client menus move often; Claude's docs and fal's docs both note that "Settings" and "Customize" labels have changed, so look for Connectors or Plugins if a label differs.
+
+{% figure src="https://static.higgsfield.ai/landing/gpt-skills/20261016-assets/demos/fashion.webp" alt="Fashion editorial image generated through Higgsfield's MCP connector, from a prompt shown on the MCP page" caption="A sample result shown on Higgsfield's MCP page for the prompt 'Create a fashion editorial photo...'. Source: higgsfield.ai/mcp" /%}
+
+### Claude (claude.ai and Claude Desktop)
+
+Per Claude's help article on custom connectors, for an individual Pro or Max plan:
+
+1. Open **Customize** then **Connectors**.
+2. Click **+ Add**, then **Add custom connector**.
+3. Enter a name (this is what you see in the list).
+4. Paste the remote MCP server URL exactly as the vendor documents it, including the path.
+5. Click **Continue**, review the authentication settings Claude detected, then **Continue** again.
+6. Choose how people connect (for example **Sign in now**), complete the browser sign-in, and approve.
+7. In a new chat, click **+**, open **Connectors**, and switch the connector on.
+
+On Team and Enterprise plans an organization owner adds the connector first, under Organization settings, Connectors. Vendor-specific notes:
+
+| Server | Name | URL to paste | Source |
+| --- | --- | --- | --- |
+| Higgsfield | Higgsfield | `https://mcp.higgsfield.ai/mcp` | Higgsfield help center and MCP page |
+| fal | fal | `https://mcp.fal.ai/mcp-relay` | fal docs |
+| ElevenLabs | ElevenLabs | `https://api.elevenlabs.io/v1/mcp` | ElevenLabs docs |
+| Luma | Luma AI | `https://agents.lumalabs.ai/mcp` | Pre-filled by the Luma "Add to Claude" button |
+| Replicate | Replicate | `https://mcp.replicate.com/sse` (needs an API token) | Replicate hosted MCP page |
+| Runway (generation) | Runway | `https://mcp.runwayml.com/mcp` | mcp.runwayml.com |
+
+### ChatGPT
+
+OpenAI's developer docs say ChatGPT connects custom MCP servers as plugins, on the web, with workspace permissions and Lockdown applying:
+
+1. Go to ChatGPT Plugins at chatgpt.com/plugins.
+2. Select the plus button, then **Add custom MCP server**.
+3. Enter a name and optional description. Under **Connection**, enter the Server URL.
+4. Configure authentication (OAuth, no authentication, or both).
+5. Review the risk warning and select **I understand and want to continue**.
+6. Select **Create as a plugin**, then install the plugin before using it in a conversation.
+
+OpenAI lists the supported protocols as SSE and streaming HTTP. Before you paste a URL, check whether the vendor offers an official plugin, which is simpler:
+
+- **Higgsfield:** use the official Higgsfield plugin from the Plugins Directory (the help center says ChatGPT uses the plugin instead of a manual URL). Audio generation and the Website Building skill are not available there.
+- **fal:** open the fal plugin listing, select Install plugin, connect and sign in, then type `@fal`.
+- **Luma:** search for Luma AI at chatgpt.com/plugins, install, sign in, then type `@Luma AI` and attach a product photo.
+- **Canva:** a third-party guide (connectorsguide.com) describes adding `https://mcp.canva.com/mcp` as a custom connector with Developer mode. Check Canva's own listing for an official plugin.
+
+### Cursor
+
+Cursor's MCP docs show that a remote server needs only a `url` entry in `mcp.json`, and static OAuth credentials can be added when a provider needs them. Cursor documents `~/.cursor/mcp.json` for all projects and `.cursor/mcp.json` per project.
+
+1. Open the Cursor Marketplace (Customize, then Marketplace) and look for Higgsfield or fal. Click Add and sign in. This is the officially documented route for both.
+2. Or edit `~/.cursor/mcp.json` and merge an entry, preserving your other servers:
+
+```json
+{
+  "mcpServers": {
+    "fal": { "url": "https://mcp.fal.ai/mcp-relay" },
+    "Runway Dev": { "url": "https://dev.runwayml.com/mcp" }
+  }
+}
+```
+
+3. Open Cursor's MCP settings, find the server and complete browser sign-in. Each user authorizes their own connection.
+4. In an Agent chat, ask Cursor to find a model without running it, as fal's docs suggest, to confirm the connection before you spend credits.
+
+## Skills and MCP servers that work with these tools
+
+Connectors give an assistant hands. Skills give it technique. These catalog entries are real pages on agentskills.codes, each checked to return HTTP 200 on November 26, 2026:
+
+- [higgsfield-seedance](https://agentskills.codes/skills/higgsfield-seedance) (OSideMedia): cinematography prompt structure for Seedance on Higgsfield. Use it so your agent writes shot-level prompts instead of vague ones.
+- [fal-platform](https://agentskills.codes/skills/fal-platform-netbarros) (netbarros): platform API management for fal model usage, tracking and pricing. Pairs with fal's MCP when you want cost visibility.
+- [fal-upscale](https://agentskills.codes/skills/fal-upscale-fiscfed9) (FISCFED9): upscale and enhance image and video resolution through fal.
+- [klingai-async-workflows](https://agentskills.codes/skills/klingai-async-workflows) (jeremylongshore): a developer guide for async video generation with Kling AI, useful because Kling's own MCP URL is not public in the pages we read.
+- [voice-ai-development](https://agentskills.codes/skills/voice-ai-development) (davila7): speech and voice app patterns that cover ElevenLabs. [music-generation](https://agentskills.codes/skills/music-generation) (fabioc-aloha) generates music through Replicate models.
+- [remotion](https://agentskills.codes/skills/remotion) (davila7) and [video-editing](https://agentskills.codes/skills/video-editing) (DrinkBoooz): assemble generated clips into finished video with React or FFmpeg.
+- [ai-image](https://agentskills.codes/skills/ai-image) (tyrchen): image generation through OpenAI models for coding agents.
+- [chatgpt-app-builder](https://agentskills.codes/skills/chatgpt-app-builder) (mcp-use): build your own ChatGPT apps and MCP servers if no vendor above fits.
+
+For wider context, our guides on [desktop-commander-mcp-with-agent-skills](https://agentskills.codes/blog/desktop-commander-mcp-with-agent-skills), [best-personal-ai-agents-2026](https://agentskills.codes/blog/best-personal-ai-agents-2026) and [best-free-ai-coding-agents-2026](https://agentskills.codes/blog/best-free-ai-coding-agents-2026) cover how MCP servers fit into agent setups.
+
+## How we evaluated
+
+We worked from primary sources on November 26, 2026: vendor pricing pages, official MCP docs, help centers and changelog or news posts, plus the client docs for Claude, ChatGPT and Cursor. We fetched each page, recorded prices as shown, and checked every URL in this article for an HTTP response. We verified the YouTube video through YouTube's oEmbed endpoint, the X posts through X's syndication endpoint, and the images with `curl -I` for status and content type. We checked GitHub's API for the community Stability server.
+
+## FAQ
+
+### What is the Higgsfield MCP URL?
+
+Higgsfield's help center gives `https://mcp.higgsfield.ai/mcp` as the connector URL, and the MCP page's "Add Higgsfield to Claude" button uses the same address. In ChatGPT, use the official Higgsfield plugin instead of a URL, and in Cursor use the marketplace entry.
+
+### How do I use Higgsfield MCP in Claude?
+
+Open Customize, then Connectors, choose Add custom connector, name it Higgsfield, paste the URL, click Connect, then sign in and authorize on Higgsfield. You need an active Higgsfield subscription. Credits are deducted for every generation.
+
+### Is Higgsfield MCP free?
+
+Not in a durable way. The Free plan has no monthly credits, MCP always deducts credits, and the help center lists an active subscription as a prerequisite. Higgsfield's November 18 MCP 2.0 post advertised a free 3-day trial with unlimited generations, which conflicts with the help-center rules, so confirm the current offer on the page.
+
+### How can I use Higgsfield AI for free?
+
+On higgsfield.ai the Free plan allows limited access to selected models, one generation at a time, with no monthly credits. That is website use, not MCP. For a free way to test an MCP workflow with real output, ElevenLabs' $0 plan or Stability's 25 free credits are better fits.
+
+### Do I need an API key for these servers?
+
+For Higgsfield, fal, Runway, ElevenLabs, Luma and Canva, the documentation describes OAuth sign-in with no API key in the client. Replicate's hosted and local servers need an API token, and the community Stability server needs a Stability API key.
+
+### What is the difference between fal's MCP and its Platform MCP?
+
+The model-generation server at `https://mcp.fal.ai/mcp-relay` finds models and runs generations. fal's docs describe a separate Platform MCP for account operations and serverless debugging, and a documentation-only MCP that does not touch your account.
+
+### Does Stability AI have an official MCP server for image generation?
+
+We found only an official docs server at `https://docs.stability.ai/mcp`, which cannot generate images. The generation option we found is a community project, `tadasant/mcp-server-stability-ai`, which says it is not affiliated with Stability AI and was last pushed on June 24, 2025.
+
+### Does OpenAI have an image MCP server?
+
+We did not find one. OpenAI documents an `image_generation` tool in the Responses API with GPT Image models, and the Responses API can also call remote MCP servers. Those are separate features.
+
+### Why does Runway have two MCP servers?
+
+One generates media in chat (`mcp.runwayml.com/mcp`), the other connects a coding agent to your Developer Portal account (`dev.runwayml.com/mcp`).
+
+### Can I reach Kling through MCP today?
+
+Kling published an MCP guide, but we could not read a server URL from it. Kling models are listed on fal, Runway and Higgsfield, which you can connect now.
+
+### Are MCP servers safe to connect to my account?
+
+OpenAI's docs warn that an untrusted server can access information or trick the model into unintended actions, including changing or deleting data. Use official URLs, OAuth, per-tool toggles and vendor-side spend caps, and be careful with community servers that hold an API key.
+
+## Sources
+
+All pages fetched on November 26, 2026 unless noted.
+
+- Higgsfield: [MCP page](https://higgsfield.ai/mcp), [pricing](https://higgsfield.ai/pricing), [connect guide](https://higgsfield.ai/creator-hub/help-center/integrations/how-do-i-connect-higgsfield-to-ai-agent), [what Higgsfield MCP is](https://higgsfield.ai/creator-hub/help-center/integrations/what-is-higgsfield-mcp), [MCP 2.0 post on X](https://x.com/higgsfield/status/2123188968472948999)
+- fal: [MCP docs](https://fal.ai/docs/documentation/setting-up/mcp), [Claude setup](https://fal.ai/docs/documentation/setting-up/mcp/claude), [ChatGPT setup](https://fal.ai/docs/documentation/setting-up/mcp/chatgpt), [Cursor setup](https://fal.ai/docs/documentation/setting-up/mcp/cursor), [pricing](https://fal.ai/pricing)
+- Replicate: [MCP reference](https://replicate.com/docs/reference/mcp), [hosted server](https://mcp.replicate.com), [pricing](https://replicate.com/pricing)
+- Runway: [Runway Dev MCP guide](https://docs.dev.runwayml.com/guides/mcp), [generation server](https://mcp.runwayml.com), [pricing](https://runwayml.com/pricing), [API pricing](https://docs.dev.runwayml.com/guides/pricing)
+- ElevenLabs: [MCP overview](https://elevenlabs.io/docs/eleven-api/resources/mcp-server), [hosted MCP](https://elevenlabs.io/docs/agents-platform/operate/hosted-mcp), [pricing](https://elevenlabs.io/pricing), [deprecated local server](https://github.com/elevenlabs/elevenlabs-mcp)
+- Luma: [MCP page](https://lumalabs.ai/mcp), [announcement, Nov 3, 2026](https://lumalabs.ai/news/new-luma-mcp), [pricing](https://lumalabs.ai/pricing)
+- Kling: [Kling MCP blog, Aug 27, 2026](https://kling.ai/blog/kling-mcp-cinematic-performance-workflow), [MCP guide](https://kling.ai/app/mcp/guide), [API video pricing](https://kling.ai/document-api/pricing/base/video)
+- Stability AI: [docs MCP](https://docs.stability.ai/ai/docs-mcp), [pricing](https://docs.stability.ai/pricing), [community server](https://github.com/tadasant/mcp-server-stability-ai)
+- Canva: [Canva MCP developer docs](https://www.canva.dev/docs/apps/mcp/), [tools and rate limits](https://www.canva.dev/docs/apps/mcp/tools/), third-party: [connectorsguide.com](https://connectorsguide.com/guides/canva/), [mcp.so](https://mcp.so/servers/canva)
+- OpenAI: [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation), [pricing](https://developers.openai.com/api/docs/pricing), [MCP guide](https://developers.openai.com/api/docs/mcp)
+- Clients: [Claude custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp), [ChatGPT custom MCP servers](https://developers.openai.com/api/docs/guides/developer-mode), [Cursor MCP](https://cursor.com/docs/context/mcp), [Model Context Protocol](https://modelcontextprotocol.io)
+- Posts on X: [fal in ChatGPT and Codex](https://x.com/fal/status/2107556391757979985), [Higgsfield Motion Designer](https://x.com/higgsfield/status/2098409362041753708), [Luma MCP](https://x.com/LumaLabsAI/status/2118372770547487117)
