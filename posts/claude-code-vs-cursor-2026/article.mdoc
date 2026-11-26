@@ -1,0 +1,592 @@
+If you are choosing between Claude Code and Cursor in late 2026, you are really choosing between two shapes of tool. Claude Code is an agent that lives in your terminal (and, per Anthropic's docs, in IDE extensions, a desktop app and the web) and is bundled with a Claude subscription. Cursor is an editor-centered product with an Agents window, a CLI and cloud agents, and as of this month it is sold through a very different pricing and ownership structure than it was a year ago. The question is less "which model is smarter" and more "where do you want to sit while the agent works, and how do you want to pay for it".
+
+Short version, as of November 26, 2026: pick Claude Code if you want a terminal-first agent with strong project memory, hooks and skills, and you already pay for (or would pay for) Claude. Pick Cursor if you want an editor you live in, cloud agents and code review attached to a team plan, and the freedom to run non-Anthropic models. The two are not mutually exclusive: Anthropic's own docs list an install link for Claude Code inside Cursor. Below we compare both head to head and cover six alternatives (Codex, Windsurf, GitHub Copilot, Gemini CLI, Kiro and Zed), with every price dated and sourced.
+
+{% youtube id="SEc8bzZCbPo" title="Cursor vs Claude Code vs Codex (2026): Which AI Coding Tool Wins?" /%}
+
+*Third-party video by Techtonica (uploaded October 22, 2026). We verified the video exists via YouTube oEmbed; we did not check its claims, and some of its pricing details may be out of date given the changes described below.*
+
+## Short answer and quick picks
+
+- **Best terminal-first agent: Claude Code.** Memory files, path-scoped rules, hooks, subagents and skills are all documented in one place, and Claude Code ships on every paid Claude plan.
+- **Best editor-first agent: Cursor.** Agent, Plan and Ask modes in the editor and CLI, cloud agents, Bugbot reviews and a team marketplace for rules, skills and plugins.
+- **Best free way to try an agent:** GitHub Copilot Free (its plans page lists CLI and agent mode on the Free plan), Kiro Free (50 credits a month), Windsurf Free, Codex on a ChatGPT Free account, or Cursor Free. Claude Code has no free plan.
+- **Best open source:** OpenAI's Codex CLI (Apache 2.0) and the Zed editor. Gemini CLI is Apache 2.0 too, but its own README now says it is aimed at Gemini Code Assist Standard and Enterprise customers.
+- **Cheapest paid entry:** Cursor Plus at $8 a month (Grok models only), then GitHub Copilot Pro and Zed Pro at $10.
+- **Best for spec-driven work:** Kiro, which pairs steering files with a credit-based plan.
+
+{% callout type="warning" %}
+Cursor changed owner and pricing in 2026. Cursor's own blog (August 14, 2026) says it "has officially been acquired by SpaceX", and its help center says new customers now choose a plan on The X Subscription, while older plans (Pro $20, Pro+ $60, Ultra $200, Teams $40 per user) keep working for existing subscribers. Many "Claude Code vs Cursor" posts and Reddit threads still quote the old $20 Pro price. Check which plan you would actually be buying.
+{% /callout %}
+
+## Master comparison table
+
+Prices are monthly list prices from each vendor's pricing page, checked November 26, 2026, excluding tax.
+
+| Product | Entry paid price | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/claude-code.png" name="Claude Code" size=24 /%} Claude Code | Pro $20 ($17/mo billed annually); Max $100; Ultra $200 | No (Free plan does not include Claude Code) | No (GitHub repo shows no open-source license) | One usage pool shared with Claude chat, with 5-hour and weekly limits | Terminal-first agent with hooks, subagents, skills |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/cursor.png" name="Cursor" size=24 /%} Cursor | Plus $8 (Grok models only); Premium $30; Super $100; Ultra $200 | Yes, limited | No | Weekly usage pool; third-party models billed separately at API list price | Editor, CLI, cloud agents, Bugbot |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/codex.png" name="Codex" size=24 /%} Codex | Included in ChatGPT plans; Pro at $100, $200 or $500 | Yes (ChatGPT Free, GPT-6 Luna) | CLI is Apache 2.0 | Message estimates per 5 hours, vary by model | Open-source CLI plus cloud tasks |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/windsurf.png" name="Windsurf" size=24 /%} Windsurf | Pro $20; Max $200; Teams $80 | Yes, light quota | No | Daily and weekly quota | Tab completions and inline edits on Free |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/github-copilot.png" name="GitHub Copilot" size=24 /%} GitHub Copilot | Pro $10; Pro+ $39; Max $100 | Yes | No | Monthly GitHub AI Credits | Lowest paid entry, works across IDEs, CLI and github.com |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/gemini-cli.png" name="Gemini CLI" size=24 /%} Gemini CLI | Code Assist Standard or Enterprise license | No individual free tier now | Yes (Apache 2.0) | Enterprise-oriented | Open-source terminal agent for Google Cloud shops |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/kiro.png" name="Kiro" size=24 /%} Kiro | Pro $20; Pro+ $40; Pro Max $100; Power $200 | Yes, 50 credits | Not verified | Credits; add-ons $0.04 per credit | Steering files and credit pooling for teams |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/zed.png" name="Zed" size=24 /%} Zed | Pro $10 ($5 of tokens included) | Yes (Personal plan) | Yes (per Zed's pricing page) | Usage beyond $5 billed at API list price plus 10% | Native, fast editor with external agents |
+
+{% figure src="https://assets.claude.com/f66071070c4701ea2c37fc01b3c0f83623cf29d3.jpg?w=2400&h=1260&fit=crop" alt="Claude Code by Anthropic product page social image" caption="Claude Code's product page image. Source: Anthropic (claude.com/product/claude-code)" /%}
+
+## Claude Code
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/claude-code.png" name="Claude Code" size=40 /%}
+
+**What it is.** Anthropic's own coding agent. Its docs describe it as "an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools," available in the terminal, IDE extensions, a desktop app and the browser. The terminal CLI is the full-featured surface; VS Code (including Cursor) and JetBrains extensions, the desktop app and the web are the other ways in. As of November 26, 2026, the public `anthropics/claude-code` repository has 157,195 GitHub stars (GitHub API, checked that day), and GitHub reports no license on it, so we list it as not open source.
+
+**Who it is for.** Developers who are comfortable driving an agent from a terminal, want durable project instructions that follow the repo, and want hooks that can block or rewrite actions deterministically. It is also the natural pick if you already pay for Claude, because Claude Code is part of the Pro, Max and Ultra plans rather than a separate product line.
+
+**Key features (from Anthropic's docs).**
+
+- **CLAUDE.md memory.** Plain markdown files loaded at the start of every session, at user, project and managed-policy scope, with `@path` imports and a private `CLAUDE.local.md`. The docs recommend keeping each file under 200 lines.
+- **Auto memory.** Notes Claude writes itself from your corrections, loaded from the first 200 lines or 25KB of `MEMORY.md`.
+- **Path-scoped rules** in `.claude/rules/`, so instructions only load when matching files are in play.
+- **Skills.** A folder with a `SKILL.md`, invoked automatically from its description or by typing `/skill-name`. Anthropic says Claude Code skills follow the Agent Skills open standard and adds extras such as invocation control and subagent execution.
+- **Subagents** that run in their own context window with their own tool access and return only a summary.
+- **Hooks**, which are user-defined shell commands run at lifecycle points, for deterministic control rather than hoping the model remembers.
+- **MCP** connections to external tools, databases and APIs.
+- **Remote Control** (announced by @claudeai on February 24, 2026): start a task in the terminal and continue it from your phone while the session keeps running on your machine.
+
+{% x id="2026418433911603668" /%}
+
+- **Computer use in the CLI** (announced March 30, 2026 as a research preview on Pro and Max): Claude can open apps, click through a UI and test what it built.
+
+{% x id="2038663014098899416" /%}
+
+**Pros**
+
+- Memory, rules, hooks, skills and subagents are all first-class and documented together, so team conventions travel with the repo.
+- One subscription covers chat and the coding agent; the usage pool is shared across Claude on web, desktop, mobile and Claude Code.
+- Reads `AGENTS.md` directly when no `CLAUDE.md` is present (needs Claude Code v2.1.277 or later), so a repo set up for other agents works without changes.
+- Works from the terminal, so it fits SSH sessions, CI-style scripting and any editor.
+
+**Cons**
+
+- No free plan: Anthropic's pricing table shows Claude Code as "No" on Free.
+- Anthropic models only through the subscription, so you cannot mix in other vendors' models the way you can in an editor-centric tool.
+- Instructions in CLAUDE.md are context, not enforcement. Anthropic's own docs say to use a PreToolUse hook if you need to block an action regardless of what the model decides.
+- Because all Claude surfaces draw from one pool, a heavy chat day can eat into your coding budget.
+
+**Benefits for your use case.** If your pain is "the agent forgets how our repo works," CLAUDE.md plus `.claude/rules/` plus repo-committed skills is the most complete documented answer among the tools in this post. If your pain is "I want to review every diff in a polished editor," you will probably use Claude Code's VS Code extension or pair it with an editor.
+
+**Pricing (claude.com/pricing, checked November 26, 2026; excludes tax).**
+
+| Plan | Price | What the page says |
+| --- | --- | --- |
+| Free | $0 | No Claude Code |
+| Pro | $17 per month billed annually ($200 up front), or $20 monthly | Includes Claude Code; usage limits every 5 hours and every week |
+| Max | $100 per month | 5x Pro usage every 5 hours and every week; $100 a month in API credits |
+| Ultra | $200 per month | No 5-hour limit for verified accounts; 10x Pro usage every week; $200 a month in API credits |
+
+Team and Enterprise plans also exist (Team is listed for teams of 2 to 150); see the pricing page for current seat prices, which we did not capture reliably. Anthropic states that prices and plans are subject to change.
+
+**Free tier / trial.** None for Claude Code. You can use Claude's free chat plan, but Claude Code requires a paid plan or an Anthropic Console account (docs: "Most surfaces require a Claude subscription or Anthropic Console account").
+
+**Limits.** Most accounts have a rolling five-hour window, and paid plans add weekly limits on top. Anthropic does not publish a fixed token or message count per plan, only relative multiples (1x, 5x, 10x weekly).
+
+**Standout use case.** A monorepo where different directories need different instructions: a root `CLAUDE.md`, nested ones loaded on demand, `.claude/rules/` scoped by file type, and a hook that formats on every edit.
+
+**Skip it if** you want a free plan, you need to switch freely between model vendors, or you would rather live in a graphical editor than a terminal or side panel.
+
+**Install and setup.** Anthropic's docs list a native installer as the recommended path, plus Homebrew and WinGet:
+
+Homebrew on macOS or Linux, WinGet on Windows, then run `claude` inside a repo:
+
+```bash
+brew install --cask claude-code
+winget install Anthropic.ClaudeCode
+claude
+```
+
+Run `/init` once to have Claude generate a starting `CLAUDE.md` from your codebase. A minimal project file looks like this:
+
+```markdown
+## Commands
+- Test: `npm test`
+- Lint: `npm run lint`
+## Conventions
+- TypeScript strict mode; no default exports.
+- Ask before adding a production dependency.
+```
+
+{% figure src="https://ptht05hbb1ssoooe.public.blob.vercel-storage.com/assets/og/opengraph-default.png" alt="Cursor default social image from cursor.com" caption="Cursor's default site image. Source: Cursor (cursor.com)" /%}
+
+## Cursor
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/cursor.png" name="Cursor" size=40 /%}
+
+**What it is.** An AI code editor and agent platform. Its docs describe Agent as "Cursor's assistant that can complete complex coding tasks independently, run terminal commands, and edit code," and the product also includes a CLI, cloud agents, automations and Bugbot code review. In April 2026 Cursor announced Cursor 3 as "built for a world where all code is written by agents, while keeping the depth of a development environment."
+
+{% x id="2039768512894505086" /%}
+
+**The ownership and pricing change you need to know.** On August 14, 2026 Cursor's blog said the company "has officially been acquired by SpaceX," completing a process that began in April with a partnership with SpaceXAI. Cursor's help center now says Cursor is "part of The X Subscription, one subscription for Grok, Cursor, and X," that new customers choose a plan there, and that anyone who subscribed before it launched is on a legacy Cursor plan that "keeps working as it is." The practical effect: the plan names and prices you see in older reviews (Pro $20, Pro+ $60) are legacy, and the current public pricing page leads with Free, Plus, Premium, Super and Ultra.
+
+**Who it is for.** Developers who want an editor as home base, teams that want code hosting, cloud agents and AI review under one admin console, and people who want to choose among several model vendors in one place.
+
+**Key features (from Cursor's docs and pricing page).**
+
+- **Agents in the editor and the CLI.** The CLI (`agent`) supports Agent, Plan and Ask modes, a print mode (`agent -p "..."`) for scripts and CI, session resume, a sandbox setting, and an `&` prefix that hands the conversation to a Cloud Agent.
+- **Cloud agents and automations**, **Bugbot** AI code reviews and **Origin** code hosting, all listed from the Premium plan up.
+- **Rules**: `.cursor/rules/*.mdc` project rules with `description`, `globs` and `alwaysApply` frontmatter, plus User Rules, Team Rules and `AGENTS.md` (root and nested).
+- **Agent Skills**: `SKILL.md` folders in `.cursor/skills/` or `.agents/skills/`, and for compatibility Cursor also loads `.claude/skills/` and `.codex/skills/`.
+- **Hooks** via `hooks.json`, with a documented path for loading hooks from third-party tools such as Claude Code.
+- **MCP** over stdio, SSE and Streamable HTTP, configured in `mcp.json` or from the Customize page, with a Cursor Marketplace for plugins.
+- **Models**: Cursor's own pool covers Grok 4.7, Grok 4.6, Grok 4.5 and Composer 2.5; third-party models are available on Premium and above at API list price, paid from prepaid credit.
+
+Two posts for context on the model side: Cursor's own Composer 2.5 announcement (May 18, 2026), and a post from the @SpaceXSI account (September 21, 2026) saying Grok 4.7 is available in Cursor, Grok Build and the Grok API.
+
+{% x id="2056415413077233983" /%}
+
+{% x id="2102069822288720022" /%}
+
+**Pros**
+
+- You can see and edit code while the agent works, in an editor built around that loop.
+- Third-party models (on Premium and above) sit beside Cursor's own, in one tool.
+- Team features that Claude Code's pricing page does not list: a team marketplace for internal rules, skills and plugins, Team Rules with an enforce toggle, SSO and, on Enterprise, SCIM and audit logs.
+- Skills written for Claude Code or Codex are picked up from their usual folders, so you are not locked into one layout.
+
+**Cons**
+
+- The pricing and ownership picture changed this year, and it is easy to land on the wrong plan: the cheapest paid tier, Plus at $8, allows Grok models only, with no Auto, Cloud Agents, Automations, Bugbot, Origin or third-party models.
+- Third-party model usage is "not included in the monthly prices shown and must be purchased separately", so total cost depends on what you run.
+- The pricing page now bundles X and Grok perks (checkmark, ads, X Money rates) into the plan comparison, which is noise if you only want an editor.
+- Cursor's rules format (`.mdc`) is proprietary; plain `.md` files in `.cursor/rules` are ignored, which trips people up.
+
+**Benefits for your use case.** If you want to keep your editor, run several agents, and have a team admin view of rules and spend, Cursor is built for that. If you are a solo developer who mostly wants the strongest single model, check whether the Grok-plus-Composer pool is what you want before paying for Premium.
+
+**Pricing (cursor.com/pricing, rendered and checked November 26, 2026; excludes tax).**
+
+| Plan | Monthly | Annual | Usage |
+| --- | --- | --- | --- |
+| Free | $0 | n/a | Limited |
+| Plus | $8 | $80 per year | Base, Grok models only |
+| Premium | $30 | $300 per year | 4x Plus |
+| Super | $100 | $1,000 per year | 15x Plus |
+| Ultra | $200 | $2,000 per year | 50x Plus |
+| Teams | $30+ per user | not listed | Marketplace for internal rules, skills and plugins |
+| Enterprise | Custom | n/a | Pooled usage |
+
+Legacy plans for existing subscribers (Cursor help center): Pro $20, Pro+ $60, Ultra $200, Teams Standard $40 per user, Teams Premium $120 per user. They are "not available to new customers."
+
+**Free tier.** Yes. Cursor's help center says Free includes Agent, Chat and Tab completions with Cursor models (Grok and Composer), with limited usage.
+
+**Limits.** Each paid plan has a weekly pool of usage for Cursor models, shared across Cursor and Grok. Third-party models draw from prepaid credit instead.
+
+**Standout use case.** A team that wants cloud agents opening pull requests, Bugbot reviewing them, and a shared marketplace of rules and skills, all managed from one place.
+
+**Skip it if** you want one flat price for a single vendor's top models, or you do not want your editor subscription tied to X and Grok accounts.
+
+**Setup.** The CLI installer from Cursor's docs:
+
+The install command below is for macOS, Linux and WSL; afterwards run `agent` in a repo:
+
+```bash
+curl https://cursor.com/install -fsS | bash
+agent "refactor the auth module to use JWT tokens"
+```
+
+A project rule that only loads for React components (format taken from Cursor's rules docs):
+
+```markdown
+---
+description: React component conventions
+globs: src/components/**/*.tsx
+alwaysApply: false
+---
+- Use function components and hooks.
+- Co-locate tests next to the component.
+```
+
+## How skills, rules and AGENTS.md work in each tool
+
+This is the part most comparisons skip, and it decides how painful it is to use more than one agent on the same repository. Every tool below reads some kind of persistent project instruction file, and most now read `SKILL.md` folders. The details differ, so here is what each vendor's documentation says (all pages read November 26, 2026).
+
+| Tool | Always-on instructions | Scoped rules | Skills (`SKILL.md`) | Reads `AGENTS.md`? |
+| --- | --- | --- | --- | --- |
+| Claude Code | `CLAUDE.md` at user, project and managed-policy scope, plus `CLAUDE.local.md` | `.claude/rules/` | `.claude/skills/<name>/SKILL.md`, personal, nested, enterprise and plugin locations | Yes, but only when no `CLAUDE.md` is found (v2.1.277 or later), unless you import it |
+| Cursor | `AGENTS.md` or User Rules and Team Rules | `.cursor/rules/*.mdc` with `globs` and `alwaysApply` | `.cursor/skills/`, `.agents/skills/`, and also `.claude/skills/` and `.codex/skills/` | Yes, root and nested |
+| Codex | `AGENTS.md` chain from `~/.codex` down to the working directory, with `AGENTS.override.md` | Nested `AGENTS.md` files | Not checked in this post | Yes, it is the native format |
+| Windsurf | `AGENTS.md`, `AGENTS.local.md`, `AGENT.md` | `.devin/rules/` and legacy `.windsurf/rules/` | `.devin/skills/`, `.agents/skills/`, legacy `.windsurf/skills/` | Yes |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.github/instructions/NAME.instructions.md` | Not checked in this post | Yes, nearest file wins; also a root `CLAUDE.md` or `GEMINI.md` |
+| Gemini CLI | `GEMINI.md` hierarchy (`~/.gemini/GEMINI.md`, workspace files) | Just-in-time and parent-directory context files | `.gemini/skills/` or the `.agents/skills/` alias, user and workspace tiers | Not checked (docs describe `GEMINI.md`) |
+| Kiro | Steering files in `.kiro/steering/` and `~/.kiro/steering/` | Steering files included when their description matches | Steering "works similarly to skills" per Kiro's docs | Yes (AGENTS.md support listed) |
+| Zed | Not checked | Not checked | Not checked | Not checked |
+
+Three practical consequences follow from those docs.
+
+**1. One `AGENTS.md` is the closest thing to a shared file.** Cursor, Codex, Windsurf, Copilot and Kiro all list `AGENTS.md` support. Claude Code reads it too, with one catch: Anthropic's docs say that if a `CLAUDE.md` exists in your working directory or above, Claude reads the `CLAUDE.md` files only. The documented fix is a one-line import:
+
+```markdown
+@AGENTS.md
+
+## Claude Code only
+- Use the /verify skill before finishing a task.
+```
+
+**2. `.claude/skills/` is read by more than Claude Code.** Cursor's skills documentation says it loads skills from `.claude/skills/`, `.codex/skills/`, `~/.claude/skills/` and `~/.codex/skills/` "for compatibility." So a skills folder committed under `.claude/skills/` already works in both tools in this post. Windsurf, Gemini CLI and Cursor all read `.agents/skills/` as well. In the Claude Code pages we read, the project location is `.claude/skills/`; we did not find `.agents/skills/` listed there, so symlink if you want one folder to serve everything.
+
+**3. Rules are not enforcement.** Anthropic's memory docs say Claude treats CLAUDE.md as context, "not enforced configuration," and point to a PreToolUse hook when you must block an action. Cursor has a comparable hooks system (`preToolUse`, `beforeShellExecution`, `beforeMCPExecution` and others, defined in `hooks.json`) and documents loading hooks from third-party tools like Claude Code. If a rule matters for safety, make it a hook, not a sentence in a markdown file.
+
+Skills as a format are moving toward shared governance. A post from the @ClaudeDevs account on October 22, 2026 said "Your skills keep working, and the licenses don't change," and named engineers from Anthropic, Earendil (Pi), Google, Microsoft, OpenAI and OpenCode as a Technical Steering Committee for the standard.
+
+{% x id="2113328528536305718" /%}
+
+For a deeper look at how these instruction formats differ, see our existing post [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules).
+
+## Other alternatives worth considering
+
+Six more tools came up in the demand data and the market scan. They get shorter sections, with the same pricing discipline: only numbers we read on the vendor's page on November 26, 2026.
+
+### Codex
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/codex.png" name="Codex" size=40 /%}
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/2Z64goaCYuEmGe825kLJFB/ccd8ea0a41e98a3a273357ae621dfe72/codex-og-image.png?w=1600&h=900&fit=fill" alt="OpenAI Codex product social image" caption="Codex product image. Source: OpenAI (openai.com/codex)" /%}
+
+**What it is.** OpenAI's coding agent, available as a CLI, an IDE extension, a desktop app and in the cloud. The CLI is open source under Apache 2.0, and the `openai/codex` repository has 136,569 GitHub stars as of November 26, 2026.
+
+**Who it is for.** People already on ChatGPT who want an agent that shares their plan, and teams that want an open-source CLI they can inspect.
+
+**Pricing (developers.openai.com/codex/pricing, November 26, 2026).** Codex is included in ChatGPT Free, Go, Plus, Pro, Business, Edu and Enterprise plans, and shares pricing, credits and limits with ChatGPT Work. Free is $0 with GPT-6 Luna at Standard speed in the desktop app, "subject to rollout." Plus adds Codex on the web, CLI, IDE extension and iOS, plus cloud integrations like automatic code review and Slack. Pro comes at $100, $200 or $500 a month, with Ultrafast mode on the $500 tier. API-key use is billed separately at API prices and has no cloud features. We did not capture the Plus monthly price from the page, so we leave it out.
+
+**Limits.** OpenAI publishes estimates of local messages per five hours for Plus and Standard Business, for example 17 to 180 for GPT-6.2 Sol, and says these "are not fixed message limits." Pro plans currently have no five-hour limit.
+
+**Pros**
+- Free access to try it, and an open-source CLI.
+- A well-documented `AGENTS.md` chain, with a global file, per-directory overrides and a default 32 KiB cap on combined size.
+- Ties into a ChatGPT plan you may already have.
+
+**Cons**
+- Usage is shared with ChatGPT, and message estimates vary by model and task.
+- API-key sessions lose cloud features.
+- Plan names and models change often, so check the page before buying.
+
+**Benefits.** If your team writes instructions as plain `AGENTS.md`, Codex is the tool that treats that file as the primary format.
+
+**Skip it if** you want a polished editor experience or a flat price you can predict from the first day.
+
+The Codex CLI install and a first command, as given in the `openai/codex` README and OpenAI's AGENTS.md guide:
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+codex --ask-for-approval never "Summarize the current instructions."
+```
+
+### Windsurf
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/windsurf.png" name="Windsurf" size=40 /%}
+
+**What it is.** An AI editor whose pricing page is now titled "Devin Plans and Pricing" (windsurf.com's social image is hosted on devin.ai). The docs describe a "Devin Local" agent that shares a harness with the Devin CLI.
+
+**Pricing (windsurf.com/pricing, November 26, 2026).** Free $0 with a light quota, limited models, and unlimited inline edits and Tab completions. Pro $20 a month with increased quotas and "frontier models from OpenAI, Claude, Gemini, and SpaceXAI." Max $200 a month with significantly higher quotas. Teams $80 a month, up to 100 users, with SAML/OIDC SSO. Paid plans have a usage allowance that "refreshes automatically on a daily and weekly basis."
+
+**Pros**
+- A real free tier with unlimited Tab and inline edits.
+- Multiple model vendors on Pro.
+- Customization list includes rules, skills, plugins, MCP servers and hooks, with `AGENTS.md` read as always-on rules.
+
+**Cons**
+- The brand and pricing page are in flux (Devin naming), which makes older reviews unreliable.
+- Quotas are described qualitatively, not as numbers.
+
+**Skip it if** you need published per-plan usage numbers or want a pure terminal workflow.
+
+### GitHub Copilot
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/github-copilot.png" name="GitHub Copilot" size=40 /%}
+
+**What it is.** GitHub's assistant across editors, the Copilot CLI, github.com and a cloud agent that opens pull requests.
+
+**Pricing (github.com/features/copilot/plans, November 26, 2026).** Free $0 (limited chat and agent usage, with CLI and agent mode listed as included). Pro $10 a month. Pro+ $39. Max $100. Usage is now measured in GitHub AI Credits: the page lists base credits equal to the plan price (Pro $10, Pro+ $39, Max $100) plus flex allotments (Pro $5, Pro+ $31, Max $100). Pro+ and Max can delegate tasks to third-party coding agents such as Claude and Codex (marked Preview).
+
+**Pros**
+- Lowest paid entry among the big-brand options outside Cursor Plus.
+- Works across many IDEs, the CLI and github.com, and reads `.github/copilot-instructions.md`, path-specific `.instructions.md` files, `AGENTS.md`, and a root `CLAUDE.md` or `GEMINI.md`.
+- Pull request reviews and a cloud agent included from Pro.
+
+**Cons**
+- Credit accounting is new and more complex than a flat plan; flex allotments "may change over time."
+- Pooled org-wide usage is not included on the individual plans.
+
+**Skip it if** you want a single vendor's frontier model with a published multiplier, or you rarely touch GitHub.
+
+### Gemini CLI
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/gemini-cli.png" name="Gemini CLI" size=40 /%}
+
+**What it is.** Google's open-source terminal agent (Apache 2.0, 109,187 GitHub stars as of November 26, 2026). The repository README has an important notice that many older posts miss: it is "designed for Gemini Code Assist Standard / Enterprise licenses," and free individual access and Google AI Pro and Ultra "moved to Antigravity CLI on June 18, 2026." It also says the CLI is not tuned for the Gemini 4 series.
+
+**Pros**
+- Open source, with a clear `GEMINI.md` context hierarchy and skills in `.gemini/skills/` or the `.agents/skills/` alias.
+- Reasonable fit if your company is already a Gemini Code Assist customer.
+
+**Cons**
+- No individual free tier any more, per the README.
+- The README itself points individuals and Gemini 4 users to a different tool (Antigravity CLI).
+
+**Skip it if** you are an individual looking for a free Google agent. Use the Antigravity route the README describes, and see our sister-site comparison [Antigravity vs Claude Code](https://agentpedia.codes/blog/antigravity-vs-claude-code).
+
+Install with npm or Homebrew:
+
+```bash
+npm install -g @google/gemini-cli
+brew install gemini-cli
+```
+
+### Kiro
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/kiro.png" name="Kiro" size=40 /%}
+
+{% figure src="https://kiro.dev/images/opengraph/home.png" alt="Kiro home page social image" caption="Kiro's home page image. Source: Kiro (kiro.dev)" /%}
+
+**What it is.** An agentic IDE and agent from the Kiro team whose docs center on spec-driven work and "steering" files.
+
+**Pricing (kiro.dev/pricing, November 26, 2026).** Free $0 with 50 credits a month and open-weight models (users who signed up with social login or AWS Builder ID also get Claude Sonnet 4.5). Pro $20, Pro+ $40, Pro Max $100, Power $200 (10,000 credits). Add-on credits cost $0.04 each. Paid plans list premium models including Auto, GPT-5.6 Sol, Claude Opus 5.5 and Grok 4.7, though "not all premium models are available in all countries/regions." First-time Pro upgraders get the rest of the month free plus 500 trial credits to use within 12 months. Teams and enterprises use credit pooling at $20 per seat per month with 500 included credits per seat.
+
+**Pros**
+- Free tier is perpetual, not a trial.
+- Steering files in `.kiro/steering/` with global and workspace scope, and `AGENTS.md` support.
+- Credit pooling suits teams with uneven usage.
+
+**Cons**
+- A credit is "a unit of work," and complex prompts cost more than one, so cost is hard to forecast.
+- We did not verify Kiro's license or source availability.
+
+**Skip it if** you want flat-rate unlimited usage.
+
+### Zed
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-cursor-2026/logos/zed.png" name="Zed" size=40 /%}
+
+{% figure src="https://zed.dev/img/home/og.webp" alt="Zed editor home page social image" caption="Zed's home page image. Source: Zed (zed.dev)" /%}
+
+**What it is.** A native, open-source code editor with an Agent Panel that can run Zed's hosted agent or external agents over ACP. As of November 26, 2026, the `zed-industries/zed` repository shows 95,788 GitHub stars (GitHub's license field reads NOASSERTION, and Zed's own pricing page says it is open source).
+
+**Pricing (zed.dev/pricing, November 26, 2026).** Personal $0 forever (the editor without Zed-hosted AI, or bring your own keys and external agents). Pro $10 a month with unlimited edit predictions and $5 of tokens included; beyond that, usage is billed at API list price plus 10%. Business $30 per seat per month. A 14-day Pro trial with $5 of GPT-6 Luna usage requires no credit card.
+
+**Pros**
+- Cheap entry, an open-source editor, and the ability to bring your own agent.
+- Honest token billing.
+
+**Cons**
+- You manage more yourself, and we did not verify Zed's rules or skills support for this post.
+
+**Skip it if** you want a managed, all-in-one agent subscription.
+
+## Pricing table (as of November 26, 2026)
+
+Every figure below is a list price read from the vendor's own page on November 26, 2026, excluding tax. Plans change often, so treat this as a snapshot.
+
+| Product | Plan | Price | Notes |
+| --- | --- | --- | --- |
+| Claude Code | Pro | $20 monthly, or $17 per month billed annually ($200 up front) | Includes Claude Code |
+| Claude Code | Max | $100 monthly | 5x Pro usage; billed monthly |
+| Claude Code | Ultra | $200 monthly | 10x Pro weekly usage; no 5-hour limit for verified accounts |
+| Cursor | Free | $0 | Limited |
+| Cursor | Plus | $8 monthly ($80 annual) | Grok models only |
+| Cursor | Premium | $30 monthly ($300 annual) | 4x Plus; cloud agents, Bugbot, third-party models at API list price |
+| Cursor | Super | $100 monthly ($1,000 annual) | 15x Plus |
+| Cursor | Ultra | $200 monthly ($2,000 annual) | 50x Plus |
+| Cursor | Teams | From $30 per seat | Seat tiers vary; see cursor.com/pricing |
+| Codex | Free | $0 | GPT-6 Luna, desktop app, subject to rollout |
+| Codex | Pro | $100, $200 or $500 monthly | Ultrafast mode on the $500 tier |
+| Windsurf | Pro / Max / Teams | $20 / $200 / $80 monthly | Teams up to 100 users |
+| GitHub Copilot | Pro / Pro+ / Max | $10 / $39 / $100 monthly | Usage in GitHub AI Credits |
+| Kiro | Pro / Pro+ / Pro Max / Power | $20 / $40 / $100 / $200 monthly | Add-on credits $0.04 each |
+| Zed | Pro / Business | $10 monthly / $30 per seat | $5 of tokens included in Pro |
+| Gemini CLI | Code Assist Standard or Enterprise | Not captured | Pricing is under the Google Cloud license, not on the repo |
+
+A plain way to compare the two main tools: on annual billing, Claude Pro is $200 a year and Cursor Premium is $300 a year. At the top, Cursor Ultra is $2,000 a year on annual billing, while Claude Ultra at $200 a month is $2,400 over twelve months because Anthropic's table shows Max and Ultra as monthly-only. These are just arithmetic on the list prices. The usage you get per dollar is not comparable: Anthropic quotes multiples of Pro, Cursor quotes multiples of Plus, and neither publishes an absolute token count.
+
+## Feature matrix
+
+"Not checked" means we did not confirm the feature in vendor documentation for this post.
+
+| Feature | Claude Code | Cursor | Codex | Windsurf | Copilot | Gemini CLI | Kiro | Zed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Terminal agent | Yes | Yes | Yes | Partial (Devin CLI shares the harness) | Yes | Yes | Not checked | Partial (external agents via ACP) |
+| Editor or IDE experience | Partial (extensions for VS Code and JetBrains) | Yes | Partial (IDE extension) | Yes | Yes | No | Yes | Yes |
+| Cloud or background agents | Yes (web, cloud sessions) | Yes (Premium and up) | Yes (web) | Not checked | Yes (cloud agent) | Not checked | Yes (web) | Not checked |
+| Free plan includes the agent | No | Yes | Yes | Yes | Yes | No | Yes | Partial (editor free, hosted AI is paid) |
+| Reads `AGENTS.md` | Partial (only without a `CLAUDE.md`, or via import) | Yes | Yes | Yes | Yes | Not checked | Yes | Not checked |
+| `SKILL.md` skills | Yes | Yes | Not checked | Yes | Not checked | Yes | Partial (steering files) | Not checked |
+| Hooks | Yes | Yes | Not checked | Yes | Not checked | Not checked | Not checked | Not checked |
+| MCP | Yes | Yes | Not checked | Yes | Yes | Not checked | Not checked | Not checked |
+| Several model vendors | Partial (Anthropic models; third-party providers on CLI, VS Code and JetBrains) | Yes (Premium and up) | Partial | Yes (Pro) | Yes | Partial | Yes | Yes |
+
+## Head-to-head: Claude Code vs Cursor
+
+{% callout type="info" %}
+**Pick Claude Code** when the terminal is your home, when you want repo-committed memory, rules, hooks and skills with the most thorough documentation, and when one Claude subscription for chat plus coding is appealing. **Pick Cursor** when you want an editor, several model vendors, cloud agents and Bugbot reviews, or a team marketplace and admin controls. **Use both** if you like Cursor's editor and Claude Code's agent: Anthropic documents installing Claude Code in Cursor.
+{% /callout %}
+
+| Question | Claude Code | Cursor |
+| --- | --- | --- |
+| Where do you work? | Terminal first; also IDE extensions, desktop and web | Editor first; also CLI, cloud agents and web or mobile handoff |
+| Who owns it? | Anthropic | SpaceX (acquisition announced complete on August 14, 2026) |
+| How do you pay? | Claude Pro, Max or Ultra subscription | The X Subscription tiers, or a legacy Cursor plan if you subscribed earlier |
+| Free plan | No | Yes |
+| Models | Anthropic's | Grok and Composer in the base pool; third-party models paid at API list price from Premium |
+| Project memory | `CLAUDE.md`, `CLAUDE.local.md`, auto memory | Rules (`.mdc`), `AGENTS.md`, User and Team Rules |
+| Scoped rules | `.claude/rules/` | `globs` in `.cursor/rules/` |
+| Skills | `.claude/skills/` | `.cursor/skills/`, `.agents/skills/`, and also `.claude/skills/` |
+| Deterministic control | Hooks (documented as the way to block actions) | Hooks (`hooks.json`) |
+| Review and CI | Scriptable CLI; code review is not listed on the pricing page | Print mode for CI; Bugbot reviews from Premium |
+| Team admin | Team and Enterprise plans; organization-wide skills deployment is listed for Team and Enterprise, SCIM and audit logs for Enterprise | Team Rules with enforce toggle, marketplace, SSO, and SCIM on Enterprise |
+
+**Our read.** The two tools have converged on the same primitives: markdown instructions, scoped rules, skills, hooks, MCP, subagents, a CLI and cloud execution. The differences that matter are now commercial and ergonomic. Claude Code gives you one vendor's models and one subscription, with the deepest documented customization surface. Cursor gives you an editor and a menu of models, but with a pricing structure that changed this year and an owner that now also sells you Grok. If you were burned by an AI editor's pricing change before, that structure is a legitimate reason to prefer the more predictable subscription. If you hate living in a terminal, no amount of memory-file elegance will fix that.
+
+Conflicting information worth knowing: Cursor's pricing page and its help center agree on the plan table, but older Cursor pages and many third-party posts still describe Pro at $20 and Pro+ at $60. Cursor's help center confirms those are legacy plans, so we treat the pricing page as current and the older prices as legacy.
+
+## Head-to-head: Claude Code vs Codex
+
+Both are agents that started in the terminal and both have open instruction conventions. Codex's CLI is Apache 2.0 licensed and its `AGENTS.md` discovery is the most explicit we read: a global file in `~/.codex`, a walk from the Git root to the working directory, one file per directory, a root-first merge, and a default 32 KiB cap. Claude Code's `CLAUDE.md` loading is similarly layered but adds `@` imports, `.claude/rules/` and auto memory. On price, Codex rides on ChatGPT plans, including a free tier, while Claude Code requires a paid plan. If you want the closest like-for-like review of terminal agents, our sister site's [Claude Code vs Codex vs Gemini CLI vs Copilot CLI](https://agentpedia.codes/blog/claude-code-vs-codex-vs-gemini-cli-vs-copilot-cli-2026) covers that matchup with a different angle, and our own note on [Codex usage limits](https://agentskills.codes/blog/codex-usage-limits-agent-workflows) looks at how its limits work.
+
+**Which to pick:** choose Codex if you want an open-source CLI and a free way in. Choose Claude Code if the surrounding ecosystem (hooks, subagents, skills, remote control) is what you want.
+
+## Head-to-head: Cursor vs Windsurf
+
+Both are editors with agents, both sell tiers at $20 and $200 (Windsurf Pro and Max, versus Cursor's legacy Pro and current Ultra), and both read `AGENTS.md` and `SKILL.md`. Cursor's current individual ladder is more granular ($8, $30, $100, $200) and ties into X and Grok; Windsurf's is $20, $200 for individuals and $80 for Teams, and its pricing page is now branded "Devin." Windsurf Free explicitly includes unlimited Tab completions and inline edits. Cursor documents cloud agents, Bugbot and a team marketplace more fully on its pricing page.
+
+**Which to pick:** Windsurf if you want a simple three-tier ladder and a free tier with unlimited Tab. Cursor if you need Bugbot, cloud agents and the finer-grained ladder.
+
+## Skills and MCP servers that work with these tools
+
+Skills written as `SKILL.md` folders are the shared layer between Claude Code, Cursor, Windsurf and Gemini CLI, so the catalog at agentskills.codes is useful whichever of these you pick. We checked that each page below returns HTTP 200 on November 26, 2026. Install counts come from the catalog's API on the same day and are small, so treat them as a rough signal only.
+
+| Catalog entry | Why it fits this comparison |
+| --- | --- |
+| [agents-md](https://agentskills.codes/skills/agents-md) | Creates or updates root and nested `AGENTS.md` files for scoped conventions, the one file Cursor, Codex, Windsurf, Copilot and Claude Code (without a `CLAUDE.md`) all read. |
+| [sync-agents-md](https://agentskills.codes/skills/sync-agents-md) | Re-syncs `AGENTS.md` after a repo has drifted, which matters when two tools share the same instruction file. |
+| [claude-code-guide](https://agentskills.codes/skills/claude-code-guide) | A guide for using Claude Code with configuration templates and prompting strategies. |
+| [cursor-codebase-indexing](https://agentskills.codes/skills/cursor-codebase-indexing) | Covers setting up and optimizing Cursor's codebase indexing. |
+| [cursor-explorer-mcp](https://agentskills.codes/skills/cursor-explorer-mcp) | An MCP-oriented skill for token-expensive multi-file analysis and codebase exploration. |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | A guide for building MCP servers, which both Claude Code and Cursor can connect to (136 listed installs when we checked). |
+| [mcp-integration](https://agentskills.codes/skills/mcp-integration) | For adding and configuring MCP servers in an agent setup (21 listed installs). |
+| [playwright-mcp](https://agentskills.codes/skills/playwright-mcp) | Browser testing and UI validation through Playwright MCP, useful when the agent needs to check what it built (33 listed installs). |
+
+Related reading on this site: [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules), [Best Claude Code skills for developers in 2026](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) and [Best free AI coding agents in 2026](https://agentskills.codes/blog/best-free-ai-coding-agents-2026).
+
+To try a skill in Claude Code, a personal skill lives under `~/.claude/skills/<name>/SKILL.md`; a project skill lives under `.claude/skills/<name>/SKILL.md`. Because Cursor also reads `.claude/skills/`, committing a skill there serves both tools.
+
+## Best for X: decision table
+
+| If you... | Pick | Why |
+| --- | --- | --- |
+| Live in the terminal and want hooks and subagents | Claude Code | Documented memory, rules, hooks, subagents and skills in one product |
+| Want an editor with several model vendors | Cursor | Third-party models at API list price from Premium |
+| Need a free way to try an agent | Copilot Free, Kiro Free, Windsurf Free, Codex Free or Cursor Free | Each lists a $0 plan; Claude Code does not |
+| Want the cheapest paid plan | Cursor Plus ($8, Grok only), then Copilot Pro or Zed Pro ($10) | List prices on November 26, 2026 |
+| Want an open-source agent CLI | Codex (Apache 2.0) | Source is public; Gemini CLI is also Apache 2.0 but is now enterprise-oriented |
+| Run a team with admin and review needs | Cursor Teams or Enterprise | Marketplace, Team Rules, Bugbot, SSO, SCIM |
+| Already pay for ChatGPT | Codex | Included in the plan |
+| Already pay for Claude | Claude Code | Included in Pro, Max and Ultra |
+| Want spec-driven steering and pooled team credits | Kiro | Steering files and credit pooling |
+| Want a fast native editor and your own agent | Zed | Open-source editor with external agents via ACP |
+
+## Common mistakes
+
+1. **Quoting old Cursor prices.** Pro at $20 and Pro+ at $60 are legacy plans for existing subscribers; new customers see Free, Plus, Premium, Super and Ultra.
+2. **Buying Cursor Plus and expecting Claude or GPT models.** The pricing page says only Grok models are available on Plus.
+3. **Forgetting that third-party models in Cursor are billed separately.** The pricing page says that usage "must be purchased separately."
+4. **Expecting Claude Code on the free Claude plan.** Anthropic's table shows it as not included.
+5. **Keeping both `CLAUDE.md` and `AGENTS.md` without an import.** Claude Code reads only the `CLAUDE.md` files when both exist, so instructions silently diverge. Add `@AGENTS.md` to the `CLAUDE.md`.
+6. **Writing Cursor rules as `.md` files.** Project rules must be `.mdc`; a plain `.md` in `.cursor/rules` is ignored.
+7. **Treating a rule as a guarantee.** For anything safety-critical, use a hook.
+8. **Installing Gemini CLI as an individual and expecting a free tier.** Its README says free individual access moved to Antigravity CLI.
+9. **Ignoring that Claude usage is one pool.** Chat, desktop, mobile and Claude Code share it.
+10. **Overlong instruction files.** Anthropic suggests under 200 lines for CLAUDE.md and Cursor suggests under 500 lines per rule.
+
+## Buying and setup checklist
+
+- [ ] Decide terminal-first or editor-first, then choose Claude Code or Cursor.
+- [ ] Check the live pricing pages (links in Sources) on the day you buy; plans change.
+- [ ] If you pick Cursor, confirm whether you are buying a current plan or already hold a legacy one.
+- [ ] If you pick Claude Code, confirm your plan includes it (Pro and above) and how your team shares usage.
+- [ ] Write one `AGENTS.md` for shared conventions; add a `CLAUDE.md` that imports it if you use Claude Code.
+- [ ] Put skills in `.claude/skills/` (works in both Claude Code and Cursor) or symlink from `.agents/skills/`.
+- [ ] Turn any must-never-happen rule into a hook.
+- [ ] Connect only the MCP servers you need; each adds context cost.
+- [ ] Try the free tier of a second tool before locking in an annual plan.
+
+## How we evaluated this
+
+**What we did.** On November 26, 2026 we read the vendor pages listed in Sources: pricing pages for Claude, Cursor, Windsurf, Kiro, Zed, GitHub Copilot and Codex; Claude Code docs on overview, memory, skills, hooks, subagents, MCP and best practices; Cursor docs on rules, skills, hooks, MCP, CLI and the agent; Windsurf, Gemini CLI, Kiro and GitHub Copilot documentation for instruction files and skills; and Cursor's SpaceX announcement and billing help page. We rendered Cursor's pricing page in a browser because its raw text mixed in X features. We queried the GitHub API for star counts and licenses. We checked the YouTube video with oEmbed, each X post with the syndication endpoint, every catalog and blog link with an HTTP request, and every image with a `curl -I` request.
+
+**What we did not do.** We did not install or run Claude Code, Cursor, Codex, Windsurf, Copilot, Gemini CLI, Kiro or Zed for this post, and we did not run benchmarks. No neutral benchmark we could verify compares Claude Code and Cursor directly, so we make no claims about code quality or speed. We did not read Reddit threads, so this post does not summarize community opinion. We did not capture Claude Team seat pricing or Codex Plus pricing reliably, and we say so where relevant.
+
+## FAQ
+
+### Is Claude Code better than Cursor?
+Neither is better in general. Claude Code is a terminal-first agent bundled with Claude plans; Cursor is an editor-centered product with cloud agents and several model vendors. Pick by where you want to work and how you want to pay. Neither vendor publishes a neutral head-to-head benchmark that we could verify, so we do not rank them on output quality.
+
+### Can I use Claude Code inside Cursor?
+Yes, in the sense that Anthropic's Claude Code docs include an "Install for Cursor" link for its VS Code extension. Cursor also reads `.claude/skills/` and can load hooks from third-party tools such as Claude Code, per Cursor's docs. We did not test the combination ourselves.
+
+### How much does Claude Code cost in November 2026?
+Claude Code is included in Claude Pro ($20 monthly, or $17 per month billed annually), Max ($100) and Ultra ($200), per claude.com/pricing on November 26, 2026. The Free plan does not include it. Team and Enterprise plans exist; we did not capture their seat prices.
+
+### How much does Cursor cost in November 2026?
+The current plans are Free, Plus ($8), Premium ($30), Super ($100), Ultra ($200) and Teams (from $30 per seat), per cursor.com/pricing on November 26, 2026. Plus allows Grok models only. Third-party model usage is billed separately. Legacy plans such as Pro at $20 continue for existing subscribers.
+
+### Who owns Cursor now?
+Cursor's blog says it was acquired by SpaceX, announced complete on August 14, 2026. Its help center says Cursor is now part of The X Subscription. Treat the acquisition details beyond those two pages as unverified by us.
+
+### Is there a free version of Claude Code?
+No. Anthropic's pricing table shows Claude Code as not included on Free. If you want a free agent to try, Copilot Free, Kiro Free, Windsurf Free, Codex on ChatGPT Free and Cursor Free all list a $0 plan, with different limits.
+
+### Does Cursor support AGENTS.md and skills?
+Yes. Cursor's docs say it supports `AGENTS.md` in the project root and subdirectories, and Agent Skills in `.cursor/skills/` and `.agents/skills/`, plus `.claude/skills/` and `.codex/skills/` for compatibility.
+
+### Does Claude Code read AGENTS.md?
+Yes, from v2.1.277 or later, but only when there is no `CLAUDE.md` in your working directory or above it. If both exist, Claude reads the `CLAUDE.md` files only, unless the `CLAUDE.md` imports `AGENTS.md`.
+
+### What is the difference between rules and skills?
+Rules are instructions that load on a condition (always, by glob, by description or when you mention them). Skills are folders with a `SKILL.md` and optional scripts that the agent loads when relevant or when you invoke them with a slash command. Both Claude Code and Cursor document each.
+
+### What do people on Reddit say about Claude Code vs Cursor?
+We did not read or verify Reddit threads for this post, so we do not summarize them. One caution when you read them: a thread from before August 2026 may quote Cursor prices that are now legacy.
+
+### Should I use Claude Code or Cursor for a team?
+Cursor's pricing page lists team-oriented features (marketplace for internal rules, skills and plugins, Team Rules, SSO, centralized billing, and on Enterprise SCIM and audit logs). Anthropic's page lists Team and Enterprise plans, with organization-wide skills deployment shown for both and SCIM and audit logs on Enterprise. Compare both admin pages against your compliance needs.
+
+### Are Windsurf, Codex, Copilot, Gemini CLI, Kiro and Zed worth considering?
+Yes, for specific reasons: Windsurf for its free Tab and a three-tier ladder, Codex for an open-source CLI and a ChatGPT-bundled plan, Copilot for the lowest paid entry and GitHub integration, Kiro for steering files and credits, and Zed for an open-source native editor. Gemini CLI is now aimed at Gemini Code Assist customers, per its README.
+
+### Will these prices change?
+Probably. Cursor's pricing structure changed this year, Gemini CLI's free access moved to a different tool in June, and Windsurf's page is now branded Devin. Re-check the vendor page before paying.
+
+## Sources
+
+All pages read on November 26, 2026 unless another date is stated.
+
+- Claude pricing: https://claude.com/pricing
+- Claude Code overview, memory, skills, hooks, subagents, MCP, best practices: https://code.claude.com/docs/en/overview, https://code.claude.com/docs/en/memory, https://code.claude.com/docs/en/skills, https://code.claude.com/docs/en/hooks-guide, https://code.claude.com/docs/en/sub-agents, https://code.claude.com/docs/en/mcp, https://code.claude.com/docs/en/best-practices
+- Claude Code product page: https://claude.com/product/claude-code
+- Cursor pricing: https://cursor.com/pricing
+- Cursor help center, pricing and plans: https://cursor.com/help/account-and-billing/pricing
+- Cursor blog, "Cursor is now a part of SpaceX" (August 14, 2026): https://cursor.com/blog/joining-spacex
+- Cursor docs: https://cursor.com/docs/context/rules, https://cursor.com/docs/context/skills, https://cursor.com/docs/hooks, https://cursor.com/docs/context/mcp, https://cursor.com/docs/cli/overview, https://cursor.com/docs/agent/overview
+- Codex pricing: https://developers.openai.com/codex/pricing
+- Codex AGENTS.md guide: https://developers.openai.com/codex/guides/agents-md
+- Codex repository: https://github.com/openai/codex
+- Windsurf pricing and docs: https://windsurf.com/pricing, https://docs.windsurf.com/windsurf/cascade/agents-md, https://docs.windsurf.com/windsurf/cascade/skills
+- GitHub Copilot plans: https://github.com/features/copilot/plans
+- GitHub Copilot repository instructions: https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions
+- Gemini CLI repository and docs: https://github.com/google-gemini/gemini-cli, https://geminicli.com/docs/cli/gemini-md/, https://geminicli.com/docs/cli/skills/
+- Kiro pricing and steering docs: https://kiro.dev/pricing/, https://kiro.dev/docs/steering/
+- Zed pricing and agent panel: https://zed.dev/pricing, https://zed.dev/docs/ai/agent-panel
+- GitHub API star and license data: https://api.github.com/repos/anthropics/claude-code, https://api.github.com/repos/openai/codex, https://api.github.com/repos/google-gemini/gemini-cli, https://api.github.com/repos/zed-industries/zed
+- X posts: https://x.com/claudeai/status/2026418433911603668, https://x.com/claudeai/status/2038663014098899416, https://x.com/cursor_ai/status/2039768512894505086, https://x.com/cursor_ai/status/2056415413077233983, https://x.com/SpaceXSI/status/2102069822288720022, https://x.com/ClaudeDevs/status/2113328528536305718
+- Video: https://www.youtube.com/watch?v=SEc8bzZCbPo
+- Agentskills catalog and blog: https://agentskills.codes/skills/agents-md and the other catalog pages linked above; https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules
+- AgentPedia: https://agentpedia.codes/blog/claude-code-vs-codex-vs-gemini-cli-vs-copilot-cli-2026, https://agentpedia.codes/blog/antigravity-vs-claude-code
