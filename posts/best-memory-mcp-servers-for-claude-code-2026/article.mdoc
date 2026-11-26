@@ -1,0 +1,841 @@
+Claude Code and Codex both start every session cold. Claude Code's own auto memory helps, but its docs say it is machine-local and loads only the first 200 lines or 25KB of MEMORY.md, so anything beyond that, or anything on another laptop, is gone. A memory MCP server (or a memory plugin that ships one) fills that gap by storing what you decided, fixed and learned, then handing the relevant parts back to the agent next time.
+
+There are now dozens of options, and they solve different problems. This post compares ten that you can wire into Claude Code, Codex and Cursor today. Short version: claude-mem is the most popular and the easiest automatic option, Basic Memory is the best if you want notes you can read and edit, Mem0 and Supermemory are the hosted APIs with the most polish, and the official MCP memory server is the tiny, free baseline. Star counts, prices and release dates below are as of November 26, 2026. This is MCP servers and coding-agent plugins only; for memory frameworks and APIs you build apps on, see AgentPedia's [best AI agent memory tools of 2026](https://agentpedia.codes/blog/best-ai-agent-memory-tools-2026).
+
+{% youtube id="Mzmzy-vutSo" title="Mem0 + Claude Code MCP: Give Your AI Agent a Permanent Memory" /%}
+
+Third-party walkthrough of adding Mem0's hosted memory MCP server to Claude Code, from the Prompt Engineer 48 channel. I confirmed the title and channel through YouTube's oEmbed endpoint, but I did not watch it end to end and did not verify its upload date, so use it as a visual companion to the setup steps below and not as a source for any claim.
+
+## Short answer: quick picks
+
+| If you want | Pick | Why |
+| --- | --- | --- |
+| Best overall for Claude Code and Codex | claude-mem | Automatic capture through hooks, local by default, Apache-2.0, 119,949 stars |
+| Best free and open source, readable memory | Basic Memory | Plain Markdown notes you can edit, MCP server, AGPL-3.0, free locally |
+| Best hosted memory API | Mem0 | Hosted MCP endpoint, plugins for Claude Code and Codex, free plan with your own LLM key |
+| Best for one memory across many tools | Supermemory | MCP URL, plugins for Claude Code and Cursor, shared per-repo container, MIT core |
+| Best for a temporal knowledge graph | Graphiti / Zep | Facts with validity windows, self-hosted MCP server, Apache-2.0 |
+| Best knowledge graph with coding-agent plugins | Cognee | Claude Code and Codex plugins, 100M free tokens on the Standard plan |
+| Best lightweight, single binary | Engram | Go binary, SQLite and FTS5, MCP server, MIT |
+| Best hook-heavy local system | agentmemory | 12 hooks, 54 MCP tools, keyless BM25 search |
+| Best baseline you can read in an afternoon | MCP memory server (official) | Knowledge-graph JSONL file, nine tools, reference implementation |
+| Best if you want a stateful-agent platform | Letta | Self-editing memory, but it replaces your harness rather than plugging into it |
+
+{% callout type="info" %}
+Ranking is my judgment from public sources, not a benchmark. No neutral, reproducible benchmark compares these ten for coding-agent use, so I weighted install friction, Claude Code and Codex support, openness, and how much each vendor documents about limits. Where a number is vendor-reported I say so.
+{% /callout %}
+
+## Master comparison table (as of November 26, 2026)
+
+| Product | Pricing | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/claude-mem.png" name="claude-mem" size=24 /%} claude-mem | Engine free; Cloud Sync $12/month or $99/year | Free local engine; 30-day Cloud Sync trial | Yes (Apache-2.0) | Observer model usage may cost extra | Auto-capture and compressed context injection |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/basic-memory.png" name="Basic Memory" size=24 /%} Basic Memory | Cloud $19, Pro $99, Business $249 per month | Free locally; 7-day cloud trial | Yes (AGPL-3.0) | Model must call the tools to write notes | Markdown files you own |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/mem0.png" name="Mem0" size=24 /%} Mem0 | Free and Custom | Yes, usage-capped | Core yes (Apache-2.0); platform hosted | Free caps adds and retrievals per month | Hosted MCP endpoint at mcp.mem0.ai |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/agentmemory.png" name="agentmemory" size=24 /%} agentmemory | Free | Fully free | Yes (Apache-2.0) | Keyless mode has no vector search | 12 hooks and 54 MCP tools |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/supermemory.png" name="Supermemory" size=24 /%} Supermemory | Free, Pro $19, Max $100, Scale $399 per month | Free with $5 usage | Core yes (MIT) | Metered credits | One shared memory across agents |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/cognee.png" name="Cognee" size=24 /%} Cognee | Standard $0, Premium $99 per month plus tokens | 100M tokens included | Yes (Apache-2.0) | Graph building calls your LLM | Knowledge graph plus coding-agent plugins |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/graphiti-zep.png" name="Graphiti / Zep" size=24 /%} Graphiti / Zep | Graphiti free; Zep Flex $125, Flex Plus $375 per month | Zep: 10,000 credits per month | Graphiti yes (Apache-2.0); Zep hosted | Graphiti needs a graph database and an LLM key | Bi-temporal facts |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/engram.png" name="Engram" size=24 /%} Engram | Free | Fully free | Yes (MIT) | Local only, no hosted option documented | One Go binary, SQLite FTS5 |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/mcp-memory-server.png" name="MCP memory server" size=24 /%} MCP memory server | Free | Fully free | Yes (Apache-2.0 for new code, MIT for older) | Reference code, not production-ready by its own README | Simplest possible graph memory |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/letta.png" name="Letta" size=24 /%} Letta | Free, Pro $20, Teams Pro $20 per seat per month | Free for 3 stateful agents | Yes (Apache-2.0) | Replaces your harness; MCP support is as a client | Self-editing agent memory |
+
+## 1. claude-mem: the most popular automatic option
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/claude-mem.png" name="claude-mem" size=40 /%}
+
+**What it is.** claude-mem is an Apache-2.0 plugin by Alex Newman (thedotmack). Its README describes it as a second agent that runs beside your coding agent and takes notes while it works. The next session starts with a short index of what matters and pulls details in only when needed. The repository had 119,949 stars on November 26, 2026 and shipped release v17.0.1 that same day, so it is both the biggest and one of the most actively maintained projects here.
+
+**Who it is for.** Developers who want memory without managing it: you install once, work normally, and your second session in a project opens with memory from the first. It supports Claude Code, Codex, Cursor, OpenCode and more; the README says Copilot CLI, Goose, Roo Code, Warp and Zed can search your memory but their sessions are not recorded.
+
+**Key features.**
+- Hook-based capture of what the agent does, compressed by an observer model into observations.
+- A mem-search skill that searches history in three steps (index, timeline, details), so the agent spends tokens only on what it opens. The catalog has it as [mem-search](https://agentskills.codes/skills/mem-search).
+- An "MCP Search Tools" section in the README, plus SQLite FTS5 and Chroma hybrid search described in the docs.
+- Memory lives in `~/.claude-mem` on your machine; cloud sync is opt-in.
+
+**Pros**
+- Zero-effort capture: you do not have to ask the model to save anything.
+- Local by default, Apache-2.0, enormous community and a fast release cadence.
+- Works across Claude Code, Codex and Cursor from one installer.
+
+**Cons**
+- Anonymous usage analytics are on by default; `npx claude-mem telemetry disable` turns them off.
+- It captures a lot, and you curate what matters afterwards.
+- It runs a local worker service, which is more surface area than a single stdio MCP server. The v16.0.0 release notes (November 18, 2026) describe removing a read-only remote TV page and binding the worker to localhost when a non-loopback host is configured without a token. That is a fix, but it shows why you should read release notes for anything that opens a port.
+- `npm install -g claude-mem` installs only the SDK, not the plugin; the README warns to use `npx claude-mem install` or the marketplace.
+
+**Benefits for your use case.** For a Claude Code or Codex user the benefit is continuity across sessions with no change in habit, plus searchable history when you ask "did we already solve this?".
+
+**Pricing (as of November 26, 2026, claude-mem.ai/pricing).** The open-source engine is free. Cloud Sync, which carries memory between devices, is $12 per month with a 30-day trial (no card needed), or $99 per year with no trial. Optional hosted generation plans are Pro at $30 per month ($30 allowance), Heavy at $70 per month ($49 allowance) and CMEM Max at $100 per month ($70 allowance). Hosted tokens and Cloud Sync are separate subscriptions. TeamBrain, the shared-memory product, has no public price.
+
+**Free tier / trial.** Free local engine; Cloud Sync 30-day trial. Model or provider usage for the observer may carry its own cost depending on configuration, per the pricing page.
+
+**Standout use case.** Long-running projects across several machines, where you want to ask the agent what you tried last week.
+
+**Skip it if** you want a small, auditable stdio server with a handful of tools, or if a persistent background worker and default telemetry are not acceptable in your environment.
+
+**Setup (from the README).**
+
+```bash
+npx claude-mem install
+
+/plugin marketplace add thedotmack/claude-mem
+/plugin install claude-mem
+```
+
+For Codex and Cursor, run `npx claude-mem install` and pick them in the prompt. To target one agent directly use `--ide <name>`; the README says the full list of values is in `npx claude-mem --help`, and I did not verify the exact Codex and Cursor values, so check that output.
+
+{% figure src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif" alt="claude-mem preview animation from the project repository" caption="Preview animation from the claude-mem repository. Source: github.com/thedotmack/claude-mem" /%}
+
+## 2. Basic Memory: notes you can actually read
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/basic-memory.png" name="Basic Memory" size=40 /%}
+
+**What it is.** Basic Memory is an MCP server and knowledge base built on plain Markdown files. Your AI and you both read and write the same notes; a local SQLite index provides search. It is licensed AGPL-3.0, had 4,719 GitHub stars on November 26, 2026, and its latest tagged release is v1.0.0 (October 29, 2026). The README refers to tools with `bm_` names, for example `bm_edit` and `bm_write`, and to schema tools such as `bm_schema_infer`.
+
+**Who it is for.** People who want to see and edit what the AI remembers, who already keep notes in Obsidian-style Markdown, or who want one knowledge base shared across Claude, Codex, Cursor and ChatGPT.
+
+**Key features.**
+- Local install through `uv tool install basic-memory --prerelease=allow` (the flag is required, per the README).
+- Hybrid full-text and vector search with FastEmbed embeddings, per the README, plus Markdown observations and `[[wikilink]]` relations that the README calls a knowledge graph.
+- A Claude Code plugin installed with `bm install claude-code`, adding a session-start briefing, a checkpoint before context compaction, and `/basic-memory:*` commands.
+- Cloud version with web, mobile and desktop access and bidirectional sync to local files.
+
+**Pros**
+- Files stay the source of truth, so you can diff, back up and edit memory with normal tools.
+- Free to run locally, with all data on your disk.
+- Explicit setup instructions for Claude Code, Codex, Cursor and VS Code in the README.
+
+**Cons**
+- The model has to decide to call the tools, so notes are only as good as what gets written; capture is mostly agent-written with an opt-in capture mode.
+- AGPL-3.0 matters if you plan to embed or modify it in a hosted product.
+- Requires Python through `uv`, and the `--prerelease=allow` requirement is an easy thing to miss.
+
+**Benefits for your use case.** Decisions, architecture notes and gotchas live in a folder you control, and they carry into Codex or Cursor sessions because they are plain files behind a standard MCP server.
+
+**Pricing (as of November 26, 2026, basicmemory.com/pricing).** Cloud $19 per month per workspace (1,900 credits included), Pro $99 per month (9,900 credits, up to 5 members) and Business $249 per month (24,900 credits, up to 25 members). One credit is $0.01. A Black Friday offer of 50 percent off each month for 12 months with code BLACKFRIDAY ends Monday, November 30 at 11:59 PM PT. Note the repository README still says "$15.00/mo locked for life", which contradicts the $19 on the pricing page; I used the pricing page.
+
+**Free tier / trial.** Open source and free locally; cloud starts with a 7-day trial.
+
+**Standout use case.** A research or architecture journal that both you and the agent maintain, readable in any editor.
+
+**Skip it if** you want fully automatic capture of everything the agent does, or you cannot accept AGPL terms.
+
+**Setup (from the README).**
+
+```bash
+uv tool install basic-memory --prerelease=allow
+
+claude mcp add basic-memory -- uvx --prerelease=allow basic-memory mcp
+bm install claude-code   # optional plugin, needs the MCP server first
+```
+
+```toml
+[mcp_servers.basic-memory]
+command = "uvx"
+args = ["--prerelease=allow", "basic-memory", "mcp"]
+```
+
+```json
+{
+  "mcpServers": {
+    "basic-memory": {
+      "command": "uvx",
+      "args": ["--prerelease=allow", "basic-memory", "mcp"]
+    }
+  }
+}
+```
+
+The JSON block goes in `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global).
+
+## 3. Mem0: hosted memory with a Codex and Claude Code plugin
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/mem0.png" name="Mem0" size=40 /%}
+
+**What it is.** Mem0 is a memory layer for AI agents. The open-source core (mem0ai/mem0, Apache-2.0) had 69,508 stars on November 26, 2026. The hosted Mem0 Platform exposes an MCP server at `https://mcp.mem0.ai/mcp`. The docs list tools including `add_memory`, `search_memories`, `get_memories`, `delete_memory`, `delete_all_memories` and `delete_entities`.
+
+**A naming caveat.** The topic is often searched as "OpenMemory MCP". That local, self-run OpenMemory is sunset: a merged pull request (#6530, July 29, 2026) removed the `openmemory/` directory from the Mem0 monorepo and points self-hosters to the `server/` directory instead (FastAPI, PostgreSQL with pgvector, Neo4j). The `mem0ai/openmemory` repository now describes itself as an open-source CLI and TUI for porting coding sessions across Claude Code, Codex and OpenCode, with 108 stars. So today's Mem0 route for coding agents is the hosted MCP endpoint or the plugins.
+
+**Who it is for.** Teams that want a managed memory backend with a clean MCP endpoint and are happy to hold an API key.
+
+**Key features.**
+- Claude Code plugin (version 0.3.1 per the docs) with automatic capture and recall, installed from the Mem0 marketplace.
+- Codex plugin with automatic capture, automatic recall, a search tool and six memory skills, connecting to Mem0's cloud over MCP.
+- `npx mcp-add` helper that writes the server into several clients' config files.
+- The site mentions HIPAA and GDPR readiness; these are vendor statements and I did not review the compliance documents.
+
+**Pros**
+- Easiest hosted path: one URL, one key, documented client-by-client.
+- Large open-source community behind the core library.
+- Free plan with generous monthly caps if you bring your own LLM key.
+
+**Cons**
+- You need a Mem0 account and API key; data goes to their cloud.
+- Graph memory, user profiles and the Dream consolidation feature are listed only on the Custom plan.
+- The pricing page I fetched on November 26, 2026 shows only Free and Custom, so there is no published mid-tier price to budget against.
+
+**Benefits for your use case.** One memory store reachable from Claude Code, Codex and Cursor with the same key, without running a database yourself.
+
+**Pricing (as of November 26, 2026, mem0.ai/pricing).** Free: unlimited end users; for the first 30 days, 10,000 adds and 1,000 retrievals a month with model calls on Mem0; with your own LLM key, 50,000 adds and 10,000 retrievals a month; usage-based billing past the limits with a monthly cap you set; community support. Custom: limits set to your volume, graph memory, user profiles, Dream, advanced analytics, private Slack support, SSO, audit logs, SLA and on-prem, price on request.
+
+**Free tier / trial.** The Free plan above; no separate trial is advertised.
+
+**Standout use case.** A shared team memory API that also powers your own product.
+
+**Skip it if** you need everything on your machine, or you want the old local OpenMemory server, which is sunset.
+
+**Setup (from docs.mem0.ai).**
+
+```bash
+npx mcp-add \
+  --name mem0-mcp \
+  --type http \
+  --url "https://mcp.mem0.ai/mcp" \
+  --clients "claude code"
+
+export MEM0_API_KEY='your-mem0-api-key'
+claude plugin marketplace add mem0ai/mem0
+claude plugin install mem0@mem0-plugins --scope user --config api_key="$MEM0_API_KEY"
+unset MEM0_API_KEY
+```
+
+```bash
+codex mcp add mem0 --url https://mcp.mem0.ai/mcp/ --bearer-token-env-var MEM0_API_KEY
+```
+
+```toml
+[mcp_servers.mem0]
+url = "https://mcp.mem0.ai/mcp/"
+bearer_token_env_var = "MEM0_API_KEY"
+```
+
+```json
+{
+  "mcpServers": {
+    "mem0-mcp": {
+      "type": "http",
+      "url": "https://mcp.mem0.ai/mcp"
+    }
+  }
+}
+```
+
+The JSON block is the Cursor config. The docs warn not to combine the Codex plugin with the direct MCP block, because the plugin registers `mem0` itself and you would get a duplicate.
+
+{% x id="1922315139057070154" /%}
+
+A May 13, 2025 post from the @taranjeetio account announcing OpenMemory MCP as private memory for MCP clients, powered by Mem0. It explains why the name is everywhere in search results, but the local OpenMemory it announced is now sunset, as described above.
+
+{% figure src="https://framerusercontent.com/assets/SA6k0ySXJfaEAN8wOQGHz3eQI.png" alt="Mem0 social preview image from mem0.ai" caption="Mem0's social preview image. Source: mem0.ai" /%}
+
+{% x id="2082850633250672879" /%}
+
+Mem0's July 30, 2026 post claiming 13,700 tokens versus 445 tokens in two Claude Code experiments on the same repo, one with Mem0 and one without. This is a vendor-reported result from an experiment I could not inspect, so read it as the vendor's claim, not a measured average.
+
+{% x id="2102438126941876590" /%}
+
+Mem0's own September 22, 2026 post announcing DolphinBench, a memory benchmark. It is vendor-run, so treat any ranking it implies as vendor-reported.
+
+## 4. Supermemory: one memory across every agent you use
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/supermemory.png" name="Supermemory" size=40 /%}
+
+**What it is.** Supermemory calls itself the memory and context layer for AI. The GitHub repository (supermemoryai/supermemory, MIT) had 31,837 stars on November 26, 2026. It ships a hosted memory API, a hosted MCP server at `https://mcp.supermemory.ai/mcp`, open-source plugins for Claude Code, Cursor, Codex, OpenCode, OpenClaw, Hermes and Muse Code, and a local mode you can run yourself.
+
+**Who it is for.** People who use several coding agents and want one memory they all read and write, plus teams that may later want a memory API inside their own product.
+
+**Key features.**
+- MCP server that works with Claude Desktop, Cursor, Windsurf, VS Code, Claude Code, OpenCode, OpenClaw and Hermes, per the README. Its `context` tool injects your profile and recent activity at the start of a session; in Cursor and Claude Code you can type `/context`.
+- Separate open-source plugin repositories: `claude-supermemory`, `cursor-supermemory` and `codex-supermemory`.
+- A memory graph: Supermemory's October 21, 2026 post says every document becomes atomic facts and that old versions of updated facts stay as history.
+- Local mode: `curl -fsSL https://supermemory.ai/install | bash`, then `npx supermemory local`. The README says it serves the full Memory API on `http://localhost:6767`, with local embeddings by default (`Xenova/bge-base-en-v1.5`) and optional Ollama for offline text memories.
+
+**Pros**
+- One URL gets any MCP client connected, and the free plan includes all the plugins.
+- MIT core plus a local mode means you are not locked to the hosted service.
+- Active: the repository was pushed to on November 26, 2026.
+
+**Cons**
+- Pricing is metered credits, not a flat fee, so cost depends on how much you store and search. Estimating a month takes some arithmetic.
+- The README claims number one on LongMemEval, LoCoMo and ConvoMem. That is the vendor's own claim, and Mem0 and agentmemory publish their own benchmark claims too, so none of these can be compared directly.
+- Local mode still downloads an embedding model on first run, and URL ingestion uses a hosted service according to the README.
+
+**Benefits for your use case.** A single memory that follows you from Claude Code to Cursor to Codex without a separate store per tool, and a way to leave the hosted service later by changing a base URL.
+
+**Pricing (as of November 26, 2026, supermemory.ai/pricing).** Free $0 with $5 of usage included, all plugins, one team seat, unlimited end users. Pro $19 per month with $20 of usage, auto top-up and three seats. Max $100 per month with $130 of usage and a Gmail connector. Scale $399 per month with $600 of usage, advanced PDF extraction, S3 and web crawler connectors, unlimited seats, SOC 2, HIPAA BAA and a self-hosted option. Enterprise is custom. Listed rates per million: plain-text memory $5 in SM tokens, rich-content memory $10, SuperRAG text $1, SuperRAG rich media $2.
+
+**Free tier / trial.** Free plan with $5 of usage; open-source local mode costs nothing but your hardware.
+
+**Standout use case.** A personal or team memory shared across Claude Code, Cursor and Codex.
+
+**Skip it if** you want a flat monthly price with no usage metering, or you want every byte on your own machine and do not want to depend on a vendor's hosted MCP endpoint.
+
+**Setup (from the README, plus standard client syntax).**
+
+```json
+{
+  "mcpServers": {
+    "supermemory": {
+      "url": "https://mcp.supermemory.ai/mcp"
+    }
+  }
+}
+```
+
+That JSON is the config the README gives for MCP clients, including Cursor (`.cursor/mcp.json`). For Claude Code, the equivalent one-liner uses Claude Code's standard HTTP transport flag with the same URL (my translation, not copied from Supermemory's docs):
+
+```bash
+claude mcp add --transport http supermemory https://mcp.supermemory.ai/mcp
+```
+
+Supermemory's own October 17, 2026 post advertises `npx supermemory plugins` as a one-command install for coding-agent plugins. For Codex, see the `codex-supermemory` repository.
+
+{% x id="2111558196494303327" /%}
+
+Supermemory's October 17, 2026 post announcing a one-command plugin install for coding agents.
+
+{% x id="2112963898739765633" /%}
+
+Supermemory's October 21, 2026 post on its memory graph, where updates keep the old version as history.
+
+{% figure src="https://supermemory.ai/og/index.png" alt="Supermemory social preview image from supermemory.ai" caption="Supermemory's social preview image. Source: supermemory.ai" /%}
+
+## 5. Graphiti / Zep: a temporal knowledge graph behind an MCP server
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/graphiti-zep.png" name="Graphiti / Zep" size=40 /%}
+
+**What it is.** Graphiti is Zep's open-source framework for building temporally aware knowledge graphs for AI agents (getzep/graphiti, Apache-2.0, 33,115 stars on November 26, 2026). Its `mcp_server` directory contains an MCP server, and the latest MCP release tag, `mcp-v1.1.5`, was published November 24, 2026. Zep is the managed product built on the same ideas.
+
+**Who it is for.** Teams whose memory needs facts that change over time ("the API used v1 until March, then v2"), and who are comfortable running a graph database and supplying an LLM key.
+
+**Key features.**
+- Facts are edges with validity windows. The `search_memory_facts` tool supports `valid_at` and `invalid_at` date-range filters, and `add_memory` supports a bi-temporal `reference_time`.
+- Tools listed in the README: `add_memory`, `add_triplet`, `search_nodes`, `search_memory_facts`, `summarize_saga`, `build_communities`, `get_episode_entities`, `delete_entity_edge` and more.
+- FalkorDB is the default backend, bundled with the MCP server in one Docker container; Neo4j is the alternative via a separate compose file.
+- HTTP transport at `http://localhost:8000/mcp/`, or stdio for clients that need it.
+
+**Pros**
+- Best fit here for evolving facts and provenance (`get_episode_entities` traces which episodes created which facts).
+- Apache-2.0, self-hostable, and backed by an active company.
+- Hybrid retrieval combining embeddings, BM25 and graph traversal, per the README.
+
+**Cons**
+- The README itself calls the `mcp_server` a reference implementation, so expect to read the code before depending on it.
+- Heaviest setup in this list: Docker, a graph database and an LLM API key (the README's prerequisite lists an OpenAI key or another supported provider).
+- It is not coding-agent specific. There is no Claude Code or Codex plugin in the docs I read; the documented clients are Claude Desktop, Cursor and VS Code with Copilot.
+- Every write calls an LLM to extract entities and facts, so ingestion has a model cost.
+
+**Benefits for your use case.** If your agent keeps contradicting itself because requirements changed, a graph that invalidates old facts rather than piling up conflicting notes is the right tool.
+
+**Pricing (as of November 26, 2026).** Graphiti is free; you pay for your graph database and LLM calls. Zep (getzep.com/pricing) is credit based: Flex $125 per month with 50,000 credits (then $25 per 10,000), 600 requests per minute, 5 projects and 5 Context MCP Server seats; Flex Plus $375 per month with 200,000 credits (then $75 per 40,000), 1,000 requests per minute, 10 projects and 15 Context MCP Server seats. The page shows 17 percent savings on annual billing and custom Enterprise plans. Zep's Agent Skills are listed as free until January 4, 2027.
+
+**Free tier / trial.** Zep: "Start free with 10,000 credits a month" for prototyping, with limits. Graphiti: free and open source.
+
+**Standout use case.** A long-lived project where requirements, owners and decisions change, and you need the agent to know which fact is current.
+
+**Skip it if** you want memory working in five minutes, or you do not want to run a database next to your editor.
+
+**Setup (from the Graphiti MCP README).**
+
+```bash
+git clone https://github.com/getzep/graphiti.git
+cd graphiti/mcp_server
+docker compose up
+```
+
+```json
+{
+  "mcpServers": {
+    "graphiti-memory": {
+      "transport": "http",
+      "url": "http://localhost:8000/mcp/"
+    }
+  }
+}
+```
+
+That block is the README's HTTP-client config and works in Cursor. For Claude Code and Codex I have not found official Graphiti snippets, so the equivalents below use each client's standard syntax with the same URL (my translation):
+
+```bash
+claude mcp add --transport http graphiti-memory http://localhost:8000/mcp/
+```
+
+```toml
+[mcp_servers.graphiti-memory]
+url = "http://localhost:8000/mcp/"
+```
+
+## 6. Cognee: knowledge-graph memory with Claude Code and Codex plugins
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/cognee.png" name="Cognee" size=40 /%}
+
+**What it is.** Cognee is an open-source AI memory engine (topoteretes/cognee, Apache-2.0, 33,649 stars on November 26, 2026, latest release v1.6.11 published that day). It turns documents and agent activity into a graph plus vectors you can query. Unlike most projects here it has first-party plugins for both Claude Code and Codex, and a separate MCP server in the `cognee-mcp` directory.
+
+**Who it is for.** Developers who want graph-based memory and are fine running Python services, or paying for Cognee Cloud, to get it.
+
+**Key features.**
+- Claude Code plugin: `claude plugin marketplace add topoteretes/cognee-integrations`, then `claude plugin install cognee-memory@cognee`.
+- Codex plugin: enable hooks with `codex features enable hooks`, then `codex plugin marketplace add topoteretes/cognee-integrations --ref main` and `codex plugin add cognee@cognee`.
+- MCP server with a deliberately small surface: `remember`, `recall`, `forget` and a `cognify_status` progress check. It can store to a fast session cache or permanent graph memory, and adds a `code_search` tool for queries against an indexed code graph.
+- Transports: stdio (default), Streamable HTTP and SSE; a Docker image `cognee/cognee-mcp:main`; or a cloud mode that connects to Cognee Cloud.
+
+**Pros**
+- The only graph-centric option here with maintained Claude Code and Codex plugins.
+- Small MCP tool set, which the README says is intentional to save agent context.
+- Free open-source engine and a free cloud plan with 100M tokens.
+
+**Cons**
+- More moving parts than a notes-based tool: a Python service, an LLM provider and storage backends.
+- The README notes that `docker run` with `--transport http` will not work inside the container; you use `TRANSPORT_MODE` there. Easy to trip over.
+- Plugin docs for local versus remote memory live in a separate integrations repository, so setup means reading two places.
+
+**Benefits for your use case.** If your agent needs to answer "what depends on this module" or "what did we decide about X across these documents", a graph plus code search gets you further than keyword recall.
+
+**Pricing (as of November 26, 2026, cognee.ai/pricing).** Standard $0 per month with 100M tokens included (no card), then $0.10 per 1M tokens, one workspace included (more at $5 each per month), unlimited users and API calls, with Claude Code, Codex and MCP integrations. Premium $99 per month plus Standard token rates, adding auto-ontology and an ontology editor. Enterprise is a bring-your-own-cloud engagement with custom pricing, and its feature list includes bi-temporal memory and conflict resolution.
+
+**Free tier / trial.** Standard at $0 with 100M tokens; the open-source engine is free to run yourself.
+
+**Standout use case.** Codebase and document memory where relationships matter more than recency.
+
+**Skip it if** you want a single binary or a folder of Markdown, or if you do not want an LLM extracting a graph from your data.
+
+**Setup (from the Cognee README).**
+
+```bash
+claude plugin marketplace add topoteretes/cognee-integrations
+claude plugin install cognee-memory@cognee
+
+codex features enable hooks
+codex plugin marketplace add topoteretes/cognee-integrations --ref main
+codex plugin add cognee@cognee
+```
+
+Cursor and other MCP clients are pointed to the Cognee MCP guide and the `cognee-mcp` README rather than a copy-paste snippet. From source, the MCP server README runs `python src/server.py --transport http --host 127.0.0.1 --port 8000 --path /mcp`.
+
+{% youtube id="8hmqS2Y5RVQ" title="Cognee - Knowledge Engine for AI Agent Memory" /%}
+
+Cognee's own channel introducing the project (title and channel confirmed by oEmbed; I did not watch it in full).
+
+{% figure src="https://www.cognee.ai/images/meta/cognee-social-card.png" alt="Cognee social card from cognee.ai" caption="Cognee's social card. Source: cognee.ai" /%}
+
+## 7. Engram: a single Go binary and a memory protocol
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/engram.png" name="Engram" size=40 /%}
+
+**What it is.** Engram (Gentleman-Programming/engram, MIT) describes itself as persistent memory for AI coding agents: an agent-agnostic Go binary with SQLite and FTS5, an MCP server, an HTTP API, a CLI and a TUI. It had 8,328 stars on November 26, 2026, and the latest release, v3.7.2, was published November 14, 2026.
+
+**Who it is for.** Developers who want a small local tool with explicit save-and-recall behaviour and no cloud dependency.
+
+**Key features.**
+- Setup commands per agent: `engram setup claude-code`, `engram setup codex`, `engram setup cursor`, covering 14 setup targets in total, per the README.
+- Data lives in `~/.engram/engram.db` (SQLite with FTS5) by default, overridable with an absolute `ENGRAM_DATA_DIR`.
+- The README's "MCP tools" link describes 27 tools. The ones it documents include `mem_save`, `mem_search`, `mem_context`, `mem_timeline`, `mem_get_observation`, `mem_update`, `mem_session_summary` and `mem_doctor`.
+- A "Memory Protocol" telling the agent to save decisions and fixes deliberately, give evolving topics a stable `topic_key`, and leave a session summary before ending, including after compaction.
+
+**Pros**
+- Simplest local install of the dedicated options: `brew install gentleman-programming/tap/engram`, then one setup command.
+- MIT, no account, no telemetry mention in the parts I read, and a TUI for browsing memories.
+- Designed around compaction recovery, a real pain point in long Claude Code sessions.
+
+**Cons**
+- Capture depends on the agent following the protocol. In Cursor, setup writes the protocol to a file and the docs say you must paste it into User Rules yourself; Cursor does not load it automatically.
+- I found no hosted or sync plan, so sharing across machines is on you.
+- 27 tools is a lot of surface; the README notes tool availability varies by MCP profile, and Cursor setup uses `--tools=agent` to narrow it.
+
+**Benefits for your use case.** A local, inspectable memory that survives context compaction, with first-class Claude Code and Codex setup.
+
+**Pricing (as of November 26, 2026).** Free and open source (MIT). I found no paid plan.
+
+**Free tier / trial.** Everything is free.
+
+**Standout use case.** Solo developers who want durable decisions and bug-fix notes in a local SQLite file.
+
+**Skip it if** you want fully automatic capture without prompting the agent, or a cloud-synced memory.
+
+**Setup (from the README and AGENT-SETUP.md).**
+
+```bash
+brew install gentleman-programming/tap/engram
+engram setup claude-code   # or: engram setup codex / engram setup cursor
+```
+
+Codex setup registers `[mcp_servers.engram]` in `~/.codex/config.toml` and installs the Codex plugin. The manual Cursor config, from the docs:
+
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "engram",
+      "args": ["mcp", "--tools=agent"]
+    }
+  }
+}
+```
+
+For Claude Code, the docs also offer a plugin route (`claude plugin marketplace add Gentleman-Programming/engram`, then `claude plugin install engram`), and note it installs plugin assets only and does not register the MCP server, so use `engram setup claude-code` or the manual MCP setup alongside it.
+
+## 8. agentmemory: hooks, 54 MCP tools and keyless search
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/agentmemory.png" name="agentmemory" size=40 /%}
+
+**What it is.** agentmemory (rohitg00/agentmemory, Apache-2.0) is a local memory server for coding agents with hooks, skills and an MCP bridge. It had 30,607 stars on November 26, 2026, and its latest release, v0.9.33, was published November 9, 2026. The repository description calls it the number one persistent memory for coding agents "based on real-world benchmarks", which is the author's own claim.
+
+**Who it is for.** Developers who want automatic capture plus a large MCP tool set, running entirely on their machine, and who do not mind a local daemon.
+
+**Key features.**
+- For Claude Code the README describes a native plugin with 12 hooks, 17 skills and an auto-wired stdio MCP server exposing 54 MCP tools.
+- Keyless mode: no model API key needed. In that mode vector embeddings are off and `memory_recall` uses BM25; setting `EMBEDDING_PROVIDER=local` in `~/.agentmemory/.env` adds free on-device semantic recall.
+- A local API on `http://localhost:3111` and a live viewer on `http://localhost:3113`, both bound to loopback by default.
+- Support listed for Claude Code, Copilot CLI, Cursor, Gemini CLI, Codex CLI, Hermes, OpenClaw, OpenCode and any MCP client.
+
+**Pros**
+- Free, Apache-2.0, nothing leaves your machine by default.
+- Publishes a retrieval benchmark with its method and limits: on LongMemEval-S (measured October 28, 2026, 500 questions, 470 answerable), the keyless BM25 component found every required source for 84.7 percent of answerable questions versus 72.1 percent for a lexical baseline, and at least one relevant source for 96.2 percent versus 88.7 percent. This is vendor-reported, and the README itself says it tests retrieval only, not full-system answer quality or competitor rankings.
+- Secret scrubbing and offline replay are listed for captured events.
+
+**Cons**
+- 54 tools is a big surface for an agent to choose from; tool-selection cost is real.
+- It runs a local daemon (plus a viewer) that you have to keep alive, so there is more to operate than a stdio-only server.
+- A documented gotcha: wiring the MCP server straight into `~/.claude.json` without `/plugin install` means Claude Code never resolves `${CLAUDE_PLUGIN_ROOT}`, so hook scripts need absolute paths.
+- The README's own heads-up says `import-jsonl` is a weak primary capture path, because Claude Code's `cleanupPeriodDays` setting (default 30) deletes older transcripts.
+
+**Benefits for your use case.** It gets Claude Code and Codex automatic capture without an API key, and gives you a viewer to inspect and edit what it stored.
+
+**Pricing (as of November 26, 2026).** Free and open source. I found no hosted plan.
+
+**Free tier / trial.** Everything is free; LLM-written observation compression is opt-in, so any model cost is yours and optional.
+
+**Standout use case.** Offline, keyless memory for a developer who works across Claude Code, Codex and Cursor on the same projects.
+
+**Skip it if** you want a minimal stdio server, or you do not want a background process and a second localhost port.
+
+**Setup (from the README).**
+
+```bash
+npx -y @agentmemory/agentmemory@latest
+/plugin marketplace add rohitg00/agentmemory
+/plugin install agentmemory
+```
+
+```bash
+codex mcp add agentmemory -- npx -y @agentmemory/mcp
+
+codex plugin marketplace add rohitg00/agentmemory
+codex plugin add agentmemory@agentmemory
+```
+
+For Cursor the README lists a full plugin through the Cursor Marketplace listing or Settings, Plugins, local checkout. For MCP-only clients the README says to use the same `mcpServers` block; the stdio command is `npx -y @agentmemory/mcp`:
+
+```json
+{
+  "mcpServers": {
+    "agentmemory": {
+      "command": "npx",
+      "args": ["-y", "@agentmemory/mcp"]
+    }
+  }
+}
+```
+
+{% figure src="https://raw.githubusercontent.com/rohitg00/agentmemory/main/assets/banner.png" alt="agentmemory banner from the project repository" caption="agentmemory repository banner. Source: github.com/rohitg00/agentmemory" /%}
+
+## 9. Letta: a stateful-agent platform, not a plug-in memory server
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/letta.png" name="Letta" size=40 /%}
+
+**What it is.** Letta (formerly MemGPT) is a platform for stateful agents with memory that learns over time. The `letta-ai/letta` repository (Apache-2.0) had 25,561 stars on November 26, 2026, but its README says the current source lives in `letta-ai/letta-code`, which holds the agent harness, terminal UI and App Server. The older Letta V1 API server is on an `archive` branch. So today Letta competes with Claude Code more than it plugs into it.
+
+**Why it is in a list of memory MCP servers.** Because many people search for it alongside these tools. I include it for completeness and to be clear about the trade-off: you adopt Letta's agent, you do not bolt it onto yours. Letta's docs do have a section on configuring MCP servers inside Letta Code, but that is Letta consuming MCP, which is a different direction from the other nine products here. I did not find a Letta-published MCP memory server for Claude Code or Codex.
+
+**Who it is for.** Teams building long-lived agents who want memory as a first-class, self-editing part of the runtime, with memory repositories (the docs have a section called MemFS).
+
+**Key features.**
+- Install with `npm install -g @letta-ai/letta-code`, run `letta` for the terminal UI or `letta server` for the App Server.
+- Access through chat.letta.com, Slack, Telegram, Discord, custom channels and an Agent SDK for TypeScript.
+- Letta Cloud keeps agent memory, identity and conversations available across computers.
+
+**Pros**
+- The most developed idea of agent-managed memory in this list.
+- Free plan lets you bring your own API keys or an external coding plan such as ChatGPT/Codex, Kimi or Z.AI.
+- Apache-2.0 source.
+
+**Cons**
+- It is a harness swap. If you want Claude Code's own tooling and models, Letta is not an add-on.
+- The old server API is retired, so older tutorials and the `letta-ai/letta` README's history will mislead you. The last tagged release on that repository, 0.16.8, is dated May 14, 2026.
+- Free-plan storage is small (5 MiB per memory repository).
+
+**Benefits for your use case.** If you are choosing a runtime for persistent agents rather than adding memory to Claude Code, Letta shows what first-class memory looks like.
+
+**Pricing (as of November 26, 2026, docs.letta.com pricing page).** Free $0, up to 3 stateful agents, 5 MiB of storage per memory repository, bring your own keys. Pro $20 per month with $20 in monthly credits, remote sandboxes charged against credits, up to 20 stateful agents and 50 MiB per memory repository. Teams Pro $20 per seat per month (shared agents and permissions). Enterprise is custom, with SSO and role-based access. Cloud sandbox runtime is billed separately at 1,000 credits per dollar.
+
+**Free tier / trial.** Free plan as above.
+
+**Standout use case.** A persistent assistant that edits its own memory, run as the agent itself.
+
+**Skip it if** you want to keep using Claude Code or Codex as your main agent and only add memory to them.
+
+**Setup (from the README).**
+
+```bash
+npm install -g @letta-ai/letta-code
+letta          # interactive terminal UI
+letta server   # App Server for local or self-hosted agents
+```
+
+## 10. MCP memory server (official reference): the small baseline
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-memory-mcp-servers-for-claude-code-2026/logos/mcp-memory-server.png" name="MCP memory server" size=40 /%}
+
+**What it is.** A knowledge-graph memory server maintained in the `modelcontextprotocol/servers` repository, published on npm as `@modelcontextprotocol/server-memory`. It stores entities, relations and observations in a JSONL file. The repository had 92,277 stars on November 26, 2026, though that counts the whole repository of reference servers, not the memory server alone.
+
+**Who it is for.** Anyone who wants the simplest possible persistent memory, or wants to read a clean reference implementation before choosing a heavier tool.
+
+**Key features.**
+- Nine tools: `create_entities`, `create_relations`, `add_observations`, `delete_entities`, `delete_observations`, `delete_relations`, `read_graph`, `search_nodes` and `open_nodes`.
+- Storage in a JSONL file whose location you control with `MEMORY_FILE_PATH`.
+- A file lock next to the memory file so several clients writing to one file do not corrupt it.
+- Runs through `npx`, Docker, or a Streamable HTTP mode.
+
+**Pros**
+- Tiny, free and boring, with no account and no database.
+- The same server works in Claude Code, Codex, Cursor and anything else that speaks MCP.
+- Documented environment variable and upgrade guidance for Docker.
+
+**Cons**
+- The repository README says its servers are reference implementations and educational examples, not production-ready solutions, and tells developers to evaluate their own security requirements.
+- The agent must decide what to store and when; there is no automatic capture and no semantic search, only name and observation matching through `search_nodes`.
+- The default file location sits next to the server's code, so under `npx` it can end up in a cache directory. The README says to set `MEMORY_FILE_PATH` to an absolute path you own.
+- Requires Node.js 24 or later when run through `npx` or from source, per the README.
+
+**Benefits for your use case.** A cheap way to test whether persistent graph memory helps your workflow before you commit to a bigger system.
+
+**Pricing (as of November 26, 2026).** Free. Licensing is mixed: the repo's license notice says the MCP project is moving from MIT to Apache-2.0, with new code under Apache-2.0 and older contributions that have not been relicensed remaining under MIT. GitHub's license detector reports "NOASSERTION" for the repository for that reason.
+
+**Free tier / trial.** Everything is free.
+
+**Standout use case.** A starter memory for one person, or a teaching example for your own server.
+
+**Skip it if** you want automatic capture, ranking or anything resembling semantic recall.
+
+**Setup (from the README, plus standard client syntax).**
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {
+        "MEMORY_FILE_PATH": "/path/to/custom/memory.jsonl"
+      }
+    }
+  }
+}
+```
+
+That JSON is the README's config and works in Cursor's `.cursor/mcp.json`. For Claude Code and Codex, the equivalents are my translation of that config:
+
+```bash
+claude mcp add memory --env MEMORY_FILE_PATH=$HOME/memory.jsonl -- npx -y @modelcontextprotocol/server-memory
+```
+
+```toml
+[mcp_servers.memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+env = { MEMORY_FILE_PATH = "/home/you/memory.jsonl" }
+```
+
+## Pricing table (as of November 26, 2026)
+
+| Product | Plan | Price | What you get |
+| --- | --- | --- | --- |
+| claude-mem | Engine | Free | Open-source local memory |
+| claude-mem | Cloud Sync | $12/month, or $99/year | Memory across devices; 30-day trial on monthly |
+| claude-mem | Hosted generation | $30, $70, $100/month | $30, $49, $70 monthly generation allowance |
+| Basic Memory | Local | Free | AGPL-3.0 open source |
+| Basic Memory | Cloud | $19/month | 1,900 credits per month, 7-day trial |
+| Basic Memory | Pro | $99/month | 9,900 credits, up to 5 members |
+| Basic Memory | Business | $249/month | 24,900 credits, up to 25 members |
+| Mem0 | Free | $0 | 50,000 adds and 10,000 retrievals a month with your own LLM key |
+| Mem0 | Custom | Quote | Graph memory, Dream, SSO, on-prem |
+| Supermemory | Free | $0 | $5 usage, all plugins |
+| Supermemory | Pro | $19/month | $20 usage, 3 seats |
+| Supermemory | Max | $100/month | $130 usage |
+| Supermemory | Scale | $399/month | $600 usage, SOC 2, HIPAA BAA, self-hosted option |
+| Cognee | Standard | $0/month | 100M tokens, then $0.10 per 1M |
+| Cognee | Premium | $99/month | Auto-ontology, plus token usage |
+| Zep | Flex | $125/month | 50,000 credits |
+| Zep | Flex Plus | $375/month | 200,000 credits |
+| Graphiti, Engram, agentmemory, MCP memory server | Self-hosted | Free | You pay for your own model and database calls |
+| Letta | Free / Pro / Teams Pro | $0 / $20 / $20 per seat per month | 3 or 20 stateful agents; Pro includes $20 credits |
+
+Basic Memory's Black Friday code takes 50 percent off monthly cloud plans for 12 months until Monday, November 30, 2026 at 11:59 PM PT.
+
+## Feature matrix
+
+"Yes", "No" and "Partial" reflect what each project's own README or docs say as of November 26, 2026. I did not test every cell myself.
+
+| Feature | claude-mem | Basic Memory | Mem0 | Supermemory | Graphiti / Zep | Cognee | Engram | agentmemory | MCP memory | Letta |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Automatic capture | Yes | Partial (opt-in) | Yes (plugin) | Yes (plugins) | No | Yes (plugins) | Partial (protocol) | Yes | No | Partial (agent-managed) |
+| Runs fully local | Yes | Yes | No (hosted) | Partial (local mode) | Yes | Yes | Yes | Yes | Yes | Partial |
+| Open source core | Yes | Yes | Yes | Yes | Graphiti yes | Yes | Yes | Yes | Yes | Yes |
+| Claude Code setup documented | Yes | Yes | Yes | Yes | No | Yes | Yes | Yes | Generic | No |
+| Codex setup documented | Yes | Yes | Yes | Yes | No | Yes | Yes | Yes | Generic | No |
+| Cursor setup documented | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Generic | No |
+| Graph memory | No | Partial | Custom plan | Yes | Yes | Yes | No | Partial | Yes | Not checked |
+| Semantic or vector search | Yes | Yes | Yes | Yes | Yes | Yes | No | Optional | No | Not checked |
+| Hosted option | Yes (sync) | Yes | Yes | Yes | Zep | Yes | No | No | No | Yes |
+| Human-readable store | No | Yes | No | No | No | No | No (SQLite, TUI) | Partial (viewer) | Yes (JSONL) | Not checked |
+
+Notes on the less obvious cells. "Partial" for Basic Memory capture reflects the README's "opt-in capture" in its Claude Code plugin; the default is that the model writes notes. Engram's "No" for semantic search reflects SQLite FTS5 full-text search in the README, with no vector mention in the sections I read. Graphiti's Claude Code and Codex cells are "No" because I found documented snippets only for Claude Desktop, Cursor and VS Code, though any MCP-capable client can use its HTTP endpoint.
+
+## Head-to-head: which to pick
+
+### claude-mem vs agentmemory: which to pick
+
+Both capture sessions through hooks and run locally under Apache-2.0. claude-mem has far more stars (119,949 against 30,607 on November 26, 2026) and a paid sync option; agentmemory exposes many more MCP tools (54) and publishes a retrieval benchmark with its limits stated. Pick claude-mem if you want the larger community, an installer that covers Claude Code, Codex and Cursor in one command, and the option to sync across machines. Pick agentmemory if you want keyless operation with a local viewer and are comfortable running a second localhost service. Both are heavier than a stdio-only server.
+
+### Basic Memory vs the official MCP memory server: which to pick
+
+Both are MCP servers that the model writes to explicitly. Basic Memory stores Markdown files you can open in any editor, offers semantic search and a Claude Code plugin, and has a paid cloud. The official server stores a JSONL graph file, has nine simple tools and no ranking. Pick Basic Memory for a knowledge base you will read and curate. Pick the official server to test the idea in minutes, or to read the code.
+
+### Mem0 vs Supermemory: which to pick
+
+Both are hosted memory APIs with an MCP endpoint, plugins for Claude Code and Codex, and a free plan. Mem0's open-source core has more stars (69,508 against 31,837), and its hosted free plan is described in monthly add and retrieval limits. Supermemory prices in usage credits, includes all plugins on the free plan, and offers a local mode and a self-hosted option on Scale. Pick Mem0 if you want the familiar add and search model with a hosted MCP endpoint. Pick Supermemory if you want a shared memory across more coding agents and a way to run it locally.
+
+### Graphiti / Zep vs Cognee: which to pick
+
+Both are graph memory, both Apache-2.0 at the core. Graphiti's strength is bi-temporal facts and a precise tool set; its MCP server is a reference implementation needing a graph database. Cognee's strength is Claude Code and Codex plugins and a small `remember`, `recall`, `forget` tool surface. Pick Graphiti when facts expire and provenance matters. Pick Cognee when you want graph memory with plugin-level setup for Claude Code and Codex.
+
+## Skills and MCP servers that work with these tools
+
+These are real entries from the agentskills.codes catalog (each page returned HTTP 200 on November 26, 2026). Install counts in the catalog were low (single or low double digits for most of these), so treat them as options to evaluate, not endorsements.
+
+- [mem-search](https://agentskills.codes/skills/mem-search): published by thedotmack, the claude-mem author. Searches claude-mem's cross-session memory when you ask "did we already solve this?". The natural companion to product 1.
+- [super-search](https://agentskills.codes/skills/super-search): published by supermemoryai. Searches your coding memory for past work and earlier sessions. Pairs with Supermemory's plugins.
+- [memory-mcp](https://agentskills.codes/skills/memory-mcp): by d-o-hub. Explains how to use and troubleshoot a Memory MCP server for episodic retrieval. Useful with the official reference server.
+- [agent-memory-mcp](https://agentskills.codes/skills/agent-memory-mcp): by davila7. A hybrid memory system for persistent, searchable knowledge such as architecture, patterns and decisions.
+- [memory-systems](https://agentskills.codes/skills/memory-systems): by sickn33. Covers short-term, long-term and graph-based memory architectures; good background before choosing between notes, vectors and a graph.
+- [conversation-memory](https://agentskills.codes/skills/conversation-memory): by davila7. Short-term, long-term and entity-based memory patterns for LLM conversations.
+- [enhance-claude-memory](https://agentskills.codes/skills/enhance-claude-memory): by avifenesh. For improving CLAUDE.md and AGENTS.md project memory files, which you should tidy before adding any MCP server.
+- [mcp-builder](https://agentskills.codes/skills/mcp-builder): by anthropics. A guide to building high-quality MCP servers, useful if you outgrow the reference server and want your own.
+
+Related reading on this site: [Best Claude Code skills for developers in 2026](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026), [Best free AI coding agents in 2026](https://agentskills.codes/blog/best-free-ai-coding-agents-2026), and [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules). For frameworks and APIs rather than MCP servers, see AgentPedia's [best AI agent memory tools of 2026](https://agentpedia.codes/blog/best-ai-agent-memory-tools-2026).
+
+## Best for X: decision table
+
+| You are | Pick | Reason |
+| --- | --- | --- |
+| A solo developer who wants zero effort | claude-mem | Hooks capture automatically; local by default |
+| Someone who wants to read and edit memory | Basic Memory | Plain Markdown files |
+| Someone who wants a free, local, minimal install | Engram | One binary, SQLite, MIT |
+| A team that wants a managed API | Mem0 or Supermemory | Hosted MCP endpoints and plugins |
+| Using Claude Code, Codex and Cursor together | Supermemory or claude-mem | Both document all three |
+| Someone whose facts change over time | Graphiti / Zep | Validity windows on facts |
+| Someone who wants graph memory with plugins | Cognee | Claude Code and Codex plugins |
+| Someone who needs no API key and a viewer | agentmemory | Keyless BM25 and a local viewer |
+| Someone just trying the idea | MCP memory server | Smallest possible setup |
+| Building a long-lived agent runtime | Letta | Memory is part of the agent itself |
+
+## Common mistakes
+
+- **Installing two automatic-capture systems at once.** claude-mem, agentmemory, the Mem0 plugin and the Supermemory plugin each register hooks. Running several means duplicate capture and competing context. The Mem0 docs even warn against combining its Codex plugin with the manual MCP block.
+- **Treating `npm install -g claude-mem` as the install.** The README says it installs the SDK only; use `npx claude-mem install` or the plugin marketplace.
+- **Leaving the official memory server's file path at the default.** Set `MEMORY_FILE_PATH` to an absolute path you own, or your memory may live in an npx cache.
+- **Searching for "OpenMemory" and installing the old project.** The local OpenMemory in the Mem0 repository was removed, as described in section 3.
+- **Trusting vendor benchmark claims side by side.** LongMemEval, LoCoMo, ConvoMem and DolphinBench are run by the vendors that cite them, with different setups.
+- **Putting secrets into memory.** Anything an agent captures can be stored. Check what each tool scrubs and where it stores data before pointing it at a private repository.
+- **Ignoring built-in memory first.** Claude Code's own CLAUDE.md and auto memory cover a lot. Keep CLAUDE.md short (Anthropic's docs suggest under 200 lines) before adding a server.
+
+## Buying and setup checklist
+
+1. Decide whether memory must stay on your machine. If yes, shortlist claude-mem, Basic Memory, Engram, agentmemory, Graphiti, or the official server.
+2. Decide who writes memory: automatic hooks (claude-mem, agentmemory, Mem0 and Supermemory plugins) or the agent on request (Basic Memory, Engram, the official server).
+3. Check licenses. Basic Memory is AGPL-3.0; most others are Apache-2.0 or MIT.
+4. Start with one tool in one client. Confirm it saves something and recalls it in a fresh session before adding a second client.
+5. Read what leaves your machine: hosted MCP endpoints send content to the vendor, and some tools send anonymous telemetry unless disabled.
+6. Put the config in the right file: `.mcp.json` or `claude mcp add` for Claude Code, `~/.codex/config.toml` for Codex, `.cursor/mcp.json` for Cursor.
+7. Write down how to remove it. Mem0's docs show an uninstall command for its plugin; check the others before you rely on one.
+8. Re-check pricing before you subscribe. Basic Memory's README says $15.00 per month locked for life while its pricing page lists $19, so vendor pages can disagree with each other.
+
+## How we evaluated
+
+This is a documentation-and-sources review, not a lab test. On November 26, 2026 I did the following:
+
+- Pulled repository metadata (stars, licenses, latest release, last push) from the GitHub API for all ten projects.
+- Read each project's README and, where relevant, its install, MCP and setup documents, and copied configuration from them. Where a project did not publish a snippet for Claude Code or Codex, I translated the same endpoint into that client's standard syntax and labelled it as my translation.
+- Fetched each vendor's pricing page and recorded plans and limits. 
+- Checked each YouTube video through YouTube's oEmbed endpoint and each X post through the syndication endpoint, and fetched each image URL to confirm an image content type.
+- Checked every internal agentskills.codes page for an HTTP 200.
+
+I did not install and run these tools against a real Claude Code or Codex session for this post, so I make no claims about speed, recall quality or reliability beyond what the vendors state, and I label those as vendor-reported. The ranking is a judgment based on install friction, documented client support, openness and clarity about limits. There are no affiliate links, and no vendor paid for placement.
+
+## FAQ
+
+### What is the best memory MCP server for Claude Code?
+
+For most developers, claude-mem is the easiest and most popular choice: it captures sessions automatically, runs locally and is Apache-2.0. If you want to read and edit memory as Markdown, pick Basic Memory. If you want a hosted API, Mem0 and Supermemory both document Claude Code setup.
+
+### What is the best memory MCP for Codex?
+
+Several projects document Codex directly: claude-mem, Basic Memory (a `[mcp_servers.basic-memory]` TOML block), Mem0 (`codex mcp add mem0 --url https://mcp.mem0.ai/mcp/ --bearer-token-env-var MEM0_API_KEY`), Cognee, Engram (`engram setup codex`), agentmemory and Supermemory. Codex reads MCP servers from `~/.codex/config.toml`, so any stdio or HTTP server can be added there.
+
+### Do I still need a memory server if Claude Code has auto memory?
+
+Maybe not. Claude Code's auto memory is machine-local, loads only the first 200 lines or 25KB of MEMORY.md at session start, and is not shared across machines or cloud environments, according to Anthropic's docs. A memory server helps when you need cross-machine continuity, searchable history, other agents sharing the same memory, or structured knowledge.
+
+### What are the main types of AI agent memory?
+
+A common split is short-term (the current context window), long-term (stored facts that persist), episodic (what happened in past sessions), semantic (facts and concepts) and procedural (how to do things, often as skills or rules). In this list, claude-mem and Engram lean episodic, Basic Memory and the official server hold semantic notes, Graphiti and Cognee model facts and relations, and CLAUDE.md files and agent skills cover procedural memory. The [memory-systems](https://agentskills.codes/skills/memory-systems) skill walks through these architectures.
+
+### Is OpenMemory MCP still available?
+
+Not as a local project inside Mem0. A merged Mem0 pull request removed the `openmemory/` directory on July 29, 2026 and points self-hosters to the `server/` directory. The `mem0ai/openmemory` repository now describes a different tool, a CLI and TUI for moving coding sessions between Claude Code, Codex and OpenCode. For Mem0 memory today, use the hosted MCP endpoint or the plugins.
+
+### Which of these are fully free and open source?
+
+Engram (MIT), agentmemory (Apache-2.0), the official MCP memory server (Apache-2.0 for new code, MIT for older), Graphiti (Apache-2.0), claude-mem (Apache-2.0, engine free), Basic Memory (AGPL-3.0, free locally) and Cognee (Apache-2.0). Mem0 and Supermemory have open-source cores but their hosted services are the easy path, and Letta has an Apache-2.0 repository but a hosted pricing model.
+
+### Is my data sent to the cloud?
+
+Hosted endpoints (Mem0, Supermemory, Zep, Cognee Cloud) send memory content to the vendor. Local options store data on your machine, but graph-building tools such as Graphiti and Cognee call whatever LLM you configure, so content goes to that model provider. claude-mem's README says anonymous usage analytics are on by default and can be disabled with `npx claude-mem telemetry disable`.
+
+### How much does memory cost per month?
+
+The self-hosted options cost nothing beyond model usage you choose. Hosted entry points as of November 26, 2026: Basic Memory Cloud $19, Supermemory Pro $19, Letta Pro $20, claude-mem Cloud Sync $12, Zep Flex $125. Mem0 and Cognee have free plans with limits, and Cognee Standard includes 100M tokens.
+
+### Can I use more than one memory server?
+
+Yes, but avoid running more than one automatic-capture system at once. A common setup is one automatic tool (claude-mem or a plugin) for history, plus a notes tool (Basic Memory) or the official server for deliberate knowledge. Keep each in its own namespace and check that tool names do not collide.
+
+### What is the difference between a memory MCP server and a skill?
+
+An MCP server is a running process that exposes tools, such as search and save. A skill is a folder of instructions the agent loads on demand. They work together: [mem-search](https://agentskills.codes/skills/mem-search) is a skill that tells the agent how to use claude-mem's search tools. The catalog on agentskills.codes lists skills like these.
+
+### How do I stop an agent from remembering something?
+
+Each tool has a delete path: the official server has `delete_entities`, `delete_observations` and `delete_relations`; Mem0's MCP exposes `delete_memory` and `delete_all_memories`; Cognee has `forget`; agentmemory has a viewer to edit, export and forget memories. For file-based tools such as Basic Memory, you delete the note.
+
+## Sources
+
+All sources were fetched on November 26, 2026 unless noted.
+
+- claude-mem repository and README: https://github.com/thedotmack/claude-mem; pricing: https://claude-mem.ai/pricing; v16.0.0 and v17.0.1 release notes on GitHub Releases.
+- Basic Memory repository and README: https://github.com/basicmachines-co/basic-memory; pricing: https://basicmemory.com/pricing
+- Mem0 repository: https://github.com/mem0ai/mem0; pricing: https://mem0.ai/pricing; MCP docs: https://docs.mem0.ai/platform/mem0-mcp; Claude Code: https://docs.mem0.ai/integrations/claude-code; Codex: https://docs.mem0.ai/integrations/codex; OpenMemory removal: https://github.com/mem0ai/mem0/pull/6530; https://github.com/mem0ai/openmemory
+- Supermemory repository: https://github.com/supermemoryai/supermemory; pricing: https://supermemory.ai/pricing
+- Graphiti repository and MCP server README: https://github.com/getzep/graphiti/tree/main/mcp_server; Zep pricing: https://www.getzep.com/pricing
+- Cognee repository: https://github.com/topoteretes/cognee; pricing: https://www.cognee.ai/pricing
+- Engram repository and setup docs: https://github.com/Gentleman-Programming/engram
+- agentmemory repository: https://github.com/rohitg00/agentmemory
+- Letta repository: https://github.com/letta-ai/letta; docs and pricing: https://docs.letta.com/
+- MCP memory server: https://github.com/modelcontextprotocol/servers/tree/main/src/memory
+- Claude Code memory docs: https://code.claude.com/docs/en/memory
+- Video: https://www.youtube.com/watch?v=Mzmzy-vutSo and https://www.youtube.com/watch?v=8hmqS2Y5RVQ
+- X posts: @taranjeetio (May 13, 2025), Mem0 (July 30 and September 22, 2026) and Supermemory (October 17 and 21, 2026), verified through the syndication endpoint.
+- agentskills.codes catalog and blog pages linked above.
+
