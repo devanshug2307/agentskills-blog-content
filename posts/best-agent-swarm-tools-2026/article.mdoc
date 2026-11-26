@@ -1,0 +1,790 @@
+"Agent swarm" now names three different designs: a model that spawns and manages its own army of sub-agents, a team of agents that share a task list and message each other, and a router that hands a conversation from one specialist to the next. Each has a different cost, a different failure mode and a different best use. Most pages on the subject pick one meaning and treat the others as noise, which is how people end up paying for a swarm when a single subagent would have done the job.
+
+This guide defines the term, separates Claude Code subagents from Claude Code agent teams using Anthropic's own docs, and compares ten tools on prices and limits checked on November 26, 2026. The short version: Claude Code is the practical default for developers, Kimi Agent Swarm is the hosted swarm with the largest published ceiling, Hermes Kanban is the open source option built around an auditable board, and the SDKs (OpenAI Agents SDK, Google ADK, CrewAI, Agency Swarm, Swarms) are where you go when you are building your own product.
+
+{% youtube id="v7IJ8JNUNQ8" title="Meet Kimi K2.6 Agent Swarm" /%}
+
+*Kimi's own launch video for the K2.6 Agent Swarm (title and channel "Kimi AI" confirmed through YouTube oEmbed on November 26, 2026). Numbers in it are vendor-reported.*
+
+## Short answer: quick picks
+
+- **Best overall for developers in a terminal:** [Claude Code](https://code.claude.com/docs/en/sub-agents). Subagents are a normal feature. Agent teams are experimental and off by default.
+- **Best hosted swarm with no setup:** [Kimi Agent Swarm](https://www.kimi.com/agent-swarm). Vendor-reported ceiling of 300 sub-agents and more than 4,000 tool calls in one task. Needs a paid Kimi plan.
+- **Best open source for durable, auditable multi-agent work:** [Hermes Kanban](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban). A SQLite task board where each task runs in its own managed worker (MIT, 266,338 GitHub stars on the Hermes Agent repo as of November 26, 2026).
+- **Best free SDK for handoff routing:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/handoffs/) (MIT, 30,890 stars).
+- **Best known open source role-based framework:** [CrewAI](https://docs.crewai.com/en/introduction) (MIT, 61,301 stars, free tier on its hosted platform).
+- **Best if you already live on Google Cloud tooling:** [Google ADK](https://github.com/google/adk-python) (Apache-2.0, 22,364 stars).
+- **Best for non-developers who want a swarm inside a desktop app:** [Kimi Work](https://www.kimi.com/en/products/kimi-work), a beta desktop agent for Mac and Windows that can switch into Agent Swarm mode.
+- **Best to read, not to depend on:** [swarm-ide](https://github.com/chmod777john/swarm-ide). A neat community visualiser with no declared license.
+
+{% callout type="info" %}
+**Honest caveat.** There is no neutral benchmark that compares these tools against each other, and we did not benchmark any of them. Every performance number below is labelled vendor-reported. Prices, limits and star counts are dated November 26, 2026 and will move.
+{% /callout %}
+
+## What an agent swarm means
+
+Start with what everyone agrees on. A single agent works through a task one step at a time inside one context window. A swarm splits the work across several agents, each with its own context, and some mechanism combines the results. The word "swarm" is marketing more than engineering, and the vendors use it loosely:
+
+- **Kimi** calls its feature Agent Swarm. Its help center describes a "scale-out" architecture that coordinates large numbers of sub-agents without predefined roles or manually designed workflows, and says Kimi K2.5 introduced it on January 27, 2026. The behavior is trained with a method Kimi calls PARL (Parallel-Agent Reinforcement Learning).
+- **Claude Code** got a post from @bcherny on February 5, 2026 reading "Out now: Teams, aka. Agent Swarms in Claude Code" (embedded below). Anthropic's own docs use the plainer word "agent teams".
+- **OpenAI Swarm** was a small educational library built around handoffs between agents. Its README now says it has been replaced by the OpenAI Agents SDK and recommends migrating for production use.
+- **Swarms** (kyegomez) and **Agency Swarm** use the word in their names and ship their own orchestration patterns.
+
+So in practice you will meet three patterns:
+
+1. **Fan-out and gather (orchestrator plus workers).** A lead agent splits a job, workers run in parallel, the lead merges. Workers usually do not talk to each other. Kimi Agent Swarm, Claude Code subagents, Hermes `delegate_task` and the orchestrator-worker flow in Agency Swarm all fit here.
+2. **Peer team with shared state.** Workers claim tasks from a shared list or board and can message each other. Claude Code agent teams and Hermes Kanban fit here.
+3. **Handoff chain.** One agent is active at a time and transfers control to a specialist who takes over the conversation. The OpenAI Agents SDK and the handoff flow in Agency Swarm fit here.
+
+Sequential pipelines (CrewAI's default process, ADK's sequential template workflows) are a fourth, quieter pattern: no parallelism, just specialised steps in order. They are often what people actually need.
+
+### The cost nobody puts in the headline
+
+Anthropic's agent teams page says teams "add coordination overhead and use significantly more tokens than a single session", and that for sequential tasks, same-file edits or work with many dependencies, a single session or subagents are more effective. The @bcherny launch post says the same thing in fewer words: experimental, and a lot of tokens. Hermes documents the same shape for its own delegation: a nested tree with `max_spawn_depth` 3 and `max_concurrent_children` 3 can reach 27 concurrent leaf agents, and "each extra level multiplies spend".
+
+A swarm is a way to buy speed and breadth with tokens. If the task is sequential, touches one file or has many dependencies, a single agent is usually the better buy.
+
+## Claude Code subagents vs agent teams
+
+This is the comparison people search for, and it is easy to get wrong because the two features share vocabulary. Everything in this section comes from Anthropic's docs pages for [subagents](https://code.claude.com/docs/en/sub-agents) and [agent teams](https://code.claude.com/docs/en/agent-teams), fetched on November 26, 2026.
+
+{% figure src="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=2f8db9b4f3705dd3ab931fbe2d96e42a" alt="Diagram comparing subagent and agent team architectures. Subagents are spawned by the main agent, do work, and report results back. Agent teams coordinate through a shared task list, with teammates communicating directly with each other." caption="Anthropic's own diagram of the difference: subagents report back to the main agent, teammates share a task list and talk to each other. Source: Anthropic Claude Code docs" /%}
+
+| | Subagents | Agent teams |
+| --- | --- | --- |
+| Status | Regular feature, built-in types plus your own | Experimental, disabled by default |
+| Where they run | Inside one session, each with its own context window | Separate Claude Code instances, each with its own context window |
+| Communication | Report a result back to the caller; named agents can also message each other through `SendMessage` | Teammates message each other directly, and you can talk to any teammate |
+| Coordination | The main agent manages everything | A shared task list with automatic dependency unblocking |
+| Token cost | Lower: only a summary returns to the main context | Higher: every teammate has its own context window and usage scales with active teammates |
+| Best for | Focused jobs where only the result matters | Work that needs discussion, such as competing debugging hypotheses or parallel review |
+| How to start | Ask Claude, or add a markdown file under `.claude/agents/` | Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, then ask for a team |
+
+A few details from the docs that change the decision:
+
+- **Subagent definitions are plain markdown with frontmatter.** The body is the system prompt. Claude Code discovers project subagents by walking up from the working directory through every `.claude/agents/` folder, and the definition closest to your working directory wins when names collide.
+- **Built-in subagents exist.** Explore (read-only codebase search) and Plan (research during plan mode) start without your CLAUDE.md files and the git status snapshot, to keep research fast and cheap.
+- **Subagents can nest, teams cannot.** By default a subagent can spawn subagents of its own, up to three layers below the main conversation. The docs give a reviewer that dispatches a verifier per finding as the example, and `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` changes the limit (set it to 1 to turn nesting off). Agent teams have no nested teams: teammates cannot spawn their own teammates.
+- **Turning teams on changes ordinary delegation.** While agent teams are enabled, a subagent that Claude names launches as a teammate, so a team can form even if you did not ask for one. Spawning teammates also needs an interactive session, so `claude -p` does not spawn them.
+- **Teams have real limits today.** The docs list no session resumption for in-process teammates, task status that can lag, slow shutdown, one team per session, no nested teams, a fixed lead, and split panes that need tmux or iTerm2.
+
+Rule of thumb from those docs: use subagents when you want quick workers that report back, and teams when the workers need to challenge each other. Start with subagents.
+
+{% x id="2019472394696683904" /%}
+
+*The post from @bcherny dated February 5, 2026 (verified through the X syndication endpoint on November 26, 2026).*
+
+## Master comparison table
+
+| Tool | Type | Pricing (Nov 26, 2026) | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/claude-code.png" name="Claude Code" size=24 /%} Claude Code | Subagents plus experimental agent teams | Included with Pro ($17/mo billed annually, $20 monthly), Max $100, Ultra $200 | No (Claude Free lists Claude Code as No) | No license declared on its GitHub repo | Teams are experimental, one team per session | Subagents are a stable feature with the most detailed docs |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/kimi-agent-swarm.png" name="Kimi Agent Swarm" size=24 /%} Kimi Agent Swarm | Hosted fan-out swarm | Plus $15, Pro $31, Max $79, Ultra $159 per month on annual billing | No (swarm not on Free) | Product no; K2.6 weights open-sourced per Kimi | 2 to 8 concurrent subtasks by plan | Up to 300 sub-agents (vendor-reported) |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/hermes-kanban.png" name="Hermes Kanban" size=24 /%} Hermes Kanban | Durable task board across profiles | Free software, you pay your model provider | Yes | Yes (MIT) | Needs Hermes profiles and the gateway dispatcher | Every handoff is an auditable row |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=24 /%} OpenAI Agents SDK | Handoffs and agents-as-tools | Free library, you pay model API usage | Yes | Yes (MIT) | You write the orchestration code | Clean handoff primitive |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/crewai.png" name="CrewAI" size=24 /%} CrewAI | Crews plus Flows | Library free; platform Basic free (50 executions a month), Enterprise custom | Yes | Yes (MIT) | Platform execution caps | Role-based crews with sequential or hierarchical process |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/google-adk.png" name="Google ADK" size=24 /%} Google ADK | Graph, dynamic, collaborative and template workflows | Free library (Apache-2.0), model costs apply | Yes | Yes (Apache-2.0) | Python 3.11 or newer for the Python package | Fixed and model-driven control in one kit |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/agency-swarm.png" name="Agency Swarm" size=24 /%} Agency Swarm | Handoff and orchestrator-worker flows | Free framework (MIT), model costs apply | Yes | Yes (MIT) | Python 3.12 or newer | Explicit communication flows |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/swarms.png" name="Swarms" size=24 /%} Swarms | Many prebuilt swarm architectures | Library free (Apache-2.0); hosted API Free $0, Pro $19.99, Premium $100 per month | Yes | Yes (Apache-2.0) | Premium endpoints need Pro or Premium | 10 architectures in the README table, 60+ structures claimed |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/kimi-work.png" name="Kimi Work" size=24 /%} Kimi Work | Desktop agent with swarm mode | No separate price on the pages we read | Not stated | No | Beta, Mac and Windows only | Local files plus Agent Swarm mode |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/swarm-ide.png" name="swarm-ide" size=24 /%} swarm-ide | Community visual swarm IDE | Free code, you bring a model key | Yes | Code public, no license declared | Last push March 2, 2026 | Chat-style view into every agent |
+
+## The ten tools
+
+Each section below follows the same order: what it is, who it is for, key features, pros, cons, benefits, pricing, free tier, limits, a standout use case, who should skip it, and a setup snippet where one is useful. Star counts come from the GitHub API on November 26, 2026. "Vendor-reported" means the number comes from the vendor and we did not reproduce it.
+
+### 1. Claude Code subagents and agent teams
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/claude-code.png" name="Claude Code" size=40 /%}
+
+**What it is.** Anthropic's terminal coding agent, with two multi-agent features. Subagents are specialised workers that run inside your session and hand back a summary. Agent teams are several full Claude Code instances that share a task list and message each other. Both are documented on code.claude.com.
+
+**Who it is for.** Developers who already use Claude Code and want to split research, review or implementation work without leaving the terminal.
+
+**Key features (from Anthropic's docs).**
+
+- Custom subagents are markdown files with frontmatter, kept in `.claude/agents/`, and Claude uses each subagent's description to decide when to delegate.
+- Built-in Explore and Plan subagents run read-only research without polluting your main context.
+- Nested subagents: up to three layers by default, adjustable with `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`.
+- Agent teams: a shared task list, automatic unblocking of dependent tasks, direct messages between teammates, and an optional plan approval step before a teammate starts implementing.
+- Two display modes for teams: in-process (any terminal) or split panes (tmux or iTerm2), controlled by the `teammateMode` setting.
+
+**Pros**
+
+- Subagents are a regular feature with the most detailed first-party documentation of any tool here.
+- You can message any teammate directly and watch their transcripts from the agent panel.
+- Subagents keep the main context clean, because only a summary returns.
+
+**Cons**
+
+- Agent teams are experimental, disabled by default, and Anthropic lists known limitations: no resumption of in-process teammates, task status that can lag, one team per session, no nested teams and a fixed lead.
+- Teams cost significantly more tokens than a single session, by Anthropic's own statement.
+- The public anthropics/claude-code GitHub repo (157,195 stars as of November 26, 2026) lists no license, so do not assume you can fork or reuse the code.
+
+**Benefits for you.** If your work is code, this is the lowest-friction way to try parallel agents. Start with subagents, and only turn on teams for work where teammates should challenge each other.
+
+**Pricing (as of November 26, 2026, claude.com/pricing).** Free $0 (Claude Code: No), Pro $17 per month with the annual discount ($200 billed up front) or $20 billed monthly, Max $100 (5x Pro usage), Ultra $200 (10x Pro weekly usage). Max and Ultra also list $100 and $200 of monthly API credits.
+
+**Free tier.** None for Claude Code: the pricing page lists it as No on the Free plan.
+
+**Limits.** Subagent descriptions that together exceed 15,000 tokens (built-ins excluded) trigger a startup warning. Teams: one per session, no nesting.
+
+**Standout use case.** Anthropic's own example for teams is a design review: three teammates take UX, technical architecture and devil's advocate roles at the same time.
+
+**Skip it if** you need a headless swarm inside a product you ship (use an SDK instead), or you cannot spend extra tokens on a feature that its own docs call experimental.
+
+**Setup.** A subagent is a file. A team needs one environment variable:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "auto"
+}
+```
+
+Save that in `settings.json`, then describe the team you want in plain language, for example "spawn three teammates to review this PR, one on security, one on performance, one on test coverage".
+
+### 2. Kimi Agent Swarm
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/kimi-agent-swarm.png" name="Kimi Agent Swarm" size=40 /%}
+
+**What it is.** A hosted multi-agent mode inside Kimi (Moonshot AI). You describe a large task, an orchestrator decides how many sub-agents to create, and the results come back as one deliverable. Kimi's help center says it launched with K2.5 on January 27, 2026, was upgraded with K2.6 on April 20, 2026, and is now powered by Kimi K3.
+
+**Who it is for.** Researchers and analysts with wide, parallel jobs: scan 100 niches, read 100 documents, collect 200 essays.
+
+**Key features (vendor-reported by Kimi).**
+
+- Up to 300 sub-agents at once and more than 4,000 tool calls in a single task (K2.6 figures from the help center).
+- The orchestrator creates sub-agents on the fly, without predefined roles or a hand-built workflow.
+- Progress of each agent is visible while it runs, and outputs include code projects, charts and tables, and Word, PDF, Markdown or PPT documents.
+- Kimi says the architecture cuts the critical steps needed in large-scale search by 3x to 4.5x versus a single agent. We could not reproduce that.
+
+**Pros**
+
+- No setup, no framework and no API key to manage.
+- The largest published ceiling in this comparison.
+- Kimi's help center gives concrete use cases, such as 100-niche research and multi-role expert reviews.
+
+**Cons**
+
+- Closed product (though Kimi K2.6 is described as open-sourced).
+- Concurrency is capped by plan: 2, 4, 8 and 8 concurrent subtasks on Plus, Pro, Max and Ultra.
+- All membership features share one monthly credit pool with no rollover, so a big swarm run can use up credits that other Kimi features also need.
+- The help center carries a Beta marker for the product entry point.
+
+**Benefits for you.** If your task is "do the same research 100 times, then merge", you buy parallelism with credits and write no code.
+
+**Pricing (as of November 26, 2026, kimi.ai pricing pages).** Billed annually, the monthly equivalents are Plus $15, Pro $31, Max $79 and Ultra $159. Billed monthly they are $19, $39, $99 and $199. Annual totals are $180, $372, $948 and $1,908. Agent credits scale from Basic on Free to More, 2x, 5x and 10x.
+
+**Free tier.** The Free plan is $0, but its swarm concurrency cell is blank in the plan table, so treat Agent Swarm as a paid feature. Plus is described as covering "Coding with Kimi Code, research, office tasks, and Agent Swarm".
+
+**Limits.** Swarm concurrent subtasks: 2 (Plus), 4 (Pro), 8 (Max), 8 (Ultra). Regular agent concurrent tasks are 1, 2, 2, 4 and 4 across Free to Ultra.
+
+**Standout use case.** Kimi's own example: find the top three creators in each of 100 YouTube niches, with one search specialist per niche, ending in a structured table and charts.
+
+**Skip it if** your data cannot leave your machine, you need a fixed audit trail of who did what, or the task is sequential.
+
+{% x id="2016021783833673897" /%}
+
+*Kimi_Moonshot on X, January 27, 2026: the K2.5 launch that introduced Agent Swarm (verified through the X syndication endpoint on November 26, 2026).*
+
+{% youtube id="zSV1if4_VZ0" title="Kimi K3 Agent Swarm Review: I Tested 3 Real Business Workflows" /%}
+
+*A third-party review by Ryan Collins (title and channel confirmed through YouTube oEmbed). We did not verify his results, so treat it as one person's testing.*
+
+### 3. Hermes Kanban multi-agent board
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/hermes-kanban.png" name="Hermes Kanban" size=40 /%}
+
+**What it is.** A durable task board in Hermes Agent (Nous Research) shared across all your Hermes profiles. Every task is a row in a local SQLite file at `~/.hermes/kanban.db`, and every handoff between agents is a row anyone can read. Its docs frame it as the alternative to "fragile in-process subagent swarms".
+
+**Who it is for.** People who run several named Hermes profiles and want work to survive restarts, pause for human input and be picked up later by a different role.
+
+**Key features (Hermes docs).**
+
+- Task statuses: triage, todo, ready, running, blocked, review, done, archived.
+- Parent to child links: the dispatcher promotes a task from todo to ready when all parents are done.
+- Comments are the inter-agent protocol, and a re-spawned worker reads the full thread.
+- Three workspace kinds: scratch (deleted on completion), a shared directory, or a git worktree for coding tasks.
+- A dispatcher loop (every 60 seconds by default) reclaims stale claims and crashed workers.
+- Multiple boards, each with its own SQLite file, plus a dashboard Kanban tab and a `kanban_*` toolset the agents use.
+
+**Pros**
+
+- Auditable: the docs say every handoff is a row, and `hermes kanban gc` prunes old events once tasks are done or archived.
+- Human in the loop at any point through comments and unblocking.
+- MIT licensed, and the Hermes Agent repo had 266,338 GitHub stars as of November 26, 2026.
+
+**Cons**
+
+- It is a coordination layer for Hermes profiles, not a general SDK for your own product.
+- It is single-machine by design (a local SQLite board).
+- More moving parts than a one-shot subagent call: profiles, a gateway-embedded dispatcher, workspaces.
+
+**Benefits for you.** You get a visible, restartable pipeline (research, write, review, retry) instead of an opaque tree of children that disappears when the session ends.
+
+**Pricing.** Free software. You pay your own model provider. (Checked November 26, 2026.)
+
+**Free tier.** Fully free to run.
+
+**Limits.** Hermes documents a separate in-session tool, `delegate_task`, that can fan out child agents. Its depth is flat by default (`max_spawn_depth: 1`), and the docs warn that depth 3 with 3 children each can reach 27 concurrent leaf agents. Two Hermes docs pages disagree about the default child concurrency: the configuration reference says 3 per batch, while the delegation page says 10 tasks by default. Check your own config before relying on either number.
+
+**Standout use case.** Nous Research's launch thread describes agents that claim tasks from a board, work in parallel, and hand off when blocked, with you watching and unblocking from one view instead of juggling terminals.
+
+**Skip it if** you want a hosted swarm with no local setup, or you are building a product for end users.
+
+**Setup.** Raise nesting only on purpose:
+
+```yaml
+delegation:
+  max_spawn_depth: 2   # children may spawn leaf grandchildren
+  max_concurrent_children: 3
+```
+
+{% x id="2050997692977844324" /%}
+
+*Nous Research on X, May 3, 2026, announcing multi-agent Kanban (verified through the X syndication endpoint on November 26, 2026).*
+
+{% x id="2051001156005151226" /%}
+
+*@Teknium on X, May 3, 2026, pointing to the Kanban docs (verified the same way).*
+
+{% figure src="https://hermes-agent.nousresearch.com/docs/img/hermes-agent-banner.png" alt="Hermes Agent banner image from the Hermes Agent documentation site." caption="The Hermes Agent banner image, served from the Hermes Agent documentation site. Source: Nous Research" /%}
+
+### 4. OpenAI Agents SDK handoffs
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=40 /%}
+
+**What it is.** OpenAI's open source Python SDK for building agents. Its multi-agent story has two primitives: handoffs, where a triage agent passes the conversation to a specialist, and agents as tools, where a manager agent calls specialists but keeps control. It is also the production successor to OpenAI's experimental Swarm library, whose README tells you to migrate.
+
+**Who it is for.** Developers building their own product who want a small, explicit routing primitive rather than a large framework.
+
+**Key features (docs).**
+
+- A handoff is shown to the model as a tool, so a handoff to `Refund Agent` becomes `transfer_to_refund_agent`.
+- Agents take a `handoffs` list, and an optional `handoff_description` hints when the model should pick that route. `handoff()` adds overrides and input filters.
+- `Agent.as_tool()` for the manager pattern, where one agent owns the final answer.
+- Human-in-the-loop approvals through `needs_approval`, covering handoffs and nested agent tools.
+- Sessions, tracing and sandbox agents are documented alongside.
+
+**Pros**
+
+- Clear guidance on when to use which pattern: the orchestration page says handoffs fit when the specialist should answer directly, and agents as tools fit when one agent should own the final answer.
+- MIT licensed, 30,890 stars as of November 26, 2026, version 0.26.0 on PyPI.
+- Handoffs and agent-tools can be combined.
+
+**Cons**
+
+- You write the orchestration. There is no board, no shared task list and no built-in swarm of parallel workers.
+- Pre-1.0 version number, so expect API movement.
+- The SDK is free, but model usage is billed by your provider.
+
+**Benefits for you.** The simplest mental model here: one active agent at a time, explicit routes, and approvals you can audit.
+
+**Pricing.** The SDK is free (MIT). You pay the model API you point it at. (Checked November 26, 2026.)
+
+**Free tier.** Yes for the library. There is no pricing page for the SDK itself.
+
+**Limits.** Requires Python 3.10 or newer.
+
+**Standout use case.** OpenAI's own example: a customer support app where a triage agent routes to order status, refunds or FAQ specialists.
+
+**Skip it if** you need parallel fan-out with minimal code (Kimi, Claude Code or a framework with workflow types will get you there faster) or non-Python runtimes.
+
+**Setup.**
+
+```python
+from agents import Agent, Runner
+
+billing = Agent(
+    name="Billing agent",
+    instructions="Answer billing questions.",
+    handoff_description="Billing and refund questions",
+)
+triage = Agent(
+    name="Triage agent",
+    instructions="Route the user to the right specialist.",
+    handoffs=[billing],
+)
+result = Runner.run_sync(triage, "I was charged twice.")
+print(result.final_output)
+```
+
+### 5. CrewAI
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/crewai.png" name="CrewAI" size=40 /%}
+
+**What it is.** An open source Python framework where you define agents with roles and tasks, then assemble them into a crew. It also sells a hosted platform for running and governing agents.
+
+**Who it is for.** Teams who think in roles ("researcher", "writer", "reviewer") and want sequential or manager-led pipelines with a path to a hosted platform.
+
+**Key features (docs).**
+
+- A crew's `process` is sequential by default, or hierarchical, which requires either `manager_llm` or `manager_agent`.
+- Optional planning, memory and caching settings on the crew.
+- Crews can be defined in code or as JSON definitions that name a manager agent.
+- A hosted platform with a Basic tier and an Enterprise tier.
+
+**Pros**
+
+- Role-based vocabulary that non-engineers can read.
+- MIT licensed, the most starred of the SDKs and frameworks here at 61,301 stars (November 26, 2026), version 1.15.45 on PyPI.
+- A free hosted tier to try.
+
+**Cons**
+
+- The default process is sequential, which is a pipeline rather than a swarm. Parallel behavior takes deliberate design.
+- Hierarchical mode needs you to supply a manager model.
+- Platform execution caps apply on the free tier.
+
+**Benefits for you.** If you want to hand a business process to a small team of role-playing agents and can accept a framework's opinions, CrewAI is the easiest on-ramp.
+
+**Pricing (as of November 26, 2026, crewai.com/pricing).** Basic: Free, with 50 workflow executions per month. Enterprise: custom, described as adding governance, connectors and a 45-day onboarding. The open source library is free.
+
+**Free tier.** Yes: the library, plus Basic on the platform.
+
+**Limits.** Python at least 3.10 and below 3.14 per PyPI. 50 executions a month on Basic.
+
+**Standout use case.** CrewAI's quickstart builds a Flow that sets a topic, runs a crew with one researcher agent that uses web search, and ends with a markdown report on disk. It is a small example, but it shows the framework's shape: Flows for control, crews for agent work.
+
+**Skip it if** you need low-level control over every handoff, or a visual, restartable task board.
+
+**Setup.**
+
+```python
+from crewai import Crew, Process
+
+crew = Crew(
+    agents=[researcher, writer, reviewer],
+    tasks=[research_task, write_task, review_task],
+    process=Process.hierarchical,
+    manager_llm="<your-model-id>",   # required for hierarchical
+)
+result = crew.kickoff()
+```
+
+{% figure src="https://images.ctfassets.net/rmv9a2eqdsyw/26ld4zbjbNkeg6KGxkyLXE/7d686ce386ed7eb61f3d0f1d3709949c/og-image__2_.png" alt="CrewAI social preview image from crewai.com." caption="CrewAI's own social preview image, served from the crewai.com site. Source: CrewAI" /%}
+
+### 6. Google ADK multi-agent workflows
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/google-adk.png" name="Google ADK" size=40 /%}
+
+**What it is.** Google's open source Agent Development Kit. Its docs now organise multi-agent work under "Workflows: multi-agent, multi-node applications", and offer four ways to build them. The Python package is `google-adk` (version 2.15.1 on PyPI as of November 26, 2026).
+
+**Who it is for.** Teams that want a choice between fixed, predictable control flow and a model that decides who to call, and who are comfortable in Python.
+
+**Key features (ADK docs).**
+
+- Graph-based workflows (ADK 2.0 and higher): agents and deterministic nodes composed into an execution graph with decision branching.
+- Dynamic workflows (ADK 2.0 and higher): the same mix, driven by ordinary program logic.
+- Collaborative workflows (ADK 2.0 and higher): a single agent acts as a dynamic coordinator over a set of specified sub-agents.
+- Template workflows built from `BaseAgent`: fixed sequences, loops and parallel execution.
+- An experimental Agent Routing feature that picks between agents at runtime for fallback, A/B testing and auto-routing.
+
+**Pros**
+
+- The docs state the trade-off in plain terms: workflows buy predictability, reliability and structure, which is the opposite pitch from an autonomous swarm.
+- Apache-2.0, 22,364 stars (November 26, 2026), active push the same day.
+- Template workflows give you real parallel execution without a model deciding it.
+
+**Cons**
+
+- Several of the most relevant workflow types need ADK 2.0 or higher, so read the version note before copying older tutorials.
+- Python 3.11 or newer for the Python package.
+- The docs site moved paths during our research: the older `agents/multi-agents` URL on adk.dev now redirects to the Workflows page.
+
+**Benefits for you.** If you want the "swarm" effect but need to explain to a reviewer exactly what runs in what order, template and graph workflows give you that.
+
+**Pricing.** The kit is free. You pay for the models and any Google Cloud services you deploy on. (Checked November 26, 2026.)
+
+**Free tier.** Yes for the library. Model usage depends on your provider.
+
+**Limits.** Agent Routing is marked experimental. Collaborative, graph and dynamic workflows are 2.0 and higher.
+
+**Standout use case.** A coordinator agent that delegates to named sub-agents, which is the closest ADK gets to a fan-out swarm, while sequential and parallel templates cover the fixed pipelines.
+
+**Skip it if** you want a no-code product, or you need a swarm that designs its own topology at run time.
+
+**Setup.**
+
+```bash
+pip install google-adk
+```
+
+{% figure src="https://opengraph.githubassets.com/1/google/adk-python" alt="GitHub social card for the google/adk-python repository." caption="GitHub's generated social card for the google/adk-python repository. Source: GitHub, google/adk-python" /%}
+
+### 7. Agency Swarm
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/agency-swarm.png" name="Agency Swarm" size=40 /%}
+
+**What it is.** An open source agent orchestration framework by VRSEN (Arsenii Shatokhin), built on the OpenAI Agents SDK and Responses API. You define agents with roles, tools and explicit communication flows, then group them as an "agency".
+
+**Who it is for.** Developers who want swarms with hand-drawn topology: who may talk to whom, and in what style.
+
+**Key features (docs).**
+
+- Communication flows are declared as tuples in `communication_flows`, so the topology is explicit.
+- Two documented flow types. Handoff transfers control completely to another agent. Orchestrator-worker has one agent assign tasks to others through the `SendMessage` mechanism and compile the answers, with control returning to the orchestrator each time.
+- Pydantic-based type validation and error correction for tools.
+- Agents communicate "based on their own descriptions and nothing else", per the overview page.
+- Custom Python tools for external APIs.
+
+**Pros**
+
+- The communication-flows page is unusually honest about trade-offs: it recommends handoffs for sequential work with tight user feedback, and orchestrator-worker for independent, not-very-high-stakes steps.
+- MIT licensed, 4,643 stars (November 26, 2026), version 1.11.0 on PyPI.
+- Sits on a mainstream SDK rather than its own runtime.
+
+**Cons**
+
+- Python 3.12 or newer.
+- Fewer GitHub stars than CrewAI or the OpenAI SDK it builds on.
+- You decide the topology up front: the docs say communication flows are "uniform" and can be defined in any way you want, which is control, but also a design job.
+
+**Benefits for you.** You get both the handoff chain and the fan-out pattern from one framework, and the topology is written down in code where a teammate can review it.
+
+**Pricing.** Free framework (MIT). Model costs go to your provider. (Checked November 26, 2026.)
+
+**Free tier.** Yes.
+
+**Limits.** Python 3.12 or newer.
+
+**Standout use case.** The docs pair each flow with a use case: a planner and script writer working with tight feedback (handoff), versus news aggregation across many sources (orchestrator-worker).
+
+**Skip it if** you want a hosted product, a visual board or a fully autonomous swarm.
+
+**Setup.**
+
+```python
+from agency_swarm import Agency, Handoff
+
+agency = Agency(
+    triage_agent,  # entry point
+    communication_flows=[
+        (triage_agent, billing_specialist, Handoff),
+        (triage_agent, technical_specialist, Handoff),
+    ],
+)
+```
+
+### 8. Swarms (kyegomez)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/swarms.png" name="Swarms" size=40 /%}
+
+**What it is.** An open source Python framework (kyegomez/swarms) plus a hosted API at swarms.ai. It ships a catalogue of prebuilt multi-agent structures. This is a different project from OpenAI's old Swarm library and from Agency Swarm.
+
+**Who it is for.** Developers who want to try many orchestration shapes quickly and swap between them.
+
+**Key features (README).** Its architecture table lists ten structures: SequentialWorkflow, ConcurrentWorkflow, AgentRearrange, GraphWorkflow, MixtureOfAgents, GroupChat, ForestSwarm, HierarchicalSwarm, HeavySwarm and SwarmRouter (a single interface that picks among swarm types). The README also says the project has 60+ multi-agent structures, which we did not count.
+
+**Pros**
+
+- Widest menu of ready-made patterns in this comparison.
+- Apache-2.0, 7,403 stars (November 26, 2026), version 17.0.3 on PyPI, pushed on the day we checked.
+- SwarmRouter lets you change strategy without rewriting the workflow.
+
+**Cons**
+
+- More patterns means more choices to evaluate, and we did not test any of them.
+- Hosted pricing mixes a subscription with a per-token fee (below).
+- Premium endpoints are gated behind paid plans.
+
+**Benefits for you.** A fast way to see which shape (sequential, concurrent, hierarchical, graph) fits your problem before you commit to a framework.
+
+**Pricing (as of November 26, 2026, swarms.ai/pricing).** Free $0, Pro $19.99 per month, Premium $100 per month ($1,020 per year), Enterprise custom. New accounts get $5.00 of credit on every plan. Tokens are billed at the model's provider price plus a 15% service fee, with flat fees on top, including $0.01 per agent on swarm, graph and grid workflows. Pro adds multi-agent architectures, Premium Endpoints and priority support; Premium adds higher rate limits (2,000 requests per minute) and SOC 2 compliance.
+
+**Free tier.** Yes: the open source library is free, and the hosted Free plan is $0 with sign-up credit. The pricing page says Premium Endpoints (batch agent and swarm completions, reasoning agents, grid and graph workflows) are not available on Free.
+
+**Limits.** Billable endpoints need a balance above $1.00 and return a 402 below it.
+
+**Standout use case.** HeavySwarm for research and analysis work, per the README's own "best for" column.
+
+**Skip it if** you want one well-documented pattern rather than a catalogue, or you cannot accept a third-party service fee on top of model prices.
+
+**Setup.**
+
+```bash
+pip3 install -U swarms
+```
+
+### 9. Kimi Work
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/kimi-work.png" name="Kimi Work" size=40 /%}
+
+**What it is.** A general-purpose local agent for knowledge workers, available in the "Work" mode of the Kimi desktop client. Kimi's help center says it launched on June 3, 2026 and is in Beta. It sits on Kimi Code and the Kimi K3 model, and it can switch between two execution modes, "Agent" and "Agent Swarm".
+
+**Who it is for.** Non-developers who want organised files, analysed data and finished documents from a desktop app, and who occasionally have a task big enough for a swarm.
+
+**Key features (Kimi help center and product page).**
+
+- Agent Swarm mode that, by Kimi's description, assembles a team of up to 300 sub-agents based on task complexity (vendor-reported).
+- Skills (including third-party and uploaded local Skills), scheduled tasks, widgets, a dashboard and plugins for apps such as Canva, Notion and WPS.
+- A browser extension for browser operation.
+- Three permission levels: default, manual approval and fully automatic.
+
+**Pros**
+
+- No terminal, no config files and no framework to learn.
+- It is a local agent, so it works on files on your machine.
+- Its help center says it can install and use Skills, recommends third-party Skills and accepts uploaded local Skills.
+
+**Cons**
+
+- Beta, and Kimi says it iterates frequently.
+- Desktop only: the help center says Mac (Apple silicon, macOS 12 or later) and Windows 10 or later, while the product page lists an Intel Mac download too. The two pages disagree, so check the download page before you commit.
+- The "fully automatic" permission level runs without asking, which is a real risk on local files.
+
+**Benefits for you.** It puts swarm-style parallelism on your own files without a developer toolchain.
+
+**Pricing.** We found no separate Kimi Work price on the pages we read. The Kimi membership tiers are listed in the Kimi Agent Swarm section above, but neither Kimi Work page states which tier it needs or what the Free plan allows, so we do not claim one. (Checked November 26, 2026.)
+
+**Free tier.** Not stated.
+
+**Limits.** Beta; platform requirements above.
+
+**Standout use case.** Kimi's own examples are moving information around, organising files, analysing data and producing reports.
+
+**Skip it if** you are a developer who wants a scriptable swarm, or your files are subject to rules that forbid a third-party agent touching them.
+
+### 10. swarm-ide
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-agent-swarm-tools-2026/logos/swarm-ide.png" name="swarm-ide" size=40 /%}
+
+**What it is.** A community project (chmod777john/swarm-ide) described as "An IDE built for Agent Swarms", supporting Kimi K2.5, GLM-4.7 and other models. Its README says the models do not need K2.5's reinforcement learning to work with it. It was created on January 1, 2026 and the last push we saw was March 2, 2026.
+
+**Who it is for.** Builders who want to see an agent swarm: topology graph, live message flow and each agent's context, rather than trust a black box.
+
+**Key features (README, Chinese and English).**
+
+- The only two primitives are create and send: any agent can create sub-agents and message any other agent.
+- A graph view of swarm topology and live communication, a tree-style conversation list so you can talk to any agent at any depth, and a panel showing each agent's LLM history.
+- MCP configuration through `mcp.json` or `.mcp.json`, supporting stdio, http and sse servers.
+- Skill support: it scans a `skills/` directory and can auto-inject a skill into new agents with `auto-load: true` in the `SKILL.md` frontmatter.
+
+**Pros**
+
+- The clearest window into what a swarm is doing, in a free, readable project.
+- Reads standard `SKILL.md` files and MCP config, which suits the agentskills.codes catalog.
+- 1,497 stars as of November 26, 2026.
+
+**Cons**
+
+- No license is declared on the repository, which matters if you want to build on it.
+- No push since March 2, 2026, so treat it as a reference, not a dependency.
+- The README's comparison table claims advantages over Kimi's swarm and Claude agent teams. That table is the author's own, and we did not verify it.
+- Needs Docker and Bun, runs on Linux, and uses an OpenRouter key.
+
+**Benefits for you.** Reading it teaches you what the create-and-send primitives look like in a working swarm, which helps you judge the commercial tools.
+
+**Pricing.** Free code. You pay your model provider (the author says they use OpenRouter with Kimi 2.5). (Checked November 26, 2026.)
+
+**Free tier.** Yes.
+
+**Limits.** Linux, Docker, Bun, an OpenRouter key.
+
+**Standout use case.** The README's own starter prompt (translated from Chinese): ask it to create three children, message each, and have each create three grandchildren.
+
+**Skip it if** you need a maintained, licensed dependency for production.
+
+**Setup (from the README).**
+
+```bash
+cd swarm-ide/backend
+cp .env.example .env.local   # add your key and model
+docker compose up -d
+curl -X POST http://127.0.0.1:3017/api/admin/init-db
+bun install
+bun dev
+```
+
+{% figure src="https://opengraph.githubassets.com/1/chmod777john/swarm-ide" alt="GitHub social card for the chmod777john/swarm-ide repository." caption="GitHub's generated social card for the swarm-ide repository. Source: GitHub, chmod777john/swarm-ide" /%}
+
+### Selection notes
+
+The topic brief flagged Hermes Kanban, Kimi Work and swarm-ide for verification. Hermes Kanban has first-party docs and launch posts, Kimi Work has a Kimi help-center page and a product page, and swarm-ide has a public GitHub repository, so all three stayed. One related item left out on purpose: OpenAI's original Swarm repository. Its README says it is replaced by the OpenAI Agents SDK, so it appears in the definition section and in item 4 rather than as a separate product.
+
+## Pricing table (as of November 26, 2026)
+
+| Tool | Plans and prices | Free tier | What you also pay for |
+| --- | --- | --- | --- |
+| Claude Code | Pro $17/mo billed annually ($20 monthly), Max $100, Ultra $200 | No | Teams use significantly more tokens than one session |
+| Kimi Agent Swarm | Plus $15, Pro $31, Max $79, Ultra $159 per month billed annually ($19, $39, $99, $199 monthly) | Free plan exists; swarm is listed from Plus up | Credits are shared across features, with no rollover |
+| Hermes Kanban | Free software | Yes | Your model provider |
+| OpenAI Agents SDK | Free library | Yes | Model API usage |
+| CrewAI | Library free; platform Basic free (50 executions a month), Enterprise custom | Yes | Model usage; platform caps |
+| Google ADK | Free library | Yes | Model usage and any cloud hosting |
+| Agency Swarm | Free framework | Yes | Model usage |
+| Swarms | Library free; API Free $0, Pro $19.99, Premium $100 per month | Yes | Provider price plus 15%, plus $0.01 per agent on swarm workflows |
+| Kimi Work | No separate price found | Not stated | See Kimi memberships |
+| swarm-ide | Free code | Yes | Your model key (OpenRouter in the README) |
+
+## Feature matrix
+
+"Not stated" means we did not find it in the docs or pages we read. "No" means it is not a built-in feature in those docs.
+
+| Tool | Parallel workers | Orchestrator-worker | Handoff chain | Shared task list or board | Agents message each other | Human approval or intervention documented | Open source | Free to start |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Claude Code | Yes | Yes | No | Yes (teams) | Yes (teams) | Yes (plan approval, message any teammate) | No (repo lists no license) | No |
+| Kimi Agent Swarm | Yes | Yes | Not stated | Not stated | Not stated | Partial (live progress view) | No | No |
+| Hermes Kanban | Yes | Yes (`delegate_task`) | Partial (profile to profile via board) | Yes | Partial (comments) | Yes (comment, unblock) | Yes | Yes |
+| OpenAI Agents SDK | Partial (you code it) | Yes (agents as tools) | Yes | No | No | Yes (`needs_approval`) | Yes | Yes |
+| CrewAI | Partial | Yes (hierarchical) | Not stated | No | Not stated | Not stated | Yes | Yes |
+| Google ADK | Yes (template parallel) | Yes (collaborative) | Partial (routing is experimental) | No | Not stated | Not stated | Yes | Yes |
+| Agency Swarm | Not stated | Yes | Yes | No | Yes (`SendMessage`) | Not stated | Yes | Yes |
+| Swarms | Yes (ConcurrentWorkflow) | Yes (HierarchicalSwarm) | Not stated | No | Yes (GroupChat) | Not stated | Yes | Yes |
+| Kimi Work | Yes | Yes | Not stated | Not stated | Not stated | Yes (three permission levels) | No | Not stated |
+| swarm-ide | Yes | Yes | No | No | Yes | Yes (talk to any agent) | Partial (no license declared) | Yes |
+
+## Head-to-head: the closest pairs
+
+### Claude Code vs Kimi Agent Swarm: which to pick
+
+- **Pick Claude Code** if the work is code in a repository and you want control over which agents exist, what they can touch and how they report. You define subagents yourself, and you can stay with plain subagents until a team is justified.
+- **Pick Kimi Agent Swarm** if the work is wide research or document production and you want an orchestrator to decide the shape. You pay in credits rather than writing definitions, and concurrency is capped by plan.
+- **Shared trait:** both spend many times the tokens or credits of a single agent, and both vendors say so.
+
+### Hermes Kanban vs Claude Code agent teams: which to pick
+
+- **Pick Claude Code agent teams** for a short, live, interactive session where teammates debate and you watch panes. Teams are experimental, one per session, and in-process teammates are not restored on resume.
+- **Pick Hermes Kanban** when work must survive restarts, wait for a human, or move between differently configured agents. Tasks live in SQLite until deleted, and the dispatcher reclaims crashed workers.
+- **Trade-off:** teams are fast to start with one environment variable. Kanban asks you to set up profiles first and pays you back in an audit trail.
+
+### OpenAI Agents SDK vs CrewAI vs Google ADK: which to pick
+
+- **OpenAI Agents SDK** if routing between specialists is the core need. One agent is active at a time, and the docs say handoffs suit specialists that should answer directly while agents-as-tools suit a manager that owns the final answer.
+- **CrewAI** if you think in roles and want a hosted platform with a free tier. Its default process is sequential.
+- **Google ADK** if you want to choose between fixed workflows (sequential, loop, parallel) and a model-driven coordinator, and your stack is Python 3.11 or newer.
+
+## Skills and MCP servers that work with these tools
+
+These are catalog entries on agentskills.codes that match the patterns above. We confirmed that each page returns HTTP 200 on November 26, 2026. We did not install or run them for this article, so read each skill before you rely on it.
+
+| Skill | Why it fits |
+| --- | --- |
+| [subagent-driven-development](https://agentskills.codes/skills/subagent-driven-development) | By davila7. Described as for executing implementation plans with independent tasks in the current session, a direct fit for Claude Code subagents. |
+| [create-subagents](https://agentskills.codes/skills/create-subagents) | By glittercowboy. Guidance for creating and using Claude Code subagents and the Task tool. |
+| [agent-teams](https://agentskills.codes/skills/agent-teams) | By cubetribe. Described as experimental Agent Teams orchestration that needs the Claude Code agent teams flag. |
+| [build-with-agent-team](https://agentskills.codes/skills/build-with-agent-team) | By coleam00. Builds a project with Claude Code Agent Teams in tmux split panes, from a plan document. |
+| [multi-agent-patterns](https://agentskills.codes/skills/multi-agent-patterns) | By sickn33. Covers orchestrator, peer-to-peer and hierarchical architectures, the vocabulary this guide uses. |
+| [swarm-orchestration](https://agentskills.codes/skills/swarm-orchestration) | By ruvnet. Multi-agent swarm coordination with a hierarchical topology of specialised agents. |
+| [crewai-multi-agent](https://agentskills.codes/skills/crewai-multi-agent) | By davila7. Use when building teams of specialised agents with CrewAI. |
+| [adk-agent-builder](https://agentskills.codes/skills/adk-agent-builder) | By jeremylongshore. Building agents with Google's Agent Development Kit, including multi-agent orchestration. |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | By anthropics. A guide to building MCP servers, useful when your swarm's workers need shared tools. |
+
+Related reading on this site: [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026), [best free AI coding agents](https://agentskills.codes/blog/best-free-ai-coding-agents-2026) and [Kimi K3.1 Pro for agent skills](https://agentskills.codes/blog/kimi-k3-1-pro-for-agent-skills).
+
+## Best for X: decision table
+
+| If you need | Pick | Why |
+| --- | --- | --- |
+| Parallel code review or research in a terminal | Claude Code subagents | Stable feature, summaries only return to the main context |
+| Teammates that challenge each other | Claude Code agent teams | Direct messages and a shared task list, but experimental |
+| A huge parallel research job with no code | Kimi Agent Swarm | Published ceiling of 300 sub-agents (vendor-reported) |
+| Restartable, auditable multi-agent pipelines | Hermes Kanban | Every handoff is a SQLite row, with comments and unblocking |
+| Routing a conversation between specialists | OpenAI Agents SDK | Handoffs are tools, with approvals |
+| Role-based crews with a free hosted tier | CrewAI | Sequential or hierarchical process, Basic free |
+| Explicit control over who talks to whom | Agency Swarm | Communication flows declared in code |
+| To compare many swarm shapes quickly | Swarms | Ten architectures in the README table |
+| A swarm on your desktop files, no terminal | Kimi Work | Beta desktop app with an Agent Swarm mode |
+| To see what a swarm is doing | swarm-ide | Graph, message flow and each agent's context |
+
+### Common mistakes
+
+- **Starting with a swarm.** Anthropic's own docs say sequential tasks, same-file edits and dependency-heavy work are better in a single session or subagents.
+- **Forgetting that enabling teams changes subagent behavior.** While teams are enabled in Claude Code, a named subagent launches as a teammate.
+- **Letting nesting grow.** Hermes documents that depth 3 with 3 children each can reach 27 concurrent leaf agents, and Claude Code subagents can nest three layers by default.
+- **Trusting vendor numbers.** The 300 sub-agent and 3x to 4.5x figures are Kimi's own and we could not reproduce them.
+- **Treating a stale community repo as a dependency.** swarm-ide has no license and no push since March 2, 2026.
+
+### Setup checklist
+
+1. Write the task as independent pieces. If you cannot, use one agent.
+2. Set a spend ceiling before you start: a plan tier, a depth limit or a credit pool.
+3. Prefer subagents or an orchestrator-worker pattern before peer teams.
+4. Decide where the audit trail lives (transcripts, a board, traces).
+5. Keep write access narrow: read-only workers for research, one writer per file.
+6. Reread the vendor limits page the week you ship. Prices and flags in this space move fast.
+
+## How we evaluated
+
+We read first-party documentation and pricing pages, pulled repository facts from the GitHub API, checked package versions on PyPI, and verified every embedded video and post. All fetches are dated November 26, 2026 unless noted.
+
+What we did not do: we did not run Claude Code agent teams, Kimi Agent Swarm, Kimi Work, Hermes Kanban or any SDK, and we did not run the catalog skills. There are no benchmarks of our own. Every performance number is vendor-reported, and we flag it. The only calls we made were HTTP requests: documentation fetches, GitHub and PyPI API reads, oEmbed and X syndication checks, and status checks on links and images. Where two vendor pages disagree (Hermes default child concurrency, Kimi Work Intel Mac support) we say so instead of picking one.
+
+## FAQ
+
+### What does agent swarm mean?
+
+There is no single definition. In current usage it covers three designs: an orchestrator that spawns many workers (Kimi Agent Swarm, Claude Code subagents), a team that shares a task list and messages each other (Claude Code agent teams, Hermes Kanban), and a handoff chain where one specialist at a time owns the conversation (OpenAI Agents SDK).
+
+### Is an agent swarm the same as a multi-agent system?
+
+A swarm is a kind of multi-agent system, but the word usually implies many workers, run-time decisions about how many to spawn, or both. Kimi's help center calls its design "scale-out" with no predefined roles. Sequential pipelines with fixed roles are multi-agent systems that most people would not call swarms.
+
+### How do I use an agent swarm in Claude Code?
+
+For subagents, ask Claude to delegate or add a markdown file in `.claude/agents/`. For agent teams, set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and ask for a team. The @bcherny post called teams "Agent Swarms in Claude Code" on February 5, 2026, but Anthropic's docs call them agent teams and mark them experimental.
+
+### What is the difference between Claude Code subagents and agent teams?
+
+Subagents run inside your session and report results back to the main agent. Agent teams are separate Claude Code instances that share a task list and message each other directly. Teams cost significantly more tokens and are disabled by default. Anthropic's rule of thumb: subagents for quick workers that report back, teams when workers need to challenge each other.
+
+### How many sub-agents does Kimi Agent Swarm use?
+
+Kimi says up to 300 sub-agents and more than 4,000 tool calls in a single task, in its help center's K2.6 description. These are vendor-reported. Your plan limits how many subtasks run at once: 2 on Plus, 4 on Pro, 8 on Max and 8 on Ultra.
+
+### What does "kimi agent集群" mean?
+
+集群 means cluster in Chinese, and "agent集群" is the Chinese search phrase for what Kimi calls Agent Swarm in English. The swarm-ide README uses the Chinese word 蜂群 (literally "bee swarm") for the same idea. The Kimi feature is the same product either way.
+
+### Is Kimi Agent Swarm free?
+
+Kimi's membership page lists a $0 Free plan, but its swarm concurrency row is blank for Free and starts at 2 on Plus. The Plus plan is described as covering Agent Swarm. Treat the swarm as a paid feature unless Kimi states otherwise on the day you read this.
+
+### Are agent swarms more expensive than a single agent?
+
+Usually. Anthropic says agent teams use significantly more tokens than a single session, and token usage scales with active teammates. Kimi's credits are shared across features. Hermes warns that nested delegation multiplies spend. The cost buys speed and breadth, not necessarily better answers.
+
+### What is the best open source agent swarm framework?
+
+It depends on the pattern. CrewAI has the most stars of the frameworks here (61,301). The OpenAI Agents SDK is the cleanest for handoffs. Google ADK has the widest choice of fixed and dynamic workflows. Swarms has the most prebuilt structures. Hermes Kanban is the one built around a durable board.
+
+### What is the difference between a handoff and agents as tools?
+
+In the OpenAI Agents SDK, a handoff transfers the conversation: the specialist becomes the active agent. With agents as tools, a manager keeps control and calls specialists for bounded subtasks. The docs say you can combine them.
+
+### What is the difference between Hermes Kanban and `delegate_task`?
+
+Hermes' own docs: `delegate_task` runs child agents inside one conversation and returns their summaries, while Kanban is a work queue where every handoff is a row any profile or human can read. Use delegation when the result belongs in the parent's context. Use Kanban when work must survive restarts or be picked up by someone else.
+
+### Is OpenAI's Swarm library still maintained?
+
+No. Its README says Swarm is replaced by the OpenAI Agents SDK, the production-ready evolution, and recommends migrating for production use.
+
+### Do these tools work with agent skills and MCP servers?
+
+Partly, and it varies. Kimi Work's help center says it supports installing and using Skills. The swarm-ide README documents both `SKILL.md` auto-loading and MCP config. The OpenAI Agents SDK documents MCP servers, including approval settings. For the other tools, check their current docs before assuming. The catalog block above lists entries to start from.
+
+### When should I not use an agent swarm?
+
+When the task is sequential, touches one file, has many dependencies, or fits in one context window. Anthropic's docs say so about agent teams, and the same logic applies to the others.
+
+## Sources
+
+All pages fetched on November 26, 2026 unless noted.
+
+- Anthropic, [Claude Code subagents](https://code.claude.com/docs/en/sub-agents) and [agent teams](https://code.claude.com/docs/en/agent-teams)
+- Anthropic, [Claude pricing](https://claude.com/pricing)
+- Kimi, [Agent Swarm help center](https://www.kimi.com/en/help/agent/agent-swarm), [membership pricing help](https://www.kimi.com/en/help/membership/membership-pricing), [Kimi Work overview](https://www.kimi.com/en/help/kimi-work/overview), [Kimi Work product page](https://www.kimi.com/en/products/kimi-work) and [Kimi international pricing](https://www.kimi.ai/resources/kimi-k3-pricing)
+- Nous Research, [Hermes Kanban docs](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban) and [subagent delegation docs](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation)
+- OpenAI, [Agents SDK handoffs](https://openai.github.io/openai-agents-python/handoffs/), [agent orchestration](https://openai.github.io/openai-agents-python/multi_agent/), [human-in-the-loop](https://openai.github.io/openai-agents-python/human_in_the_loop/) and the [Swarm README](https://github.com/openai/swarm)
+- Google, [ADK workflows](https://google.github.io/adk-docs/workflows/)
+- CrewAI, [pricing](https://crewai.com/pricing) and [docs](https://docs.crewai.com/en/introduction)
+- VRSEN, [Agency Swarm docs](https://agency-swarm.ai) and [communication flows](https://agency-swarm.ai/core-framework/agencies/communication-flows)
+- Swarms, [kyegomez/swarms README](https://github.com/kyegomez/swarms) and [swarms.ai pricing](https://swarms.ai/pricing)
+- Community, [chmod777john/swarm-ide](https://github.com/chmod777john/swarm-ide)
+- GitHub REST API repository statistics and PyPI package metadata, November 26, 2026
+- YouTube oEmbed for videos `v7IJ8JNUNQ8` and `zSV1if4_VZ0`; X syndication endpoint for posts `2019472394696683904`, `2016021783833673897`, `2050997692977844324` and `2051001156005151226`
+
