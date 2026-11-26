@@ -1,0 +1,681 @@
+Yes, you can use Codex for free, but only a little. As of November 26, 2026, OpenAI says Codex is included in every ChatGPT plan, Free and Go included, and its pricing page shows the Free plan getting Codex in the desktop app with the GPT-6 Luna model, "subject to rollout". There is no published message count for Free or Go, Codex cloud tasks are not included on either plan, and the real working allowance starts at Plus. The open-source Codex CLI is free to install, but the model usage behind it is paid for either through a ChatGPT plan or through your own OpenAI API key.
+
+If you typed "codex ai", "codex ai pricing", "codex ia" or "codex von openai" into a search box, this guide is the plain-English version: what Codex is, which of its entry points cost money, what the limits look like by plan, and how it compares with the free use of Claude Code and Gemini CLI. We checked OpenAI's Codex pricing page, its help center, the API pricing page and the GitHub repositories today, and we flag every claim we could not confirm.
+
+{% youtube id="oBvuhcdSsuw" title="Learn 99% of Codex in One Video" /%}
+
+*A third-party walkthrough from the Tech With Tim channel, which says it was recorded on November 3, 2026. We confirmed the title and channel through YouTube oEmbed but did not watch it end to end. Its search transcript says nearly everything can be tried on the free plan but you will use up the allowance fast, which matches OpenAI's own pages. Check any price it quotes against OpenAI's pricing page, because plans change often.*
+
+## Short answer: what is free, what is not
+
+- **Best free way to try Codex:** a ChatGPT Free account with the Codex desktop app. Small unpublished allowance, GPT-6 Luna, no cloud tasks, no image generation.
+- **Best first paid step:** ChatGPT Plus at $20 a month. OpenAI's pricing page frames it as enough for "a few focused coding sessions each week" and it unlocks the CLI, IDE extension, web, iOS and cloud tasks.
+- **Best for all-day agent work:** ChatGPT Pro, which OpenAI's pricing page now lists at $100, $200 and $500 a month, with no five-hour limit on any of the three.
+- **Best open source option:** the Codex CLI (Apache-2.0 on GitHub, 136,568 stars as of November 26, 2026). The client is free, the model calls are not.
+- **Best pay-as-you-go route:** Codex with an API key, billed at OpenAI's per-token API rates, no ChatGPT plan needed but no cloud features either.
+- **Best free alternative for terminal agents:** Antigravity CLI from Google, whose Individuals plan is $0 with a weekly-refreshed baseline quota. Gemini CLI itself no longer has a free individual tier.
+- **Hardest to use for free:** Claude Code. Anthropic's Free plan does not include it, so the cheapest entry is Claude Pro at $20 a month ($17 monthly-equivalent if you pay $200 up front for a year).
+
+{% callout type="info" %}
+Quick answer for the impatient: Codex is not a separate subscription. It rides on your ChatGPT plan (Free $0, Go from $8 in the US, Plus $20, Pro $100 to $500) or on API billing. Free and Go can try it. Plus is where most people start using it for real work. All prices are from OpenAI's pages as of November 26, 2026, exclude tax, and can change without notice.
+{% /callout %}
+
+One change to know about before you pick a plan: OpenAI's help center says that starting in December 2026, usage allowances on Plus, Pro and Business will be shared across ChatGPT and Codex, and The Verge reported the same on November 25, 2026. We cover what that does and does not tell us in the limits section.
+
+## What Codex is, and why the names are confusing
+
+"Codex" now refers to a family of surfaces from OpenAI rather than a single product. OpenAI's help center describes it as "OpenAI's coding agent that helps you write, review, and ship code", and it is reachable through four clients that all sign in with a ChatGPT account: the ChatGPT desktop app (Codex mode), the Codex CLI, the Codex IDE extension and Codex on the web. A fifth route, Codex cloud, runs tasks on OpenAI-managed machines instead of your laptop.
+
+That is where the "ai agent codex" searches come from. Codex reads a repository, edits files, runs commands and tests, and reports back, with approval settings that control how much it may do without asking. If you only know the word from older OpenAI coding models, the current thing is an agent product with its own apps, its own CLI and its own usage meter.
+
+Three naming traps to keep straight:
+
+1. **Codex is not billed on its own.** There is no "Codex plan". The pricing page says Codex is included in your ChatGPT Free, Go, Plus, Pro, Business, Edu or Enterprise plan, and that those plans share pricing, credits and usage limits with it.
+2. **"Free" has three meanings.** A free ChatGPT account (a small allowance), a free open-source client (the CLI, which still needs a model behind it) and a free trial (not offered as a standing trial by OpenAI that we could find).
+3. **Model names change fast.** The pricing page today lists GPT-6.2 Astra, GPT-6.2 Sol, GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Luna and older GPT-5.6 models. The Codex changelog says CLI 0.171.0 on November 20, 2026 added GPT-6.2 Sol and Astra to the model catalogs and made Sol the default. Expect these to rotate again.
+
+There is also a version caveat. Older videos and some blog posts say Codex needs a paid plan, or that the free window was a two-month promotion. One third-party video from a June 2026 round-up even warns that the free and $8 plans cannot use Codex. OpenAI's current help center says the opposite, so we trust the vendor pages dated today, and we recommend you do the same when you read any older guide.
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/2Z64goaCYuEmGe825kLJFB/ccd8ea0a41e98a3a273357ae621dfe72/codex-og-image.png?w=1600&h=900&fit=fill" alt="Codex product page social card from openai.com" caption="OpenAI's Codex product page social card. Source: OpenAI (openai.com/codex)" /%}
+
+## Master comparison table
+
+All prices are USD per month unless noted, as of November 26, 2026, and exclude tax.
+
+| Product | Pricing | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-free.png" name="Codex Free" size=24 /%} Codex Free | $0 | Yes, it is the free tier | No (app); the CLI is open source | No published message count; GPT-6 Luna in the desktop app, subject to rollout; no cloud tasks | A no-card way to try the agent |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-go.png" name="Codex Go" size=24 /%} Codex Go | Go is $8 in the US (launch price, January 16, 2026) | No standing trial | No | "Lightweight coding tasks", no published count; no cloud tasks | Cheaper than Plus for light use |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-plus.png" name="Codex Plus" size=24 /%} Codex Plus | $20 | No standing trial | No | Per-5-hour message ranges by model, weekly limits may apply | CLI, IDE, web, iOS and cloud tasks |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-pro.png" name="Codex Pro" size=24 /%} Codex Pro | $100, $200 or $500 | No | No | No five-hour limit currently; weekly limits may apply | Highest included allowance, Ultrafast mode on the $500 tier |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-business.png" name="Codex Business" size=24 /%} Codex Business | Per seat; the pricing page mentions $20 and $100 Business tiers | No | No | Standard Business matches the Plus ranges | Team admin, workspace environments |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-cli.png" name="Codex CLI" size=24 /%} Codex CLI | Free software, you pay for the model | Uses your ChatGPT plan or API key | Yes (Apache-2.0) | Limits of whatever sign-in you use | Terminal agent, scriptable with `codex exec` |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-cloud.png" name="Codex cloud" size=24 /%} Codex cloud | No separate VM charge at launch; model usage counts | No (not on Free or Go) | No | Shares your plan allowance | Tasks keep running while your computer sleeps |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-api-key.png" name="Codex API key" size=24 /%} Codex API key | Per token, for example GPT-6.1 Sol $2 in and $10 out per 1M tokens | No | No | No plan caps, you pay as you go | No subscription needed |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/claude-code.png" name="Claude Code" size=24 /%} Claude Code | Pro $20 ($17 annual-equivalent), Max from $100, Ultra $200 | No (Free plan excludes it) | No (repository has no license file shown on GitHub) | 5-hour and weekly windows | 157,195 GitHub stars |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/gemini-cli.png" name="Gemini CLI" size=24 /%} Gemini CLI | Code Assist Standard or Enterprise | No free tier since June 18, 2026 | Yes (Apache-2.0) | Set by your Code Assist plan | 109,185 stars, Google ecosystem fit |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/antigravity-cli.png" name="Antigravity CLI" size=24 /%} Antigravity CLI | Individuals $0; Pro and Ultra tiers | Yes | No | Baseline quota refreshed weekly on $0 | The real free Google route |
+
+## Codex in ChatGPT Free: a taste, not a workflow
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-free.png" name="Codex Free" size=40 /%}
+
+**What it is.** The $0 ChatGPT plan includes Codex. OpenAI's pricing page describes the Free tier as a way to "explore Codex capabilities on quick coding tasks", with GPT-6 Luna at Standard speed in the desktop app, subject to rollout. OpenAI's help center confirms Codex is "included across ChatGPT plans, including Free and Go".
+
+**Who it is for.** People who want to see what an agent does with a small repository before paying, students trying a first agentic workflow, and anyone comparing tools.
+
+**Key features.**
+- Sign in with a ChatGPT account (a separate Codex signup is not needed).
+- Codex in the ChatGPT desktop app (Codex mode).
+- Auto-review safety checks are free and do not count toward limits when you are signed in with ChatGPT, per the help center.
+
+**Pros**
+- Zero cost to try, and no separate Codex signup.
+- Uses the same account you may already have.
+- Safety auto-review checks are not metered.
+
+**Cons**
+- No published message count for Free. The usage table on the pricing page has columns for Plus, Standard Business and API key only, so we cannot give you a number.
+- Codex cloud is explicitly not included with Free or Go.
+- Image generation is not available on Free, per the pricing page.
+- The pricing page says availability is subject to rollout, so you may not see the same models as another account.
+
+**Benefits for your use case.** If you are asking "is Codex free" because you want to decide whether to pay, Free answers it. You can see how the agent plans, edits files and asks for approval on a small task without spending anything.
+
+**Pricing.** $0. **Free tier:** this is it. **Limits:** unpublished; the in-app usage view and the CLI `/status` command show what you have left once you are signed in.
+
+**Standout use case.** A quick refactor or bug explanation on a small project you already have open locally.
+
+**Skip it if** you plan to run Codex daily, need the CLI or IDE extension guaranteed, or want cloud tasks. We could not confirm from OpenAI's pages whether the Free plan can sign in from the CLI (the pricing page names the desktop app for Free, while the help center lists the CLI as a client for ChatGPT plans generally), so test before you build a workflow on it.
+
+## Codex in ChatGPT Go: lightweight tasks for a low price
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-go.png" name="Codex Go" size=40 /%}
+
+**What it is.** ChatGPT Go is OpenAI's low-cost tier. The January 16, 2026 launch post priced it at $8 a month in the US, and OpenAI's help center says Go prices are shown on the pricing page and vary by region. The Codex pricing page describes Go as "use Codex for lightweight coding tasks", with GPT-6 Luna at Standard speed in the desktop app, subject to rollout.
+
+**Who it is for.** Hobbyists who already use ChatGPT daily for chat and want some Codex on the side.
+
+**Key features.**
+- Same access pattern as Free, with a higher allowance for ChatGPT itself (the help center lists Go as having unlimited everyday text chats, like Free, plus extra capacity for tools).
+- No annual billing for Go, according to the Go help article.
+
+**Pros**
+- Cheapest paid ChatGPT tier.
+- Included in the same Codex story as Free, so no new accounts.
+
+**Cons**
+- Codex cloud is not included with Go.
+- No published Codex message numbers for Go either.
+- We could not retrieve a dollar figure for Go from chatgpt.com/pricing today, because the page did not render prices in our fetch. The $8 figure comes from OpenAI's January 2026 launch post and may differ by country or time.
+
+**Benefits for your use case.** If Free runs out quickly for you but a $20 plan feels like too much, Go is the step between them. Whether it gives you materially more Codex than Free is not documented in numbers, so treat it as a test, not a guarantee.
+
+**Pricing.** $8 per month in the US per OpenAI's launch post (January 16, 2026). **Free tier:** none for Go itself, the Free plan is the free route. **Limits:** unpublished.
+
+**Standout use case.** Light daily help in the desktop app while you keep your main work in an editor.
+
+**Skip it if** you need cloud tasks, the IDE extension or predictable numbers. Go straight to Plus, where OpenAI documents ranges.
+
+## Codex in ChatGPT Plus: where most people start working
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-plus.png" name="Codex Plus" size=40 /%}
+
+**What it is.** ChatGPT Plus is $20 a month per OpenAI's help center. For Codex, OpenAI's pricing page says Plus is built to "power a few focused coding sessions each week" and lists Codex on web, in the CLI, in the IDE extension and on iOS, plus cloud integrations such as automatic code review and Slack, access to GPT-6.1 Sol and GPT-6 Luna (and other models in the table), and the option to extend usage with ChatGPT credits.
+
+**Who it is for.** Individual developers who use Codex a few times a week for features, reviews and bug hunts, not for eight-hour autonomous runs.
+
+**Key features.**
+- Documented local-message ranges per five-hour window, by model.
+- Cloud tasks (Codex cloud is available to eligible Plus accounts, subject to rollout and workspace settings).
+- Credits you can buy when you hit a limit; eligible Plus and Pro users can buy credits without changing plans.
+- All clients: desktop app, CLI, IDE extension, web.
+
+**Local messages per five hours on Plus (as of November 26, 2026, from OpenAI's Codex pricing page).** OpenAI describes these as estimates rather than fixed limits, and says weekly limits may also apply.
+
+| Model | Messages per 5 hours (Plus and Standard Business) |
+| --- | --- |
+| GPT-6.2 Astra | 6-50 |
+| GPT-6.2 Sol | 17-180 |
+| GPT-6.1 Sol | 15-160 |
+| GPT-6.1 Terra | 35-285 |
+| GPT-6 Astra | 5-45 |
+| GPT-6 Sol | 15-150 |
+| GPT-6 Luna | 350-3,000 |
+
+The spread inside each row is not a bug. OpenAI says usage depends on the model, where the task runs, task complexity, context, reasoning, speed and tools, and that a long-running task can use far more than a short request. In practice that means the top of a range is for small, simple prompts and the bottom is for large-context agent runs, so plan around the low end.
+
+**Pros**
+- First plan with published numbers, so you can reason about it.
+- Cloud tasks and every client available.
+- Credits as a pressure valve.
+
+**Cons**
+- Real work on the strongest models eats the allowance quickly. The Astra range is 6-50 messages per five hours, the lowest in the table.
+- Weekly limits may apply on top of the five-hour window.
+- A third-party tracker (cg-method.com, read on November 26, 2026) reports the Plus five-hour window was restored in late August 2026 after being removed in July, which shows how often the rules move.
+
+**Benefits for your use case.** Plus is the cheapest plan where Codex is a normal tool rather than a demo. The model dropdown is your throttle: Luna for routine edits stretches the allowance a lot further than Astra or Sol.
+
+**Pricing.** $20 per month. **Free tier:** none; the Free plan is the free route. **Limits:** see the table above; check `/status` in the CLI or the usage dashboard for your actual balance.
+
+**Standout use case.** A weekend of focused feature work with the CLI, switching to a cheaper model for boilerplate and a strong model only for design questions.
+
+**Skip it if** you routinely hit limits mid-session (go to Pro or use API billing) or you only need occasional help (Free or Go may be enough).
+
+## Codex in ChatGPT Pro: $100, $200 and $500 tiers
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-pro.png" name="Codex Pro" size=40 /%}
+
+**What it is.** Pro on the Codex pricing page is now three plans, at $100, $200 or $500 USD a month, with Ultrafast mode listed on the $500 tier. The page states "Pro plans currently have no five-hour limit". When ChatGPT Pro launched, OpenAI's January 2026 post listed a single $200 price, so the tier structure is newer than much of what is written online.
+
+**Who it is for.** Developers who keep agents running most of the day, teams of one that treat Codex as the main engineer, and people who were hitting Plus limits repeatedly.
+
+**Key features.**
+- No five-hour limit currently, weekly limits still possible.
+- Higher included usage on the higher tiers.
+- GPT-6 Astra is included within the existing Codex allowance on the $100 and $200 Pro plans, according to the FAQ text on OpenAI's chatgpt.com/codex/pricing page (seen in a search result on November 26, 2026), which adds that Plus and the $20 Business plan include limited Astra usage with the option to buy credits.
+- Fast and Ultrafast modes that spend allowance faster for lower latency (the pricing page lists the multipliers per model).
+
+**Pros**
+- Removes the five-hour wall, which is the limit people complain about most.
+- Three price points instead of a jump from $20 to $200.
+
+**Cons**
+- $100 is five times Plus, and it is not obvious from OpenAI's pages exactly how much more Codex it buys beyond "higher".
+- OpenAI changes allowances, resets and tiers often. The X posts embedded in this guide show resets, banked resets and a usage-accounting problem within the last six months, so today's numbers may not hold next quarter.
+- OpenAI's own pages disagree with older numbers, so any $200-only comparison is stale.
+
+**Benefits for your use case.** If your work has a daily rhythm (you open Codex in the morning and leave it running), the missing five-hour limit changes the shape of your day more than the dollar figure does.
+
+**Pricing.** $100, $200 or $500 per month (as of November 26, 2026, from developers.openai.com/codex/pricing). **Free tier:** none. **Limits:** weekly limits may apply, per OpenAI.
+
+**Standout use case.** Long agent runs on a large codebase with the CLI or desktop app, no hourly babysitting.
+
+**Skip it if** your usage fits inside Plus, or if you would rather pay per token and cap spend yourself.
+
+{% x id="2065225647358886118" /%}
+
+*OpenAIDevs, June 12, 2026: the invite-a-friend mechanic that banks a reset, rolling out to Go, Plus, Pro and Business users at that date. Confirmed through the X syndication endpoint on November 26, 2026.*
+
+## Codex in ChatGPT Business: seats, a shared pool and admin controls
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-business.png" name="Codex Business" size=40 /%}
+
+**What it is.** ChatGPT Business gives teams Codex under the same plan structure, with workspace administration. The pricing page's usage table has a "Standard Business" column whose message ranges match Plus. A cached copy of OpenAI's chatgpt.com/codex/pricing page (seen in search results, not re-opened as a page) mentions a $20 Business plan and a $100 Business plan, which tell us there are at least two Business tiers. A third-party tracker reports $20 per seat billed annually and $25 monthly for two or more seats; we could not confirm those two numbers on OpenAI's own page today.
+
+**Who it is for.** Small teams that want central billing, admin control over models and cloud access, and a shared credit option.
+
+**Key features.**
+- Workspace admins can set the starting model, reasoning level, speed and Fast mode behavior from Workspace settings, per the help center.
+- Role-based access control for Codex, and Codex usage appears in the Compliance API.
+- Plugins can be set to Available or Installed per role.
+- Codex cloud is available to eligible Business accounts, subject to workspace settings.
+
+**Pros**
+- Admin visibility and controls that individual plans lack.
+- Shared usage model with the Plus numbers as a baseline.
+
+**Cons**
+- Exact per-seat prices are not stated on the page we could fetch.
+- On Business and Enterprise with credits, usage can be billed in dollars instead of credits (OpenAI says Enterprise token-based agreements bill Codex in USD).
+
+**Benefits for your use case.** If three developers each buy Plus, you get three separate allowances and no admin view. Business is the route when someone needs to control access and models centrally.
+
+**Pricing.** See OpenAI's Business pricing for your region; the Codex pricing page references $20 and $100 Business tiers. **Free tier:** none. **Limits:** same estimates as Plus for Standard Business.
+
+**Standout use case.** A team that wants to pilot Codex with a managed model list and cloud access policy.
+
+**Skip it if** you are one person, or you do not need admin controls.
+
+{% x id="2112592264686149749" /%}
+
+*Thibault Sottiaux (@thsottiaux), October 20, 2026, on roughly 40,000 accounts whose applied usage limits did not match their selected plan. He posts most Codex usage and reset announcements. Confirmed through X syndication on November 26, 2026.*
+
+## Codex CLI: free software, metered model
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-cli.png" name="Codex CLI" size=40 /%}
+
+**What it is.** The terminal client for Codex, open source under Apache-2.0 at github.com/openai/codex. GitHub's API reports 136,568 stars as of November 26, 2026, a push the same day, and release rust-v0.172.0 on November 24, 2026. The Codex changelog lists CLI 0.172.0 on November 24 and 0.171.0 on November 20.
+
+**Who it is for.** Terminal-first developers, people scripting agents in CI, and anyone who wants to read the client source.
+
+**Key features.**
+- Run `codex` in a project folder and choose "Sign in with ChatGPT".
+- Slash commands per the CLI docs include `/init`, `/status`, `/permissions`, `/model` and `/review`.
+- Non-interactive runs with `codex exec`, resume with `codex resume`, MCP configuration with `codex mcp`, and `codex cloud` for cloud tasks.
+- Two billing paths: ChatGPT sign-in (counts against your plan) or an API key (pay per token, no cloud features).
+
+Install options as documented by OpenAI:
+
+Installer script from the Codex CLI docs:
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh -o install.sh
+sh install.sh
+```
+
+Or install with npm (the changelog pins release numbers this way), then start it inside your repo:
+
+```bash
+npm install -g @openai/codex
+codex
+```
+
+Inside a session, type `/status` to see your remaining allowance.
+
+**Pros**
+- The client costs nothing and its source is public.
+- One tool for ChatGPT-plan use and API-key use.
+- `/status` tells you where you stand.
+
+**Cons**
+- It is a client, not a free model. Without a ChatGPT plan that includes it or an API key, it does not do work.
+- Whether the Free plan can use the CLI is not spelled out on the pricing page (see the Free section).
+- It changes quickly, with a new release roughly every few days.
+
+**Benefits for your use case.** If you live in a terminal, the CLI is the most direct way to see exactly what you are paying for, because `/status` and the usage dashboard show the same pool.
+
+**Pricing.** Free software. Model use is billed through your ChatGPT plan or API key. **Free tier:** whatever your ChatGPT plan includes. **Limits:** your plan's allowance, or none beyond API rate limits when you use a key.
+
+**Standout use case.** `codex exec` in a script for repeatable code review or migration chores.
+
+**Skip it if** you prefer a GUI (use the desktop app) or you want the model free too (see Antigravity below).
+
+## Codex cloud: tasks on OpenAI's machines
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-cloud.png" name="Codex cloud" size=40 /%}
+
+**What it is.** Codex cloud runs coding tasks on OpenAI-managed computers using reusable cloud environments. OpenAI's help center says you create and publish an environment on desktop or web, then start and continue tasks from desktop, web or mobile, and that cloud tasks can keep working while your computer is asleep.
+
+**Who it is for.** Developers who want parallel background tasks, teams that need work to continue off their laptops, and anyone who dislikes leaving a machine on.
+
+**Key features.**
+- Reusable environments you set up once.
+- Task continuation while your device sleeps.
+- Auto code review and Slack-style integrations listed on the Plus plan.
+
+**Pros**
+- Frees your machine and lets work run in parallel.
+- At launch, standard environments carry no separate VM charge; only model usage counts.
+
+**Cons**
+- Not included with Free or Go.
+- Eligibility is "subject to rollout and workspace settings", and guest, K-12 and Enterprise view-only seats cannot create cloud environments, per the help center.
+- Cloud tasks can use more of your allowance than local ones (a third-party source says so; OpenAI says only that usage depends on where the task runs).
+- Cloud access is off by default for Enterprise workspaces that have not enabled it.
+
+**Benefits for your use case.** It turns a small allowance into a queue of background jobs, but it also spends that allowance without you watching, so keep an eye on `/status` or the dashboard.
+
+**Pricing.** No separate VM charge at launch; model usage counts toward your plan's limits and applicable credits (OpenAI help center, as of November 26, 2026). **Free tier:** none. **Limits:** shared with your plan.
+
+**Standout use case.** Kick off a refactor before lunch and come back to a diff.
+
+**Skip it if** you are on Free or Go, or you do not want code leaving your machine. Check OpenAI's data controls and your own policies first.
+
+## Codex with an API key: pay per token
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/codex-api-key.png" name="Codex API key" size=40 /%}
+
+**What it is.** The CLI, SDK and IDE extension can run on an OpenAI API key instead of a ChatGPT plan. The Codex pricing page says this mode has no cloud features (no GitHub code review or Slack), model availability follows the API, and you pay API pricing. The help center also says the August 31, 2026 removal of GPT-5.4 and GPT-5.4 mini from ChatGPT-signed-in Codex does not affect API-key use.
+
+**Who it is for.** People who want a hard spending cap, automation in CI, or who would rather pay for exactly what they use.
+
+**API prices (Standard tier, per 1M tokens, as of November 26, 2026, from OpenAI's API pricing page).**
+
+| Model | Input | Cached input | Output |
+| --- | --- | --- | --- |
+| gpt-6.2-astra | $8.00 | $0.40 | $40.00 |
+| gpt-6.2-sol | $2.00 | $0.10 | $10.00 |
+| gpt-6.1-sol | $2.00 | $0.10 | $10.00 |
+| gpt-6.1-terra | $1.00 | $0.05 | $5.00 |
+| gpt-6-luna | $0.10 | $0.01 | $0.50 |
+| gpt-5.3-codex | $3.50 | $0.35 | $28.00 |
+
+The Batch tier is half of Standard for these rows, and Fast mode costs more; check the page before budgeting.
+
+Illustrative arithmetic (ours, not OpenAI's): a run that reads 1M uncached input tokens and writes 100K output tokens costs $3.00 on GPT-6.2 Sol ($2.00 plus $1.00), $12.00 on GPT-6.2 Astra, and $0.15 on GPT-6 Luna. Real tasks cache part of the input, so treat these as ceilings for simple cases.
+
+OpenAI's pricing page also shows credit rates for ChatGPT-plan users who go over their allowance, per 1M tokens in credits: GPT-6.2 Astra 200 input, 10 cached, 1,000 output; GPT-6.2 Sol and GPT-6.1 Sol 50, 2.5 and 250; GPT-6.1 Terra 25, 1.25 and 125; GPT-6 Luna 2.5, 0.25 and 12.5. Comparing the credit and dollar rows implies 25 credits per dollar of API-equivalent usage, but that is our inference, not a price list for buying credits.
+
+**Pros**
+- No plan caps and a clear price per token.
+- Works for automation and CI.
+
+**Cons**
+- No cloud features in this mode.
+- Easy to overspend on a strong model with long contexts.
+- You manage keys and billing yourself.
+
+**Benefits for your use case.** The pricing page notes that when you hit a plan limit, all users can run extra local chats with an API key. That makes API billing a clean overflow for a Plus plan.
+
+**Pricing.** Per token as above. **Free tier:** none. **Limits:** API rate limits, no plan message caps.
+
+**Standout use case.** Overflow when a Plus limit hits mid-task, or a metered CI job.
+
+**Skip it if** you want a flat monthly price or need the cloud features.
+
+{% figure src="https://learn.chatgpt.com/og/docs/pricing.png" alt="Codex pricing page social card from the OpenAI developer site" caption="The Codex pricing page, the primary source for the plan, limit and credit figures in this guide. Source: OpenAI (developers.openai.com/codex/pricing)" /%}
+
+{% x id="2095651088502591861" /%}
+
+*Thibault Sottiaux (@thsottiaux), September 3, 2026, announcing one banked reset per day for paid ChatGPT users without access to the Astra model. Confirmed through X syndication on November 26, 2026.*
+
+## Claude Code: the closest rival, with no free plan
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/claude-code.png" name="Claude Code" size=40 /%}
+
+**What it is.** Anthropic's coding agent for the terminal and other surfaces. Its docs list install paths through a shell script, a Homebrew cask, a Windows PowerShell script and npm. GitHub's API reports 157,195 stars for anthropics/claude-code as of November 26, 2026 and shows no license on the repository, so we do not call it open source.
+
+**Who it is for.** Developers already on Claude who want an agent in the terminal, and teams comparing Anthropic and OpenAI agents.
+
+**Key features.**
+- Included with Claude Pro, Max and Ultra according to Anthropic's pricing page; the Free plan does not include it.
+- Shares one 5-hour and weekly usage window with the rest of Claude.
+- Skills, subagents and hooks, which is why many entries in our catalog target it.
+
+Install with npm, as listed in Anthropic's docs:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+**Pros**
+- Mature skills and subagent ecosystem.
+- Clear plan ladder on Anthropic's page.
+
+**Cons**
+- No free route. The Free plan on claude.com/pricing lists Claude Code as not included.
+- Anthropic does not publish message counts, only "more usage than Free every 5 hours and every week", so comparing it with Codex's published ranges is apples to oranges.
+- Closed-source client.
+
+**Benefits for your use case.** If your question is "which agent can I try without paying", Claude Code loses the first round. If you already pay for Claude Pro, it is included.
+
+**Pricing (as of November 26, 2026, claude.com/pricing).** Pro $20 per month, or $17 per month billed annually ($200 up front). Max from $100 (5x Pro usage). Ultra $200 (10x Pro weekly usage and $200 a month in API credits, per Anthropic's page). **Free tier:** none for Claude Code. **Limits:** 5-hour and weekly windows.
+
+**Standout use case.** Large-context refactors with skills and subagents you already own.
+
+**Skip it if** you want a free agent, or you do not use Claude.
+
+For the Claude side in more depth, see our [Is Claude free guide](https://agentskills.codes/blog/is-claude-free) and the sister-site comparison of [Claude Code, Codex, Gemini CLI and Copilot CLI](https://agentpedia.codes/blog/claude-code-vs-codex-vs-gemini-cli-vs-copilot-cli-2026).
+
+## Gemini CLI: no longer the free one
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/gemini-cli.png" name="Gemini CLI" size=40 /%}
+
+**What it is.** Google's open-source terminal agent (Apache-2.0; 109,185 GitHub stars as of November 26, 2026). Older videos and posts still describe a generous free tier with a Gemini 2.5 Pro allowance. That is out of date. The repository README now states that free individual access and Google AI Pro and Ultra access "moved to Antigravity CLI on June 18, 2026", and that Gemini CLI is for organizations with Gemini Code Assist Standard or Enterprise licenses (plus legacy paid API or Vertex keys).
+
+**Who it is for.** Teams already on Gemini Code Assist and Google Cloud.
+
+**Key features.**
+- Open source, `gemini` command.
+- The README says it is not tuned for the Gemini 4 series and should not be used to benchmark Gemini models.
+
+**Pros**
+- Open source with a large community.
+- Fits Google Cloud shops.
+
+**Cons**
+- No free tier today, which reverses what many older guides say.
+- Positioned as an enterprise tool, with newer models routed to Antigravity CLI.
+
+**Benefits for your use case.** Knowing this saves you from a stale tutorial: if you want a free Google agent in 2026, install Antigravity CLI, not Gemini CLI.
+
+**Pricing.** Depends on your Code Assist or API arrangement; we found no public per-seat price on the pages we fetched. **Free tier:** none. **Limits:** set by your license.
+
+**Standout use case.** An enterprise already paying for Code Assist that wants a terminal agent.
+
+**Skip it if** you are an individual looking for free use.
+
+## Antigravity CLI: the free Google route
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/is-codex-free-pricing-and-limits/logos/antigravity-cli.png" name="Antigravity CLI" size=40 /%}
+
+**What it is.** Google's current multi-agent coding terminal (`agy`), part of Google Antigravity, which also ships an app, IDE extensions and a Python SDK. Google's Antigravity pricing page lists an Individuals plan at $0 per month with access across the app, CLI, IDE extensions and Python SDK, and a "baseline agent quota refreshed weekly".
+
+**Who it is for.** Individual developers who want a free agent.
+
+**Key features.**
+- The $0 plan lists Gemini 4 Hydrogen, Gemini 3.8 Flash and, on that page, Claude Sonnet 4.6 (thinking), Opus 4.6 and GPT-OSS-120b, with a note that some models are removed on November 30, 2026.
+- Google AI Pro gets quotas refreshed every five hours and Ultra gets the highest. Enterprise starts from $30 per seat per month through Gemini Enterprise, per the page.
+
+**Pros**
+- The only one of these three vendors with a free individual coding-agent plan today.
+- Several model families on the free page.
+
+**Cons**
+- A weekly refresh means a burst of work can leave you waiting days.
+- The quota is called "baseline" and no numbers are published.
+- Model availability is changing (the November 30, 2026 removals).
+- We did not run it and cannot speak to output quality.
+
+**Benefits for your use case.** If your budget is zero and you need more than a trial, this is the practical alternative to Codex Free.
+
+**Pricing.** Individuals $0 per month. AI Pro and Ultra prices are not shown on the Antigravity page, so we leave them out. **Free tier:** yes. **Limits:** baseline quota refreshed weekly.
+
+**Standout use case.** Weekly side-project work with no card on file.
+
+**Skip it if** you need a published message budget or a model that is not on the free page.
+
+{% figure src="https://antigravity.google/og/index.png" alt="Google Antigravity site social card" caption="Google Antigravity's site social card. Source: Google (antigravity.google)" /%}
+
+## How Codex limits work (and how to stretch them)
+
+OpenAI's help center and pricing page describe a handful of rules worth knowing before you spend money.
+
+**Two kinds of windows.** Usage is metered over a five-hour period and, on some plans, weekly. The pricing page says "Pro plans currently have no five-hour limit" and that weekly limits may also apply. A third-party tracker reports the Plus five-hour window was removed in July 2026 and restored in late August; we could not confirm those dates on OpenAI's pages, so treat them as reported, not verified.
+
+**One shared pool.** The help center says Codex, ChatGPT Work, ChatGPT for Excel and workspace agents share an allowance and credit pool where those features exist on your plan.
+
+**Where it is heading.** The help center article "Understanding ChatGPT and Codex usage limits" (shown as updated 2 days ago when we read it) says that starting in December 2026, Plus, Pro and Business allowances will be shared across ChatGPT and Codex, measured in tokens, with instant chat not drawing from usage. OpenAI says it expects "most users won't need to wait for their usage to reset more often than they do now", and The Verge reported the plan on November 25, 2026. OpenAI has not published how large the combined allowances will be, so we cannot tell you whether your Plus plan will feel bigger or smaller.
+
+**What you see.** Settings or the usage dashboard shows which allowance is exhausted, your credit balance and any reset time. In a CLI session, type `/status`.
+
+**What happens at the limit.** An active turn can continue under fair use, Plus and Pro users can buy credits, and everyone can run extra local chats with an API key. Support does not reset limits for you. OpenAI says occasional one-time resets happen but are not guaranteed.
+
+**Banked resets.** OpenAI has been rolling out rate-limit banking, where you save a reset and use it when you need it. The OpenAIDevs post above says an invited friend's first Codex message adds one to the bank for both of you, rolling out to Go, Plus, Pro and Business as of June 12, 2026. We did not test it. For the full mechanics, see our dedicated guide to [Codex usage limits for agent workflows](https://agentskills.codes/blog/codex-usage-limits-agent-workflows) and AgentPedia's [Codex out-of-usage resets guide](https://agentpedia.codes/blog/codex-out-of-usage-resets-guide).
+
+{% x id="2075641131002700120" /%}
+
+*Thibault Sottiaux (@thsottiaux), July 10, 2026, announcing a usage reset across Codex and ChatGPT Work. Confirmed through X syndication on November 26, 2026.*
+
+**Ways to stretch an allowance (from OpenAI's help center and pricing page):**
+
+1. Pick a cheaper model for routine work. On Plus, GPT-6 Luna allows 350-3,000 messages per five hours against 5-45 for GPT-6 Astra.
+2. Keep your `AGENTS.md` small. OpenAI lists a smaller AGENTS.md as a way to reduce usage.
+3. Turn off MCP servers you are not using. OpenAI lists fewer MCP servers as a usage reducer too.
+4. Avoid Fast and Ultrafast modes unless latency matters. OpenAI's page says they spend included usage at a higher rate (2x to 2.5x for Fast, 6x to 8x for Ultrafast, depending on the model).
+5. Run `/status` before you kick off a long cloud task.
+
+One more item to price in: voice in the desktop app costs $0.05 per minute where flexible pricing applies, per the pricing page, and building or editing a Site counts toward Codex usage.
+
+## Pricing table (dated)
+
+As of November 26, 2026. Prices exclude tax and are in USD unless stated. "n/p" means not published on the page we checked.
+
+| Plan or route | Monthly price | Codex included | Cloud tasks | Published Codex limit | Source |
+| --- | --- | --- | --- | --- | --- |
+| ChatGPT Free | $0 | Yes (desktop app, GPT-6 Luna, subject to rollout) | No | n/p | Codex pricing page, OpenAI help center |
+| ChatGPT Go | $8 US (launch price, Jan 16, 2026) | Yes (lightweight tasks) | No | n/p | OpenAI launch post, Codex pricing page |
+| ChatGPT Plus | $20 | Yes (web, CLI, IDE, iOS) | Yes, eligible accounts | Per-5-hour ranges by model | Codex pricing page, OpenAI help center |
+| ChatGPT Pro | $100, $200, $500 | Yes | Yes | No five-hour limit currently | Codex pricing page |
+| ChatGPT Business | $20 and $100 tiers referenced | Yes | Yes, eligible | Standard Business matches Plus ranges | Codex pricing page |
+| OpenAI API key | Per token (GPT-6.1 Sol $2 in, $10 out per 1M) | Yes (CLI, SDK, IDE) | No | None beyond API limits | OpenAI API pricing page |
+| Claude Free | $0 | Claude Code: No | n/a | n/a | claude.com/pricing |
+| Claude Pro | $20 ($17 annual-equivalent) | Claude Code: Yes | n/a | 5-hour and weekly | claude.com/pricing |
+| Claude Max | From $100 | Claude Code: Yes | n/a | 5x Pro | claude.com/pricing |
+| Claude Ultra | $200 | Claude Code: Yes | n/a | 10x Pro weekly | claude.com/pricing |
+| Gemini CLI | Code Assist license | Yes | n/a | License based | Gemini CLI README |
+| Antigravity CLI Individuals | $0 | Yes | n/a | Baseline quota, weekly refresh | antigravity.google/pricing |
+
+## Feature matrix
+
+| Feature | Codex Free | Codex Plus | Codex Pro | Codex API key | Claude Code | Gemini CLI | Antigravity CLI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Free to try | Yes | No | No | No | No | No | Yes |
+| Terminal client | Partial (not confirmed for Free) | Yes | Yes | Yes | Yes | Yes | Yes |
+| Desktop app | Yes | Yes | Yes | No | No | No | Yes |
+| Cloud tasks on vendor machines | No | Yes | Yes | No | n/a | n/a | n/a |
+| Open-source client | Partial (CLI only) | Partial (CLI only) | Partial (CLI only) | Partial (CLI only) | No | Yes | No |
+| Published usage numbers | No | Yes | Partial | Yes (API prices) | No | No | No |
+| Five-hour window | Not published | Yes | No (currently) | No | Yes | License based | Pro tier only |
+| Weekly limit | Not published | Possible | Possible | No | Yes | License based | Yes |
+
+Notes: the Codex Free column comes from OpenAI's page text, not a hands-on test. "Partial" marks cases where the vendor's pages leave a detail open or only part of the product qualifies. "n/a" means we did not verify that feature for that product, so we do not claim it. The Claude Code and Gemini CLI desktop-app cells reflect that both are described as terminal tools in the sources we read.
+
+## Head-to-head: which to pick
+
+### Codex Free vs Antigravity CLI Individuals: which free plan to pick
+
+Both are $0. Codex Free gives you the desktop app with GPT-6 Luna and no published allowance. Antigravity Individuals gives a baseline weekly-refreshed quota across app, CLI, IDE extensions and SDK with a wider listed model set. **Pick Codex Free** if you want OpenAI's agent in the ChatGPT desktop app and are happy with small tasks. **Pick Antigravity** if you want the terminal and IDE surfaces for free and can live with a weekly refresh. Neither publishes message numbers, so run both on one real task before choosing.
+
+### Codex Plus vs Claude Pro: which $20 plan to pick
+
+Both are $20 a month ($17 annual-equivalent for Claude). Codex Plus gives published per-model ranges (for example 15-160 messages per five hours on GPT-6.1 Sol) and cloud tasks. Claude Pro includes Claude Code but gives no message counts. Third-party video reviewers we found in search results reach opposite conclusions on which gives more headroom, and we ran no benchmark, so we cannot settle it. **Pick Codex Plus** if you want published numbers and an agent inside a ChatGPT subscription you may already have. **Pick Claude Pro** if you prefer Claude models and its skills and subagent ecosystem.
+
+### Codex CLI with ChatGPT sign-in vs Codex CLI with an API key: which billing to pick
+
+Same client, different meter. A ChatGPT sign-in draws on a flat-priced allowance and unlocks cloud features. An API key charges per token with no cloud features and no plan caps. **Pick ChatGPT sign-in** for steady daily use under your allowance. **Pick an API key** for CI, spend-capped automation or overflow when Plus runs out.
+
+## Skills and MCP servers that work with these tools
+
+Codex reads `AGENTS.md`, and the CLI can configure MCP servers with `codex mcp`. Our catalog has real entries for working with it (each page below returned HTTP 200 on November 26, 2026):
+
+- [codex](https://agentskills.codes/skills/codex): the Lucklyric skill that invokes the Codex CLI for complex coding tasks, handy if you drive Codex from another agent.
+- [codex-cli-bridge](https://agentskills.codes/skills/codex-cli-bridge): bridges Claude Code and Codex CLI and generates `AGENTS.md` from `CLAUDE.md`, useful if you run both tools.
+- [codex-skill](https://agentskills.codes/skills/codex-skill): lets Claude hand implementation work to Codex.
+- [codex-code-review](https://agentskills.codes/skills/codex-code-review): code reviews through the Codex CLI.
+- [codex-worker](https://agentskills.codes/skills/codex-worker): spawns multiple Codex CLI agents through tmux, which also multiplies how fast you spend an allowance.
+- [codex-review](https://agentskills.codes/skills/codex-review): code review with automatic changelog generation, integrated with Codex.
+- [mcp-builder](https://agentskills.codes/skills/mcp-builder): a guide for building MCP servers, usable with any client that speaks MCP.
+- [mcp-integration](https://agentskills.codes/skills/mcp-integration): guidance on adding MCP servers to a plugin or agent setup.
+
+Install a hosted catalog skill with the download endpoint. The id comes from the catalog API (`codex` is id 18):
+
+```bash
+curl -L https://agentskills.codes/api/skills/download/18 -o skill.zip \
+  && unzip skill.zip -d ~/.claude/skills/codex
+```
+
+That path targets Claude Code's skill folder. For how `AGENTS.md` relates to skills and other rule files, see our explainer on [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules). If you are choosing models inside Codex, read our guide to [GPT-6.1 Sol for agent workloads](https://agentskills.codes/blog/gpt-6-1-sol-agent-workloads) and the [cost-planning guide to Ultrafast and Pro tiers](https://agentskills.codes/blog/ultrafast-and-pro-tiers-cost-planning). For free options beyond these three, see [best free AI coding agents in 2026](https://agentskills.codes/blog/best-free-ai-coding-agents-2026).
+
+## Best for X: decision table
+
+| If you want | Pick | Why |
+| --- | --- | --- |
+| To try Codex for $0 | ChatGPT Free with the desktop app | Included per OpenAI, small unpublished allowance |
+| A real daily tool for $20 | ChatGPT Plus | Published ranges, all clients, cloud tasks |
+| No hourly wall | ChatGPT Pro ($100 tier or higher) | OpenAI says no five-hour limit currently |
+| A hard monthly spending cap | Codex with an API key | You control token spend |
+| An open-source terminal client | Codex CLI | Apache-2.0 on GitHub |
+| A free agent that is not OpenAI | Antigravity CLI Individuals | $0 weekly baseline quota |
+| Your team under admin control | ChatGPT Business | Workspace settings, RBAC, Compliance API |
+| Claude models | Claude Pro with Claude Code | Included from Pro, no free plan |
+
+## Common mistakes
+
+1. **Believing the "free for two months" posts.** Early Codex coverage described a limited promotion. OpenAI's current help center says Codex is included across plans, including Free and Go, and states no end date there.
+2. **Assuming "Codex" is one price.** It follows your ChatGPT plan or your API key. Check which meter you are on with `/status`.
+3. **Following a Gemini CLI free-tier tutorial.** The repository README says free individual access moved to Antigravity CLI on June 18, 2026.
+4. **Planning around the top of a range.** The upper number is for small prompts. A big agent run on a strong model sits near the bottom.
+5. **Leaving every MCP server on.** OpenAI lists fewer MCP servers as a way to cut usage.
+6. **Treating third-party limit numbers as official.** Trackers and videos are useful, but OpenAI's pages are the source and they change.
+7. **Forgetting the December change.** Shared ChatGPT and Codex allowances are coming on Plus, Pro and Business.
+
+## Checklist before you choose a plan
+
+- [ ] Do you only need to see what Codex does? Use Free.
+- [ ] Do you need the CLI or IDE extension on Free or Go? Test sign-in first, since OpenAI's pages are not explicit.
+- [ ] Do you need cloud tasks? You need Plus or higher.
+- [ ] Do you hit limits inside one five-hour session? Look at Pro or API overflow.
+- [ ] Do you need a spending cap? Use an API key.
+- [ ] Are you a team? Compare Business admin controls.
+- [ ] Have you read the current pricing page today, not a cached blog post?
+
+## How we evaluated
+
+We fetched OpenAI's Codex pricing page, Codex CLI and cloud docs, auth and changelog pages, its API pricing page and two help center articles on November 26, 2026. We also read Anthropic's pricing page, the Gemini CLI GitHub README, the Antigravity pricing page and the GitHub repositories, and pulled star counts from the GitHub API the same day. We checked every YouTube and X embed against YouTube oEmbed and the X syndication endpoint, and confirmed each image URL returns HTTP 200 with an image content type.
+
+What we did not do: we did not run Codex, Claude Code, Gemini CLI or Antigravity CLI for this guide, we did not sign in to a Free plan to check the real allowance, we did not benchmark output quality, and we did not buy any plan. The chatgpt.com/pricing page did not render dollar amounts in our fetch, so Plus at $20 comes from OpenAI's help center and Go at $8 from its January 2026 launch post. We take no affiliate fees and have no relationship with any vendor named here.
+
+## FAQ
+
+### Is Codex free?
+
+Partly. OpenAI says Codex is included in ChatGPT Free and Go plans, with the Free plan listed on its pricing page at $0 for quick tasks in the desktop app. The allowance is small, no message count is published for Free, and cloud tasks are not included. The CLI is free to install, but it needs a ChatGPT plan or an API key to do model work.
+
+### Is Codex AI free for students?
+
+We did not find a Codex-specific student discount on OpenAI's pages. Students can use the Free plan like anyone else, and OpenAI lists Education plans for institutions with their own terms. Check with your school.
+
+### How much does Codex cost per month?
+
+There is no Codex price on its own. It uses your ChatGPT plan: Free $0, Go from $8 in the US, Plus $20, Pro $100, $200 or $500, as of November 26, 2026. Business and Enterprise are priced per seat or by agreement. Or you can pay per token with an API key.
+
+### What is the difference between Codex and ChatGPT?
+
+ChatGPT is OpenAI's assistant. Codex is its coding agent, reachable from the ChatGPT desktop app, a CLI, an IDE extension and the web. They share plans and, from December 2026 on Plus, Pro and Business, a combined usage allowance according to OpenAI's help center.
+
+### What does "codex ia" or "codex von openai" mean?
+
+Those are the same Codex in other languages: OpenAI's coding agent ("ia" is the Spanish and French abbreviation for AI, and "von OpenAI" is German for "from OpenAI"). Do not confuse it with the older Codex model OpenAI released years ago, which is a different thing.
+
+### Is the Codex CLI free?
+
+The software is free and open source under Apache-2.0. Using it costs money or plan allowance because requests go to OpenAI models. You sign in with ChatGPT or supply an API key.
+
+### Can I use Codex without a ChatGPT subscription?
+
+Yes, two ways: the Free ChatGPT plan, or an OpenAI API key paid per token. The API-key mode has no cloud features, per OpenAI's pricing page.
+
+### What are Codex's usage limits on Plus?
+
+OpenAI's pricing page gives per-five-hour local message ranges by model, for example 350-3,000 for GPT-6 Luna, 15-160 for GPT-6.1 Sol and 5-45 for GPT-6 Astra, and says they are estimates, not fixed limits. Weekly limits may also apply.
+
+### Does Codex have a five-hour limit?
+
+Plus and Standard Business show five-hour ranges. For Pro, OpenAI's page says "Pro plans currently have no five-hour limit".
+
+### What happens when I run out of Codex usage?
+
+You can wait for the reset time, buy credits on Plus or Pro, use an API key for extra local chats, or upgrade. OpenAI says an active turn can continue under fair use. Support does not reset limits. See our [limits guide](https://agentskills.codes/blog/codex-usage-limits-agent-workflows).
+
+### Is Codex better than Claude Code?
+
+We did not benchmark them and no neutral benchmark exists that we can cite. On cost, Codex has a free entry (the Free plan) and Claude Code does not. Reviewers disagree on quality and limit headroom, so test both on your own repo.
+
+### Is Gemini CLI still free?
+
+No. Its README says free individual access moved to Antigravity CLI on June 18, 2026. Antigravity's Individuals plan is $0 with a weekly-refreshed baseline quota.
+
+### Will Codex limits change in December?
+
+OpenAI says Plus, Pro and Business will share one allowance across ChatGPT and Codex starting in December 2026. It has not published the new sizes.
+
+### Does Codex cloud cost extra?
+
+At launch, OpenAI says standard cloud environments have no separate VM charge, but model usage counts against your limits and credits.
+
+## Sources
+
+All fetched or checked on November 26, 2026 unless stated.
+
+- [Codex pricing](https://developers.openai.com/codex/pricing), OpenAI
+- [Codex CLI](https://developers.openai.com/codex/cli), OpenAI
+- [Codex cloud](https://developers.openai.com/codex/cloud), OpenAI
+- [Codex authentication](https://developers.openai.com/codex/auth), OpenAI
+- [Codex changelog](https://developers.openai.com/codex/changelog), OpenAI
+- [API pricing](https://developers.openai.com/api/docs/pricing), OpenAI
+- [Using Codex with your ChatGPT plan](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan), OpenAI Help Center
+- [Understanding ChatGPT and Codex usage limits](https://help.openai.com/en/articles/20001625-understanding-chatgpt-and-codex-usage-limits), OpenAI Help Center
+- [What is ChatGPT Go?](https://help.openai.com/en/articles/11989085-what-is-chatgpt-go), OpenAI Help Center
+- [What is ChatGPT Plus?](https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus), OpenAI Help Center
+- [Introducing ChatGPT Go](https://openai.com/index/introducing-chatgpt-go/), OpenAI, January 16, 2026
+- [openai/codex](https://github.com/openai/codex), GitHub
+- [Claude plans and pricing](https://claude.com/pricing), Anthropic
+- [Claude Code docs](https://code.claude.com/docs/en/overview), Anthropic
+- [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli), GitHub
+- [Antigravity pricing](https://antigravity.google/pricing), Google
+- [OpenAI is combining ChatGPT and Codex usage limits](https://www.theverge.com/ai-artificial-intelligence/1042187/openai-is-combining-chatgpt-and-codex-usage-limits), The Verge, November 25, 2026
+- [Codex usage limits by plan](https://cg-method.com/ai/codex-usage-limits/), cg-method.com (third party, read as a search result, page dated November 26, 2026)
+- [Learn 99% of Codex in One Video](https://www.youtube.com/watch?v=oBvuhcdSsuw), Tech With Tim (third party)
