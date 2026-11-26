@@ -1,0 +1,847 @@
+Codex now reads the same SKILL.md folders as every other agent that follows the open Agent Skills format, so the open question is which of the thousands of public skills are worth the context budget. The agentskills.codes catalog indexes 11,524 skills as of November 26, 2026, and a plain search for "codex" returns 191 of them. Most of those 191 are Claude Code skills that mention Codex in passing. Very few were written for how Codex actually discovers and loads a skill.
+
+We picked 14 skills that fit web development and day-to-day coding in Codex, read each SKILL.md from its GitHub source, checked what the folder really contains, and ranked them. **Webapp Testing** is the best first install because it ships a working server-lifecycle script and has the highest install count of the testing skills. **Frontend Design** wins for UI quality, **GH Fix CI** for pull-request work, and **UI UX Pro Max** has by far the most catalog installs (1,909). One finding changes how you should install most of them: the catalog's hosted zip contains only `SKILL.md`, so skills that depend on scripts need a GitHub install instead. Details are in the install section.
+
+{% youtube id="4IWTdkwa9Js" title="Codex Skills Tutorial (2026): Build Your First Skill and Stop Repeating Prompts" /%}
+
+*A third-party walkthrough by James NoCode on writing a first Codex skill. We did not review its claims line by line; OpenAI's own documentation is the authority for everything below.*
+
+## Short answer: which Codex skills to install first
+
+- **Best overall:** [Webapp Testing](https://agentskills.codes/skills/webapp-testing). 353 catalog installs, bundled `with_server.py` to start your dev server, and a clear "reconnaissance then action" procedure for browser checks.
+- **Best for front-end design quality:** [Frontend Design](https://agentskills.codes/skills/frontend-design). 481 installs and a rewrite dated September 3, 2026 that targets generic AI design defaults.
+- **Best for pull requests and CI:** [GH Fix CI](https://agentskills.codes/skills/gh-fix-ci) (diagnose failing GitHub Actions checks, then plan, then fix only after approval) and [GH Address Comments](https://agentskills.codes/skills/gh-address-comments) (numbered review threads, you choose which to fix).
+- **Best for security:** [Security Best Practices](https://agentskills.codes/skills/security-best-practices). Ten reference files, including a Next.js server file, a React front-end file and an Express file.
+- **Best free option:** all 14 are free to install. The only cost is your Codex plan usage, covered in the pricing section.
+- **Best open source:** every pick lives in a public GitHub repository. Eight of the 14 upstream repos report an MIT or Apache-2.0 license through the GitHub API. The other six come from `openai/skills` and `anthropics/skills`, which report no license to the API, though each of those skill folders ships its own LICENSE.txt.
+- **Best for browser automation outside tests:** [Agent Browser](https://agentskills.codes/skills/agent-browser) (54,123 GitHub stars) if you can install its CLI, [Playwright Skill](https://agentskills.codes/skills/playwright-browser-automation) if you prefer plain Node scripts.
+- **Biggest trap:** [Next.js Developer](https://agentskills.codes/skills/nextjs-developer) has 328 installs, but the catalog copy is a single descriptive paragraph with no instructions. We dropped it. More on that under "What we left out".
+
+## Where Codex loads skills from
+
+This is the part most "best skills" lists skip, and it decides whether your install does anything. We read OpenAI's skills page (the page is served from developers.openai.com and learn.chatgpt.com) on November 26, 2026 and cross-checked it against the `openai/codex` source on GitHub.
+
+**What the docs say.** Codex reads skills from repository, user, admin and system locations. For a repository, it scans `.agents/skills` in every directory from your current working directory up to the repository root.
+
+| Scope | Location | Use it for |
+| :-- | :-- | :-- |
+| Repo | `$CWD/.agents/skills` | Skills for one module or microservice |
+| Repo | `$CWD/../.agents/skills` | Skills for a shared parent folder |
+| Repo | `$REPO_ROOT/.agents/skills` | Skills every contributor to the repo should get |
+| User | `$HOME/.agents/skills` | Your personal skills across all repos |
+| Admin | `/etc/codex/skills` | Machine or container defaults (SDK scripts, automation) |
+| System | Bundled with Codex | `skill-creator` and `skill-installer`, enabled by default |
+
+Rules worth knowing, all from the same page:
+
+- Codex follows symlinked skill folders.
+- If two skills share a `name`, Codex does not merge them. Both can appear in selectors.
+- Codex detects skill changes automatically; if an update does not appear, restart Codex.
+- Skills use progressive disclosure: Codex starts with each skill's name, description and file path, then reads the full SKILL.md only when it picks the skill. That initial list is capped at 2% of the model's context window (8,000 characters if the window is unknown). When many skills are installed, Codex shortens descriptions first and may omit some with a warning. You can raise the budget with `skills.max_context_tokens`, up to 10,000 tokens.
+- You can invoke a skill explicitly with `$skill-name` or the `/skills` command in the CLI or IDE extension, or let Codex match it implicitly from the description.
+- To disable a skill without deleting it, add a `[[skills.config]]` entry with `enabled = false` to `~/.codex/config.toml`. To turn off the bundled system skills for one project, set `[skills.bundled] enabled = false` in that project's trusted `.codex/config.toml`.
+
+**What the installer does.** The bundled `skill-installer` script (`install-skill-from-github.py` in `openai/codex`) writes to `$CODEX_HOME/skills`, which defaults to `~/.codex/skills`. That path is not in the docs table above. We looked for it in the source: `codex-rs/exec-server/src/discoverV2/capability_locations.rs` builds a skill root named `codex-home-skills` from `codex_home.join("skills")`, so the installer's target is a real discovery root in the current source, even though the docs list only `.agents/skills`, `/etc/codex/skills` and the system bundle. We did not launch Codex and watch it pick up a skill from either path.
+
+**Our recommendation.** Put repo skills in `.agents/skills` and personal skills in `~/.agents/skills`, because those are the paths the docs promise. That also helps portability: Cursor, Gemini CLI, OpenCode and Hermes Agent all document `.agents/skills` as a shared location (see the works-with matrix below), so one folder serves several tools.
+
+{% callout type="info" %}
+Distribution is the other half of the story. OpenAI's docs say direct skill folders are for local authoring and repo-scoped workflows, and recommend packaging skills as plugins when you want to share them. OpenAI announced Agent Plugins on August 6, 2026 as an open standard that packages Agent Skills with MCP server configuration. This article ranks skills, not plugins, but if your team wants one install for several skills, look at plugins.
+{% /callout %}
+
+{% figure src="https://learn.chatgpt.com/og/docs/build-skills.png" alt="Social card image for OpenAI's Build skills documentation page" caption="OpenAI's Build skills docs page, the source for the Codex skill locations above. Source: OpenAI" /%}
+
+## Master comparison table
+
+Stars, installs and commit dates are as of November 26, 2026. "Folder last commit" is the date of the latest commit touching that skill's own folder (from the GitHub API), not the repository's last push. Installs and views come from the agentskills.codes API.
+
+| Skill | Author | Installs | Upstream stars | License (GitHub API) | Folder last commit | Standout |
+| :-- | :-- | --: | --: | :-- | :-- | :-- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/webapp-testing.png" name="Webapp Testing" size=24 /%} Webapp Testing | Anthropic | 353 | 200,948 | none reported, LICENSE.txt in folder | Apr 20, 2026 | Server-lifecycle script plus Playwright decision tree |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/frontend-design.png" name="Frontend Design" size=24 /%} Frontend Design | Anthropic | 481 | 200,948 | none reported, LICENSE.txt in folder | Sep 3, 2026 | Plan, critique, build process against "generic AI design" tells |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/gh-fix-ci.png" name="GH Fix CI" size=24 /%} GH Fix CI | OpenAI | 12 | 29,160 | none reported, LICENSE.txt in folder | Feb 2, 2026 | Log-fetch script, plan before fix |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/security-best-practices.png" name="Security Best Practices" size=24 /%} Security Best Practices | OpenAI | 7 | 29,160 | none reported, LICENSE.txt in folder | Feb 2, 2026 | Ten language and framework reference files |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/gh-address-comments.png" name="GH Address Comments" size=24 /%} GH Address Comments | OpenAI | 10 | 29,160 | none reported, LICENSE.txt in folder | Feb 2, 2026 | Numbered review threads, you pick which to fix |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/figma-implement-design.png" name="Figma Implement Design" size=24 /%} Figma Implement Design | OpenAI | 24 | 29,160 | none reported, LICENSE.txt in folder | Mar 25, 2026 | Strict Figma MCP to code workflow |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/agent-browser.png" name="Agent Browser" size=24 /%} Agent Browser | Vercel Labs | 30 | 54,123 | Apache-2.0 | Nov 13, 2026 | Version-matched guide served by its own CLI |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/web-design-guidelines.png" name="Web Design Guidelines" size=24 /%} Web Design Guidelines | Vercel | 32 | 5,172 | MIT | Jan 24, 2026 | Live-fetched UI rules, terse file:line findings |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/ui-ux-pro-max.png" name="UI UX Pro Max" size=24 /%} UI UX Pro Max | nextlevelbuilder | 1,909 | 154,578 | MIT | Nov 26, 2026 | Searchable design database with a Python search script |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/skill-installer.png" name="Skill Installer" size=24 /%} Skill Installer | OpenAI | 29 | 136,569 | Apache-2.0 | Sep 1, 2026 | Ships inside Codex; installs skills from GitHub paths |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/playwright-skill.png" name="Playwright Skill" size=24 /%} Playwright Skill | lackeyjb | 29 | 3,327 | MIT | Aug 14, 2026 | Detects dev servers, writes reusable Node scripts |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/turborepo.png" name="Turborepo" size=24 /%} Turborepo | Vercel | 61 | 31,394 | MIT | Sep 25, 2026 | Points the agent at docs bundled in the installed `turbo` version |
+| Next.js Best Practices | davila7 | 31 | 34,224 | MIT | Jan 25, 2026 | Compact App Router decision tables |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/code-reviewer.png" name="Code Reviewer" size=24 /%} Code Reviewer | Google Gemini CLI | 24 | 109,185 | Apache-2.0 | Jan 21, 2026 | Reviews a remote PR or local diff in one structure |
+
+All 14 are free to install and open source. None needs an account of its own, though several depend on tools you must already have: the GitHub CLI for GH Fix CI and GH Address Comments, the Figma MCP server for Figma Implement Design, Python or Node for the browser skills.
+
+{% figure src="https://opengraph.githubassets.com/1/openai/skills" alt="GitHub social card for the openai/skills repository" caption="The openai/skills repository, home of the curated Codex skills and the .curated and .system folders. Source: GitHub" /%}
+
+## How we ranked them
+
+Priority order, as in our other skills roundups:
+
+1. **What the SKILL.md makes the agent do.** A concrete procedure with stop conditions and safety rules beats advice the model already knows.
+2. **Does the install actually work in Codex?** A skill that depends on `${CLAUDE_PLUGIN_ROOT}` or on files the hosted zip omits loses points.
+3. **Freshness of the skill folder,** measured by the last commit touching that folder.
+4. **Catalog installs and views,** as a tiebreaker only. Install counts are small and skewed: the top Codex-relevant skill has 1,909 installs, the bundled system skill has 29, and a skill that ships inside Codex itself cannot be counted by a third-party catalog at all.
+
+## 1. Webapp Testing
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/webapp-testing.png" name="Webapp Testing" size=40 /%}
+
+**What it is.** Anthropic's skill for driving a local web app with Python Playwright. The SKILL.md gives the agent a decision tree (static HTML, running server, or server that needs starting) and a "reconnaissance then action" pattern: load the page, wait for `networkidle`, screenshot or dump the DOM, pick selectors from what rendered, then act. [Skill page](https://agentskills.codes/skills/webapp-testing), [source](https://github.com/anthropics/skills/tree/main/skills/webapp-testing).
+
+**Who it is for.** Anyone who asks Codex to "check that the form still submits" or "screenshot the pricing page at mobile width" and wants a repeatable method instead of improvised one-off scripts.
+
+**Key features.**
+
+- `scripts/with_server.py` starts one or more dev servers (for example backend on port 3000 and frontend on port 5173), waits for the ports, runs your automation, and shuts everything down.
+- Three runnable examples in `examples/`: element discovery, static HTML via `file://` URLs, and console log capture.
+- A blunt rule that helps context budgets: run bundled scripts with `--help` first and treat them as black boxes instead of reading their source.
+
+**Pros.**
+
+- Concrete procedure with a named pitfall (inspect the DOM only after `networkidle` on dynamic apps).
+- Highest install count of the browser and testing skills we shortlisted: 353 as of November 26, 2026.
+- Works for the multi-server case that trips up most ad-hoc test scripts.
+
+**Cons.**
+
+- It assumes Python Playwright is already installed. The SKILL.md has no install step, and we found no mention of `pip install` or `playwright install` in it.
+- Folder last changed April 20, 2026, so it is not the freshest pick.
+- The hosted zip contains only SKILL.md, so `with_server.py` and the examples are missing unless you install from GitHub.
+
+**Benefits for Codex users.** A repo-level copy in `.agents/skills/webapp-testing` gives every contributor the same browser-verification routine, which is exactly the "check in skills relevant to the repository" use that OpenAI's docs describe.
+
+**Pricing and limits.** Free, no license reported by the GitHub API for `anthropics/skills`, LICENSE.txt ships in the folder. It runs on your normal Codex usage.
+
+**Standout use case.** "Start the app, open /checkout, fill the form with invalid data, and screenshot the error state."
+
+**Skip it if** your project already has a Playwright or Cypress suite you trust; ask Codex to run that suite instead.
+
+Install from GitHub so `scripts/` and `examples/` come along. We ran this form on November 26, 2026 with a scratch destination, and the whole folder arrived:
+
+```bash
+python3 install-skill-from-github.py \
+  --url https://github.com/anthropics/skills/tree/main/skills/webapp-testing \
+  --dest ~/.agents/skills
+```
+
+## 2. Frontend Design
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/frontend-design.png" name="Frontend Design" size=40 /%}
+
+**What it is.** Anthropic's design-direction skill for building or reshaping a UI. The current SKILL.md asks the agent to behave like a design lead whose client has already rejected templated work, to write a short design plan (palette, type, layout concept, principles), review that plan against the brief, then build and critique. [Skill page](https://agentskills.codes/skills/frontend-design), [source](https://github.com/anthropics/skills/tree/main/skills/frontend-design).
+
+**Who it is for.** Developers who get serviceable but samey pages from a coding agent and want a process that pushes against defaults.
+
+**Key features.**
+
+- Lists the common tells of generated pages: the cream-and-serif look with a terracotta accent, near-black with one acid accent, broadsheet hairlines, the identical rounded-card kit, and all-caps eyebrow labels.
+- Typography rules (line length under 80 characters, deliberate type scale) and motion rules (one orchestrated moment beats scattered hover effects).
+- A section on interface writing: active voice, CTAs that say what happens, errors that explain the fix.
+
+**Pros.**
+
+- Fresh: the folder's last commit is September 3, 2026, "Update frontend-design skill to avoid generic design defaults".
+- Single self-contained SKILL.md, so the hosted zip and the GitHub copy have identical instructions (we compared the bodies after stripping front matter).
+- 481 catalog installs, the second highest in this list.
+
+**Cons.**
+
+- It is a prompt, not a tool. It cannot check contrast, layout shift or accessibility; pair it with a review skill from this list.
+- Its front matter differs between the catalog copy (an older description beginning "Create distinctive, production-grade frontend interfaces") and the current upstream text. The body matched; the description Codex uses for implicit triggering may not.
+- Opinionated: if your brand already has a design system, the "make a distinct choice" instruction can fight it.
+
+**Benefits for Codex users.** Because Codex shows only the name and description until it selects a skill, a skill this size costs almost nothing when idle and loads its roughly 9,000 characters only for UI tasks.
+
+**Pricing and limits.** Free. Same license situation as Webapp Testing.
+
+**Standout use case.** Greenfield landing pages and marketing sites where "looks generated" is the failure you most want to avoid.
+
+**Skip it if** you are implementing from a Figma file; use Figma Implement Design instead, since the design decisions are already made.
+
+## 3. GH Fix CI
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/gh-fix-ci.png" name="GH Fix CI" size=40 /%}
+
+**What it is.** An OpenAI-curated skill for failing GitHub Actions checks on a pull request. The agent resolves the PR, lists failing checks with `gh`, pulls the logs, summarizes the failure, drafts a fix plan, and implements only after you approve. [Skill page](https://agentskills.codes/skills/gh-fix-ci), [source](https://github.com/openai/skills/tree/main/skills/.curated/gh-fix-ci).
+
+**Who it is for.** Teams on GitHub who lose time to red checks and log spelunking.
+
+**Key features.**
+
+- Bundled `scripts/inspect_pr_checks.py` with `--repo`, `--pr`, `--max-lines`, `--context` and `--json` options. We ran its `--help` on November 26, 2026 and it printed that usage without errors.
+- A manual `gh pr checks` and `gh run view --log` fallback if the script cannot be used.
+- Explicitly scopes itself to GitHub Actions: checks from other providers are labeled external and only their URL is reported.
+- Ships `agents/openai.yaml` with a display name, short description and default prompt, the Codex-specific metadata file described in OpenAI's docs.
+
+**Pros.**
+
+- Approval gate before edits, which fits Codex's agent workflow.
+- Written by OpenAI for Codex, so path and sandbox notes (request elevated network access for `gh`) match how Codex runs commands.
+
+**Cons.**
+
+- Only 12 catalog installs, and the folder was last changed February 2, 2026.
+- Needs an authenticated `gh` with repo and workflow scopes.
+- The hosted zip has SKILL.md only. The skill still works through its manual fallback, but the script is the better path.
+
+**Benefits for Codex users.** The most direct "fix my PR" workflow in the catalog that was written for Codex rather than adapted to it.
+
+**Pricing and limits.** Free. Consumes Codex usage while reading logs; large logs are trimmed by `--max-lines`.
+
+**Standout use case.** "CI is red on PR 482, tell me why and propose the smallest fix."
+
+**Skip it if** your CI is not GitHub Actions.
+
+Inside Codex, with the bundled installer and the curated list name:
+
+```bash
+$skill-installer gh-fix-ci
+```
+
+## 4. Security Best Practices
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/security-best-practices.png" name="Security Best Practices" size=40 /%}
+
+**What it is.** An OpenAI-curated skill that identifies the languages and frameworks in a project, loads the matching reference files, and then either writes secure-by-default code, passively flags major issues, or produces a prioritized report saved as `security_best_practices_report.md`. [Skill page](https://agentskills.codes/skills/security-best-practices), [source](https://github.com/openai/skills/tree/main/skills/.curated/security-best-practices).
+
+**Who it is for.** Web developers who want a framework-aware security pass without a separate scanner.
+
+**Key features.**
+
+- Ten reference files in the upstream folder, including `javascript-typescript-nextjs-web-server-security.md`, `javascript-typescript-react-web-frontend-security.md`, `javascript-express-web-server-security.md`, plus Python (Django, FastAPI, Flask) and Go.
+- Three modes: write secure code, passive detection, full report with severity sections and numeric finding IDs.
+- A documented override rule: project docs can legitimately bypass a practice.
+
+**Pros.**
+
+- It tells the agent what to do when no reference matches: use general knowledge but say concrete guidance is unavailable, instead of pretending coverage.
+- Trigger is narrow (only when you explicitly ask for security guidance), so it will not burn context on every task.
+
+**Cons.**
+
+- 7 catalog installs and a last folder commit of February 2, 2026.
+- The value is in the reference files, which the hosted zip omits. Install from GitHub or you get only the workflow text.
+- It covers a fixed list of stacks; Rails, Laravel or Spring projects get no reference file.
+
+**Benefits for Codex users.** A repository-scoped copy plus an `AGENTS.md` line such as "run security-best-practices before merging auth changes" gives you a repeatable review gate.
+
+**Pricing and limits.** Free. Not a substitute for a scanner or a human security review, and the skill does not claim to be.
+
+**Standout use case.** Reviewing a new Next.js route handler and its React form against both the server and front-end reference files.
+
+**Skip it if** your stack is outside the ten reference files and you only want a generic checklist.
+
+## 5. GH Address Comments
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/gh-address-comments.png" name="GH Address Comments" size=40 /%}
+
+**What it is.** Another OpenAI-curated `gh` skill. It finds the open PR for the current branch, runs `scripts/fetch_comments.py` to print every review thread and comment, numbers them with a one-line fix summary each, asks which to address, then applies only those. [Skill page](https://agentskills.codes/skills/gh-address-comments), [source](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments).
+
+**Who it is for.** Authors who return to a PR with a pile of review comments and want to triage before editing.
+
+**Key features.** Numbered threads, a user choice step, authentication check with `gh auth status`, and guidance to re-authenticate when `gh` hits auth or rate problems.
+
+**Pros.**
+
+- The clarification step prevents the agent from "fixing" comments you disagree with.
+- Short: the whole SKILL.md is under 1,300 characters.
+
+**Cons.**
+
+- 10 installs; folder last changed February 2, 2026.
+- Depends on `scripts/fetch_comments.py`, which is not in the hosted zip and has no manual fallback in the text. Install from GitHub.
+- GitHub only.
+
+**Benefits for Codex users.** Closes the loop with GH Fix CI: one skill reads CI, the other reads reviewers, and both ask before they edit.
+
+**Pricing and limits.** Free; requires authenticated `gh`.
+
+**Standout use case.** "Go through the review on my current PR and fix comments 1, 3 and 4."
+
+**Skip it if** your reviews happen in GitLab, Gerrit or another tool.
+
+## 6. UI UX Pro Max
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/ui-ux-pro-max.png" name="UI UX Pro Max" size=40 /%}
+
+**What it is.** A design-intelligence skill with a searchable local database of styles, palettes, font pairings, UX guidelines, chart types and framework stacks, queried through a Python script. The catalog copy describes 80 searchable styles (51 active), 194 product palettes, 74 font pairings, 141 UX guidelines and 23 technology stacks; those are the SKILL.md's own numbers, which we did not count. [Skill page](https://agentskills.codes/skills/ui-ux-pro-max), [source](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max).
+
+**Who it is for.** Developers who want a design system generated from a product description ("beauty spa wellness service") rather than a free-form style essay.
+
+**Key features.** A `--design-system` search that can persist output to a project folder, domain-specific searches, and a README install flow that lists Codex CLI as a supported assistant (`uipro init --ai codex`).
+
+**Pros.**
+
+- By far the most installs in this list: 1,909 as of November 26, 2026, and 154,578 GitHub stars on an MIT repository.
+- Freshest folder in the roundup: the last commit touching it was November 26, 2026 ("add ambient / continuous decoration presets").
+- Upstream folder includes `data`, `references` and `scripts`, so it is genuinely a tool, not just prose.
+
+**Cons.**
+
+- The catalog copy's commands reference `${CLAUDE_PLUGIN_ROOT}/.claude/skills/ui-ux-pro-max/scripts/search.py` (15 occurrences). In Codex that variable will not exist; use the project's own `uipro init --ai codex` flow or edit the paths. We did not run `uipro`.
+- The hosted zip is SKILL.md only, so the search script and data are not included.
+- Large surface area for a skill; you are trusting a fast-moving repo.
+
+**Benefits for Codex users.** If you want a reproducible palette and type choice per project, this is the only pick here that gives you data to query instead of advice to follow.
+
+**Pricing and limits.** Free, MIT.
+
+**Standout use case.** Generating and persisting a design-system file for a new SaaS dashboard before any component is written.
+
+**Skip it if** you do not want Python in your skill path, or you already have a brand system.
+
+## 7. Agent Browser
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/agent-browser.png" name="Agent Browser" size=40 /%}
+
+**What it is.** A Vercel Labs browser-automation CLI for agents (Rust, Chrome or Chromium over CDP, accessibility-tree snapshots with compact `@eN` element refs) and the skill stub that teaches an agent to use it. [Skill page](https://agentskills.codes/skills/agent-browser), [source](https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser).
+
+**Who it is for.** Teams that want one browser tool across several agents. The SKILL.md names Codex among the agents it works with.
+
+**Key features.**
+
+- The SKILL.md is deliberately a "discovery stub": the real workflow comes from `agent-browser skills get core`, so guidance always matches the installed CLI version.
+- Specialized sub-skills listed in the stub: Electron apps, Slack, dogfood (exploratory QA), HAR-to-API-client, Vercel sandboxes, AWS AgentCore cloud browsers.
+- Sessions, an authentication vault, state persistence and video recording, per the SKILL.md.
+
+**Pros.**
+
+- Actively maintained: folder last commit November 13, 2026, repo pushed November 26, 2026, Apache-2.0, 54,123 stars.
+- Version-matched instructions avoid the staleness that hits every static skill.
+
+**Cons.**
+
+- You must install the CLI (`npm i -g agent-browser && agent-browser install`) before the skill does anything.
+- The front matter sets `hidden: true`; how a given client treats that field is not something we tested in Codex.
+- Only 30 catalog installs, so little community signal there.
+
+**Benefits for Codex users.** Accessibility-tree refs keep browser steps short, which helps when the model's context also has to carry your repository.
+
+**Pricing and limits.** Free, Apache-2.0. Cloud browser providers it mentions are separate services with their own pricing, not covered here.
+
+**Standout use case.** Exploratory QA of a staging site where you do not want to write Playwright code.
+
+**Skip it if** you would rather keep dependencies to Node and Playwright; Playwright Skill is closer to that.
+
+## 8. Web Design Guidelines
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/web-design-guidelines.png" name="Web Design Guidelines" size=40 /%}
+
+**What it is.** A Vercel skill that reviews UI files against the Web Interface Guidelines. Rather than embedding the rules, it tells the agent to fetch the latest `command.md` from `vercel-labs/web-interface-guidelines` before each review and report findings in terse `file:line` form. [Skill page](https://agentskills.codes/skills/web-design-guidelines), [source](https://github.com/vercel/examples/tree/main/.agents/skills/web-design-guidelines).
+
+**Who it is for.** React and Next.js teams that want an accessibility and UX lint pass from the agent.
+
+**Key features.** The fetched rules file covers accessibility (icon-only buttons need `aria-label`, controls need labels, semantic HTML before ARIA), focus states and more; output is intentionally compact.
+
+**Pros.**
+
+- Rules stay current because they are fetched live. The rules repo reports MIT and was last pushed October 5, 2026.
+- Tiny SKILL.md (about 900 characters), so near-zero idle cost.
+- Lives under `.agents/skills` in Vercel's examples repo, the same directory convention Codex scans.
+
+**Cons.**
+
+- Needs network access at review time. In Codex, outbound access depends on your sandbox and approval settings; OpenAI's own `gh` skills tell you to request elevated network access.
+- The SKILL.md says to use "WebFetch", a Claude tool name. Codex will have to map that to whatever fetch route it has; we did not test it.
+- 32 installs, folder last changed January 24, 2026.
+
+**Benefits for Codex users.** A cheap second opinion on accessibility that complements, rather than replaces, a real audit tool.
+
+**Pricing and limits.** Free, MIT.
+
+**Standout use case.** `$web-design-guidelines src/components/checkout` before opening a PR.
+
+**Skip it if** you work offline or in a locked-down sandbox.
+
+## 9. Figma Implement Design
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/figma-implement-design.png" name="Figma Implement Design" size=40 /%}
+
+**What it is.** An OpenAI-curated skill for translating Figma frames into code through the Figma MCP server, with a seven-step required workflow: parse the node ID from the URL, fetch design context, capture a visual reference, download assets, translate to project conventions, reach 1:1 visual parity, and validate against Figma. [Skill page](https://agentskills.codes/skills/figma-implement-design), [source](https://github.com/openai/skills/tree/main/skills/.curated/figma-implement-design).
+
+**Who it is for.** Front-end developers handed Figma files who want the agent to reuse the project's design tokens and components.
+
+**Key features.** URL parsing rules for `figma.com/design/:fileKey/:fileName?node-id=1-2`, a desktop-app MCP option that needs no URL, implementation rules, common-issue fixes, and clear boundaries (use sibling skills to edit Figma itself or build screens in Figma).
+
+**Pros.**
+
+- Strict ordering ("do not skip steps") reduces the drift you get from free-form prompting.
+- Folder includes `agents` and `assets`; last commit March 25, 2026 aligned the curated Figma skill licenses.
+- 24 catalog installs, the highest among the OpenAI-curated skills in this list apart from the bundled installer.
+
+**Cons.**
+
+- Requires a connected Figma MCP server and a Figma URL; without them it cannot start.
+- It links to sibling skills (`figma-use`, `figma-generate-design`, and others) that are not installed by this one.
+- Folder older than 90 days.
+
+**Benefits for Codex users.** One of the few skills here that explicitly bridges design and repository code, which is the gap Codex users most often hit on front-end tickets.
+
+**Pricing and limits.** The skill is free. Figma's own plan and MCP availability are separate; we did not verify Figma's pricing and leave it out.
+
+**Standout use case.** "Implement this card component from Figma using our existing Button and tokens."
+
+**Skip it if** you do not use Figma.
+
+## 10. Skill Installer
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/skill-installer.png" name="Skill Installer" size=40 /%}
+
+**What it is.** The system skill bundled with Codex. It lists skills from `openai/skills` (curated by default, experimental on request) and installs skills from any GitHub repo path, including private repos. The docs list `skill-creator` and `skill-installer` as the SYSTEM-scope skills, enabled by default. [Skill page](https://agentskills.codes/skills/skill-installer), [source](https://github.com/openai/codex/tree/main/codex-rs/skills/src/assets/samples/skill-installer).
+
+**Who it is for.** Everyone using Codex skills. It is how you get anything else in this article.
+
+**Key features.** `list-skills.py` (with `--format json` and `--path skills/.experimental`) and `install-skill-from-github.py` (`--repo`, `--path`, `--url`, `--dest`).
+
+**Pros.**
+
+- Already present; no install needed. Folder last commit September 1, 2026, `openai/codex` is Apache-2.0 with 136,569 stars.
+- Refuses symbolic links inside skills and refuses to overwrite an existing destination.
+
+**Cons.**
+
+- Defaults to `$CODEX_HOME/skills` (`~/.codex/skills` if unset), not the `.agents/skills` path the docs promote. Pass `--dest` to choose.
+- Our run of `list-skills.py` on November 26, 2026 returned HTTP 403 from GitHub, which we did not investigate further.
+- The catalog's source link for this skill points to an older path in `openai/codex` that now returns 404; the current folder is under `codex-rs/skills/src/assets/samples`.
+
+**Benefits for Codex users.** It is the supported route for installing scripts and references that the catalog's zip omits.
+
+**What we ran.** In a throwaway `CODEX_HOME`, `install-skill-from-github.py --repo openai/skills --path skills/.curated/gh-fix-ci` installed GH Fix CI (including `agents/openai.yaml`), and `--url https://github.com/anthropics/skills/tree/main/skills/webapp-testing` installed Webapp Testing with its `scripts/` and `examples/`. A second run of the same command printed "Destination already exists" and changed nothing. The catalog's 29 installs undercount real use, since the skill ships with Codex.
+
+**Pricing and limits.** Free; GitHub API rate limits apply.
+
+**Skip it if** you prefer cloning repos and copying folders by hand, which works just as well.
+
+Inside Codex (the `linear` example is from OpenAI's docs), or run the script directly and choose the destination:
+
+```bash
+$skill-installer linear
+
+python3 install-skill-from-github.py --repo openai/skills \
+  --path skills/.curated/security-best-practices --dest ~/.agents/skills
+```
+
+## 11. Playwright Skill
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/playwright-skill.png" name="Playwright Skill" size=40 /%}
+
+**What it is.** lackeyjb's skill for browser automation with Node Playwright (version 5.0.0 in the SKILL.md). It detects running dev servers, writes reusable scripts to a temp folder, and runs them with a bundled `run.js`. [Skill page](https://agentskills.codes/skills/playwright-browser-automation), [source](https://github.com/lackeyjb/playwright-skill/tree/main/skills/playwright-skill).
+
+**Who it is for.** JavaScript teams that prefer Node Playwright to the Python route in Webapp Testing.
+
+**Key features.** Dev-server detection (ask which URL if there are several), screenshot, responsive and login-flow checks, a visible browser by default, and a rule not to claim success without checking the resulting page.
+
+**Pros.**
+
+- MIT, 3,327 stars, folder updated August 14, 2026 ("use portable temporary paths in examples").
+- Declares requirements in front matter: Node.js 20+, npm, and network on first setup.
+- Resolves its own directory instead of hard-coding one agent's path.
+
+**Cons.**
+
+- Its listed install paths are all Claude locations (`~/.claude/...`); you must set `SKILL_DIR` to wherever you put it for Codex.
+- Needs `npm run setup` once, which downloads Playwright and Chromium.
+- Visible browser by default; use headless where no display exists.
+- Hosted zip is SKILL.md only; the upstream folder has `run.js`, `lib/helpers.js` and `package.json`.
+
+**Benefits for Codex users.** Keeps the whole toolchain in Node, matching most web repos.
+
+**Pricing and limits.** Free, MIT. 29 catalog installs.
+
+**Standout use case.** Responsive checks across several viewport widths on a local Next.js dev server.
+
+**Skip it if** you already use Webapp Testing, since they overlap heavily.
+
+## 12. Turborepo
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/turborepo.png" name="Turborepo" size=40 /%}
+
+**What it is.** Vercel's skill for `turbo.json`, task pipelines, caching, Remote Cache, filtering and CI. Its entire instruction is: do not rely on this skill, read the docs bundled inside the installed `turbo` package, starting at `node_modules/turbo/docs/README.md`. [Skill page](https://agentskills.codes/skills/turborepo), [source](https://github.com/vercel/turborepo/tree/main/skills/turborepo).
+
+**Who it is for.** Monorepo teams on Turborepo.
+
+**Key features.** Resolves the package location with `node -p "require.resolve('turbo/package.json')"` when `node_modules` is not flat, and falls back to inspecting version constraints before installing turbo.
+
+**Pros.**
+
+- The guidance is version-exact by design. The upstream commit that bundled docs into the npm package landed September 25, 2026.
+- Tiny (about 1,200 characters) and MIT, from the Turborepo repo itself (31,394 stars).
+- 61 catalog installs.
+
+**Cons.**
+
+- Useless without a recent `turbo` that ships the docs folder.
+- No scripts, no examples; it is a pointer.
+
+**Benefits for Codex users.** Stops the agent from using remembered, possibly outdated `turbo.json` syntax.
+
+**Pricing and limits.** Free. Remote Cache is a separate Vercel feature whose pricing we did not check.
+
+**Standout use case.** Fixing a cache miss in CI by reading the bundled caching docs for the installed version.
+
+**Skip it if** you do not use Turborepo.
+
+## 13. Next.js Best Practices
+
+
+**What it is.** A compact App Router guide from the `davila7/claude-code-templates` collection: ten sections of decision tables on server versus client components, data fetching, routing, API routes, performance, metadata, caching, server actions, anti-patterns and project structure. [Skill page](https://agentskills.codes/skills/nextjs-best-practices), [source](https://github.com/davila7/claude-code-templates/tree/main/cli-tool/components/skills/development/nextjs-best-practices).
+
+**Who it is for.** Teams new to the App Router who want a short reference loaded when Codex touches Next.js code.
+
+**Key features.** A server-versus-client decision tree, a fetch strategy table (default static, `revalidate` for ISR, `no-store` for dynamic), revalidation methods, and "validate all inputs" for server actions.
+
+**Pros.** Short, MIT, 31 installs. It is the only Next.js-specific skill we found with real content that sits in a repo with 34,224 stars.
+
+**Cons.**
+
+- Generic: it names no Next.js version, so check it against the docs for the version you run.
+- Folder last changed January 25, 2026, in a commit that migrated 244 skills from another repository.
+- Front matter lists `allowed-tools: Read, Write, Edit, Glob, Grep`, which is a Claude-style field; Codex's handling of it is not something we tested.
+
+**Benefits for Codex users.** Cheap guardrail against Pages Router habits in App Router code.
+
+**Pricing and limits.** Free, MIT.
+
+**Standout use case.** Deciding where `'use client'` belongs in a new dashboard route.
+
+**Skip it if** you track the newest Next.js features closely; read the official docs instead.
+
+## 14. Code Reviewer
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-codex-skills-2026/logos/code-reviewer.png" name="Code Reviewer" size=40 /%}
+
+**What it is.** The review skill from Google's Gemini CLI repository. It reviews either a remote PR (checks it out with `gh pr checkout`) or local staged and unstaged changes, scores them across correctness, maintainability, readability, efficiency, security, edge cases and testability, and returns a structured summary with Critical, Improvements and Nitpicks plus an Approved or Request Changes verdict. [Skill page](https://agentskills.codes/skills/code-reviewer), [source](https://github.com/google-gemini/gemini-cli/tree/main/.gemini/skills/code-reviewer).
+
+**Who it is for.** Anyone who wants a consistent review format on their own diff before pushing.
+
+**Pros.**
+
+- Handles both local diffs and PRs in one skill.
+- Apache-2.0, in a 109,185-star repo.
+- Tone guidance (explain why, acknowledge value in approvals).
+
+**Cons.**
+
+- It hard-codes `npm run preflight`, a script from the Gemini CLI project. In another repo that command may not exist; the skill says to run the project's standard verification suite, then names that one.
+- Folder last changed January 21, 2026; 24 installs.
+- Does not read project-specific rules unless you tell it to.
+
+**Benefits for Codex users.** A neutral reviewer persona that works across vendors, since the SKILL.md uses plain `git` and `gh`.
+
+**Pricing and limits.** Free, Apache-2.0.
+
+**Standout use case.** "Review my staged changes before I commit."
+
+**Skip it if** your team has its own review standard; write a repo skill that encodes it (the Metabase `typescript-review` skill is a good model, see below).
+
+## What we left out and why
+
+- **[Next.js Developer](https://agentskills.codes/skills/nextjs-developer)** (328 installs). The catalog copy is a single descriptive paragraph with no workflow, and its listed source on `zenobi-us/dotfiles` returns 404 for the path on November 26, 2026. High installs, no verifiable instructions.
+- **[TypeScript Review](https://agentskills.codes/skills/typescript-review)** (39 installs, Metabase). Detailed but tied to Metabase's own standards, shared files and a `typescript-write` skill that is not included. Good as a pattern, not as a drop-in.
+- **[React Best Practices](https://agentskills.codes/skills/react-best-practices)** (22 installs, Redpanda). Specific to a Redpanda Console front end; we read the catalog entry and did not rank it.
+- **[Playwright MCP](https://agentskills.codes/skills/playwright-mcp)** (33 installs). Lives in a Snowflake dbt demo repository and needs a Playwright MCP server.
+- **[Web Design Reviewer](https://agentskills.codes/skills/web-design-reviewer)** (7 installs, GitHub). Listed under Design; not read in depth.
+- **[Codex](https://agentskills.codes/skills/codex)** (Lucklyric). A skill for driving Codex from another agent through tmux, so it is not a skill that runs in Codex.
+- **[Vercel Deploy](https://agentskills.codes/skills/vercel-deploy)** and **[Yeet](https://agentskills.codes/skills/yeet)** (OpenAI-curated, 4 and 2 installs). We confirmed they exist in the catalog but did not read them in depth, so we did not rank them.
+
+## How Codex skills got here: a short timeline
+
+Codex skills are young, which is why so many catalog entries still carry Claude-first paths. These first-party posts, each checked against X's syndication endpoint on November 26, 2026, mark the steps.
+
+{% x id="2000295405242966334" /%}
+
+On December 14, 2025, @thsottiaux announced *experimental* skills support, enabled at the time with `codex --enable skills`.
+
+{% x id="2002099762536010235" /%}
+
+OpenAI Developers followed on December 19, 2025: Codex "officially supports" skills, callable with `$skill-name` or chosen by Codex from the prompt.
+
+{% x id="2067681320281723113" /%}
+
+On June 18, 2026, OpenAI Developers announced Record & Replay: show Codex a workflow once and it drafts an inspectable, editable skill.
+
+{% x id="2085398373511918022" /%}
+
+On August 6, 2026, Agent Plugins: an open standard, developed with several companies named in the post, that packages Agent Skills and MCP server configuration in one shared format.
+
+A video that walks through the first release of the feature, from a third-party creator (JeredBlu), is below. Treat it as a historical look at the launch, not a current reference; the docs have moved since.
+
+{% youtube id="MsJzacfjzp8" title="OpenAI Adds Agent Skills to Codex (First Look and Walkthrough)" /%}
+
+{% figure src="https://opengraph.githubassets.com/1/openai/codex" alt="GitHub social card for the openai/codex repository" caption="The openai/codex repository, which holds the skill-installer source and the skill discovery code we read. Source: GitHub" /%}
+
+## Pricing: what these skills cost to run
+
+The skills are free. Running them costs Codex usage, and Codex pricing depends on how you sign in. The table is from OpenAI's Codex pricing page, read November 26, 2026. We quote plan names and prices only; included-usage amounts change and we did not copy them.
+
+| Plan | Price (as of November 26, 2026) | Notes from the pricing page |
+| :-- | :-- | :-- |
+| Free | $0 per month | Explore Codex on quick coding tasks |
+| Go | $8 per month | Lightweight coding tasks |
+| Plus | $20 per month | Codex on web, CLI, IDE extension and iOS; cloud integrations such as automatic code review; credits can extend usage |
+| Pro | From $100 per month | Plans at $100, $200 or $500 per month |
+| Business | $20 per user per month, with a footnote: 2+ users, billed annually; $25 per user per month billed monthly | Admin controls, SAML SSO, MFA |
+| Enterprise and Edu | Contact sales | Priority processing, SCIM, EKM |
+| API key | Pay per token at API pricing | CLI, SDK or IDE extension; no cloud features such as GitHub code review or Slack |
+
+Two practical points. First, skills add instruction text to the context, so a long SKILL.md such as Figma Implement Design (about 11,600 characters) uses more tokens each time it loads than a stub like Turborepo (about 1,200). Second, the same pricing page says ChatGPT Work and Codex share pricing, credits and usage limits; our separate post on [Codex usage limits for agent workflows](https://agentskills.codes/blog/codex-usage-limits-agent-workflows) covers planning around that.
+
+## Feature matrix
+
+"Yes", "No" or "Partial" are from our reading of each SKILL.md and its upstream folder as of November 26, 2026. "Hosted zip runs as-is" means the agentskills.codes download contains everything the skill needs; every hosted zip we opened held a single file, `SKILL.md`.
+
+| Skill | Hosted zip runs as-is | Upstream ships scripts or data | Needs an external CLI or MCP | Needs network at use time | Has Codex metadata (`agents/openai.yaml`) | Folder touched in last 90 days |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| Webapp Testing | No | Yes | Partial (Python Playwright) | No | No | No |
+| Frontend Design | Yes | No | No | No | No | Yes |
+| GH Fix CI | Partial (manual fallback) | Yes | Yes (`gh`) | Yes | Yes | No |
+| Security Best Practices | No | Yes (references) | No | No | Yes | No |
+| GH Address Comments | No | Yes | Yes (`gh`) | Yes | Yes | No |
+| UI UX Pro Max | No | Yes | Partial (Python) | No | No | Yes |
+| Agent Browser | Partial (stub) | No | Yes (agent-browser CLI) | Yes | No | Yes |
+| Web Design Guidelines | Yes | No | No | Yes | No | No |
+| Figma Implement Design | Partial | Yes (assets) | Yes (Figma MCP) | Yes | Yes | No |
+| Skill Installer | No | Yes | No | Yes | Yes | Yes |
+| Playwright Skill | No | Yes | Partial (Node, npm) | Partial (first setup) | No | No |
+| Turborepo | Yes | No | Partial (`turbo` package) | No | No | Yes |
+| Next.js Best Practices | Yes | No | No | No | No | No |
+| Code Reviewer | Yes | No | Yes (`git`, `gh` for PRs) | Partial (PRs) | No | No |
+
+"Folder touched in last 90 days" means a commit on or after August 28, 2026. We confirmed the Codex metadata column from the upstream folder listings for the OpenAI-curated skills and for the bundled installer.
+
+## Head-to-head: the three closest pairs
+
+### Webapp Testing vs Playwright Skill: which browser-testing skill to pick
+
+Both drive a real browser and both are about local web apps. The difference is language and lifecycle.
+
+| | Webapp Testing | Playwright Skill |
+| :-- | :-- | :-- |
+| Language | Python Playwright | Node Playwright |
+| Server handling | `with_server.py` starts and stops servers, multi-server aware | Detects already-running dev servers, asks which URL if several |
+| Setup | No install step in the SKILL.md | `npm run setup` once (installs Playwright and Chromium) |
+| Browser mode | Headless chromium | Visible by default, headless on request |
+| Catalog installs (Nov 26, 2026) | 353 | 29 |
+| Folder last commit | April 20, 2026 | August 14, 2026 |
+| License (GitHub API) | none reported, LICENSE.txt in folder | MIT |
+
+**Pick Webapp Testing** if your project is Python-leaning or you need the agent to start the backend and frontend together. **Pick Playwright Skill** if your repo is JavaScript and you want scripts saved next to your code. Do not install both; they will compete for the same "test my web app" prompts.
+
+### Frontend Design vs UI UX Pro Max: which design skill to pick
+
+| | Frontend Design | UI UX Pro Max |
+| :-- | :-- | :-- |
+| Approach | A process: plan, review against the brief, build, critique | A database you query with a script |
+| Idle context cost | About 9,000 characters when loaded | Larger SKILL.md plus data, scripts and references upstream |
+| Catalog installs | 481 | 1,909 |
+| Codex readiness | Plain SKILL.md, nothing path-specific | Catalog copy uses `${CLAUDE_PLUGIN_ROOT}` paths; the repo documents `uipro init --ai codex` |
+| Last folder commit | September 3, 2026 | November 26, 2026 |
+
+**Pick Frontend Design** to get distinctive, deliberate visual choices on a single page with no setup. **Pick UI UX Pro Max** when you want a repeatable, queryable design system and are willing to run its installer. If you only install one for Codex today, Frontend Design is the lower-risk choice because nothing in it assumes another agent's directory layout.
+
+### Skill Installer vs the catalog's hosted zip: which install route to pick
+
+| | Skill Installer (GitHub) | agentskills.codes hosted zip |
+| :-- | :-- | :-- |
+| What you get | The whole skill folder, scripts and references included | `SKILL.md` only (every zip we opened held one file) |
+| Default destination | `$CODEX_HOME/skills`, or pass `--dest` | You choose with `unzip -d` |
+| Needs | Python and network access to GitHub | `curl` and `unzip` |
+| Best for | Skills with scripts: Webapp Testing, GH Fix CI, Security Best Practices | Single-file skills: Frontend Design, Turborepo, Code Reviewer |
+
+Use the catalog to discover and read a skill, and the GitHub installer when the upstream folder has more than a SKILL.md.
+
+{% figure src="https://opengraph.githubassets.com/1/anthropics/skills" alt="GitHub social card for the anthropics/skills repository" caption="anthropics/skills, upstream of Webapp Testing and Frontend Design. Source: GitHub" /%}
+
+## Skills and MCP servers that work with these tools
+
+Because every product above is already a catalog skill, here is the install table first, then related catalog entries that pair with them. All links below returned HTTP 200 on November 26, 2026.
+
+### Install commands for each pick
+
+The hosted-zip form is the catalog's own. We changed the destination to `~/.agents/skills/<slug>`, the user-scope location in OpenAI's docs, instead of Claude's folder. Replace `~/.agents/skills` with `.agents/skills` inside a repository for repo scope.
+
+| Skill | Catalog id | Hosted zip command | Prefer GitHub install? |
+| :-- | --: | :-- | :-- |
+| [Webapp Testing](https://agentskills.codes/skills/webapp-testing) | 47 | `curl -L https://agentskills.codes/api/skills/download/47 -o skill.zip && unzip skill.zip -d ~/.agents/skills/webapp-testing` | Yes, for `scripts/` and `examples/` |
+| [Frontend Design](https://agentskills.codes/skills/frontend-design) | 1 | `curl -L https://agentskills.codes/api/skills/download/1 -o skill.zip && unzip skill.zip -d ~/.agents/skills/frontend-design` | No |
+| [GH Fix CI](https://agentskills.codes/skills/gh-fix-ci) | 1912 | `curl -L https://agentskills.codes/api/skills/download/1912 -o skill.zip && unzip skill.zip -d ~/.agents/skills/gh-fix-ci` | Yes, for `scripts/inspect_pr_checks.py` |
+| [Security Best Practices](https://agentskills.codes/skills/security-best-practices) | 1431 | `curl -L https://agentskills.codes/api/skills/download/1431 -o skill.zip && unzip skill.zip -d ~/.agents/skills/security-best-practices` | Yes, for `references/` |
+| [GH Address Comments](https://agentskills.codes/skills/gh-address-comments) | 599 | `curl -L https://agentskills.codes/api/skills/download/599 -o skill.zip && unzip skill.zip -d ~/.agents/skills/gh-address-comments` | Yes, for `scripts/fetch_comments.py` |
+| [UI UX Pro Max](https://agentskills.codes/skills/ui-ux-pro-max) | 191 | `curl -L https://agentskills.codes/api/skills/download/191 -o skill.zip && unzip skill.zip -d ~/.agents/skills/ui-ux-pro-max` | Yes, or the project's own `uipro init --ai codex` |
+| [Agent Browser](https://agentskills.codes/skills/agent-browser) | 817 | `curl -L https://agentskills.codes/api/skills/download/817 -o skill.zip && unzip skill.zip -d ~/.agents/skills/agent-browser` | No, but install the CLI too |
+| [Web Design Guidelines](https://agentskills.codes/skills/web-design-guidelines) | 556 | `curl -L https://agentskills.codes/api/skills/download/556 -o skill.zip && unzip skill.zip -d ~/.agents/skills/web-design-guidelines` | No |
+| [Figma Implement Design](https://agentskills.codes/skills/figma-implement-design) | 898 | `curl -L https://agentskills.codes/api/skills/download/898 -o skill.zip && unzip skill.zip -d ~/.agents/skills/figma-implement-design` | Optional |
+| [Skill Installer](https://agentskills.codes/skills/skill-installer) | 409 | Already bundled with Codex | n/a |
+| [Playwright Skill](https://agentskills.codes/skills/playwright-browser-automation) | 58 | `curl -L https://agentskills.codes/api/skills/download/58 -o skill.zip && unzip skill.zip -d ~/.agents/skills/playwright-browser-automation` | Yes, for `run.js` and `lib/` |
+| [Turborepo](https://agentskills.codes/skills/turborepo) | 519 | `curl -L https://agentskills.codes/api/skills/download/519 -o skill.zip && unzip skill.zip -d ~/.agents/skills/turborepo` | No |
+| [Next.js Best Practices](https://agentskills.codes/skills/nextjs-best-practices) | 651 | `curl -L https://agentskills.codes/api/skills/download/651 -o skill.zip && unzip skill.zip -d ~/.agents/skills/nextjs-best-practices` | No |
+| [Code Reviewer](https://agentskills.codes/skills/code-reviewer) | 527 | `curl -L https://agentskills.codes/api/skills/download/527 -o skill.zip && unzip skill.zip -d ~/.agents/skills/code-reviewer` | No |
+
+We downloaded the zip for each id in this table (including Playwright Skill, id 58) on November 26, 2026 and each returned HTTP 200 and held one `SKILL.md`. We unpacked several of them in a scratch folder to compare with GitHub; for nine of them (Frontend Design, Webapp Testing, Skill Installer, GH Fix CI, GH Address Comments, Security Best Practices, Figma Implement Design, Web Design Guidelines, Next.js Best Practices) the instruction body matched the upstream file after we stripped front matter and normalized whitespace. We did not do that comparison for the other five.
+
+### Works-with matrix
+
+All six clients below load the same SKILL.md folder format. "Documented" means the client's own docs list the path; we did not install and run each skill in each client.
+
+| Client | Skills location the docs list | Reads `.agents/skills`? |
+| :-- | :-- | :-- |
+| Codex | `.agents/skills` (repo), `~/.agents/skills` (user), `/etc/codex/skills` (admin) | Yes, documented |
+| Claude Code | `~/.claude/skills`, project `.claude/skills` | Not in the page we read |
+| Cursor | `.agents/skills/`, `.cursor/skills/`, `~/.agents/skills/`, `~/.cursor/skills/` (its page also lists `.claude/skills/` and `.codex/skills/`) | Yes, documented |
+| Gemini CLI | `~/.gemini/skills/` or the `~/.agents/skills/` alias, and `.gemini/skills/` or `.agents/skills/` in a workspace | Yes, documented |
+| OpenCode | `~/.config/opencode/skills`, `.opencode/skills`, plus compatibility paths `~/.claude/skills`, `~/.agents/skills`, `.claude/skills`, `.agents/skills` | Yes, documented |
+| Hermes Agent | `~/.hermes/skills/`; shared directories such as `~/.agents/skills` can be added through `skills.external_dirs` | Yes, via `external_dirs` |
+
+The practical consequence: one copy in `~/.agents/skills` covers Codex, Cursor, Gemini CLI and OpenCode, and Hermes with one config line. Claude Code needs its own folder or a symlink. Per-skill caveats still apply: GH Fix CI needs `gh`, Agent Browser needs its CLI, and UI UX Pro Max's catalog copy points at a Claude plugin path.
+
+### Related catalog entries and MCP servers
+
+- [OpenAI Docs](https://agentskills.codes/skills/openai-docs) (OpenAI, 3 installs). Official documentation lookup through the developers.openai.com docs MCP server; its SKILL.md has a section on Codex self-knowledge, useful when you want Codex to answer questions about its own configuration.
+- [Vercel Deploy](https://agentskills.codes/skills/vercel-deploy) (OpenAI-curated, 4 installs). Deployment and preview management; pairs with the Next.js picks. We did not read it in depth.
+- [Yeet](https://agentskills.codes/skills/yeet) (OpenAI-curated, 2 installs). A one-shot Git-to-pull-request flow, per its catalog description; a natural precursor to GH Fix CI.
+- [TypeScript Review](https://agentskills.codes/skills/typescript-review) (Metabase, 39 installs). A model for writing your own repo-specific review skill: review dimensions, priority order, and blind spots like accessibility and bundle size.
+- [React Best Practices](https://agentskills.codes/skills/react-best-practices) (Redpanda, 22 installs). 29 performance rules per its catalog description; specific to that project's stack.
+- [Playwright MCP](https://agentskills.codes/skills/playwright-mcp) (33 installs). For when you would rather connect a browser through an MCP server than run scripts.
+- The [Figma MCP server](https://developers.figma.com/docs/figma-mcp-server/) is a prerequisite for Figma Implement Design; its docs page returned 200 on November 26, 2026.
+
+If you also use Claude Code, our [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) post overlaps on Webapp Testing and Code Reviewer, and [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules) explains which file type holds which kind of instruction.
+
+## Best for X: a decision table
+
+| You want to... | Install | Why |
+| :-- | :-- | :-- |
+| Verify a web app in a real browser | Webapp Testing | Server lifecycle plus a proven pattern |
+| Keep tests in JavaScript | Playwright Skill | Node Playwright, MIT, fresher folder |
+| Avoid generic-looking UI | Frontend Design | Targets the common generated-design tells |
+| Generate a design system from a product type | UI UX Pro Max | Queryable data, most installs |
+| Fix a red PR | GH Fix CI | Log script and approval gate |
+| Triage review feedback | GH Address Comments | Numbered threads, you choose |
+| Review your own diff | Code Reviewer | Local and remote PR in one skill |
+| Check UI for accessibility rules | Web Design Guidelines | Live rules, terse output |
+| Turn Figma into components | Figma Implement Design | Strict seven-step workflow |
+| Review security of a Next.js or React app | Security Best Practices | Framework reference files |
+| Keep monorepo config current | Turborepo | Reads docs for the installed version |
+| Get App Router habits right | Next.js Best Practices | Compact decision tables |
+| Browser automation across agents | Agent Browser | Version-matched CLI guidance |
+| Install anything else | Skill Installer | Bundled with Codex |
+
+## Common mistakes
+
+1. **Installing 20 skills at once.** Codex's initial skill list is capped at 2% of the context window, and descriptions are shortened first when it fills up. More skills can mean less precise matching, not more help.
+2. **Installing the zip and assuming scripts came along.** The hosted zips we opened were single-file. Skills whose value is a script or a reference folder need a GitHub install.
+3. **Putting skills in the wrong folder.** The docs list `.agents/skills`, not `.claude/skills`. A copy in `.claude/skills` is invisible to Codex based on the docs we read.
+4. **Trusting install counts.** The most-installed skill here has 1,909 installs; a skill bundled with Codex shows 29. Neither number says how good the instructions are.
+5. **Using Claude-only paths and tool names.** `${CLAUDE_PLUGIN_ROOT}`, `WebFetch` and `~/.claude/...` appear in some picks. Edit them or the skill will fail quietly.
+6. **Duplicate names.** Codex does not merge two skills with the same `name`; both show up in selectors. Keep one copy per name.
+7. **Letting a skill replace your project rules.** Put repository-specific rules in `AGENTS.md` and use skills for repeatable procedures.
+8. **Skipping the read.** A SKILL.md is executable instruction. Read it before installing, especially if it runs scripts or fetches URLs.
+
+## Setup checklist
+
+1. Decide scope: repo (`.agents/skills` in the repository), user (`~/.agents/skills`) or admin (`/etc/codex/skills`).
+2. Install the one or two skills that match your next task, not the whole list.
+3. For script-based skills, use `$skill-installer` or the installer script with `--dest`.
+4. Check prerequisites: `gh auth status` for the GitHub skills, a Figma MCP connection for Figma Implement Design, Python or Node for the browser skills.
+5. Start Codex in the repository and run `/skills`, or type `$` and look for the name. If it is missing, restart Codex.
+6. Try an explicit call first (`$webapp-testing check the signup flow`), then see whether implicit matching picks it up.
+7. If a skill fires when you do not want it, disable it with a `[[skills.config]]` entry in `~/.codex/config.toml` rather than deleting it.
+8. Re-check upstream before relying on a skill: look at the folder's last commit, not the repository's.
+
+## How we evaluated
+
+**Candidate discovery.** On November 26, 2026 we queried the agentskills.codes API (`/api/v1/skills?q=<term>&limit=50`) for codex, web, nextjs, testing and review, plus follow-up terms such as playwright, frontend, react, security, deploy and accessibility. A `q=codex` query returned 191 skills. We sorted by installs locally, because adding `sort=installs` did not visibly change the order we got. We shortlisted 22 candidates, read each one's catalog page, followed its source link to GitHub, and read 16 SKILL.md files.
+
+**Upstream checks.** For each pick we used the GitHub API to read stars, license, archive status, repository push date, the last commit touching the skill's own folder, and the folder's file listing. We downloaded the catalog's hosted zip for each pick and compared it with the upstream file.
+
+**What we ran.**
+
+- With `CODEX_HOME` pointed at a scratch directory, we ran OpenAI's `install-skill-from-github.py` to install GH Fix CI and Webapp Testing from GitHub. Both installed; a repeat install refused to overwrite.
+- We ran `inspect_pr_checks.py --help` from GH Fix CI.
+- We ran `list-skills.py`; it failed with an HTTP 403 from GitHub.
+- We confirmed `codex-cli 0.166.0` is installed on our research machine. We did **not** launch a Codex session, so we did not watch Codex discover or invoke any of these skills.
+
+**What we did not test.** We did not run Webapp Testing's server script, Agent Browser, Playwright Skill, UI UX Pro Max's search, or the Figma and security workflows. Everything we say about how those behave comes from their SKILL.md text. We did not benchmark output quality; no neutral benchmark exists for individual skills, and we did not invent one. Star counts, installs and prices are vendor or platform-reported and dated.
+
+**Ranking caveat.** Our order weighs usefulness for web development first, so a 7-install skill can outrank a 1,909-install one. That is a judgement, shown in the master table so you can disagree with it.
+
+## FAQ
+
+### Where does Codex load skills from?
+
+From repository, user, admin and system locations. In a repository Codex scans `.agents/skills` in every directory from your working directory up to the repository root. For one user it reads `$HOME/.agents/skills`. Machine-wide skills go in `/etc/codex/skills`, and OpenAI bundles `skill-creator` and `skill-installer`. Source: OpenAI's Codex skills page, read November 26, 2026.
+
+### What is the Codex skills location on my machine?
+
+For personal skills, `~/.agents/skills`. The bundled installer defaults to `~/.codex/skills` (or `$CODEX_HOME/skills`), which our reading of the current `openai/codex` source shows as a real discovery root, but the docs table does not list it. We prefer `~/.agents/skills` because the docs name it.
+
+### Is there a Codex skills directory or library?
+
+Yes, several. OpenAI's own curated set is the [openai/skills](https://github.com/openai/skills) repository (29,160 stars as of November 26, 2026), organized into `.curated`, `.system` and experimental folders, and `$skill-installer` installs from it. The [agentskills.codes catalog](https://agentskills.codes) is a third-party index that lists 11,524 skills with install counts. OpenAI also points to plugins as the distribution channel for reusable skills.
+
+### Is there a Codex skills marketplace?
+
+OpenAI's docs describe a plugin directory shared by ChatGPT and Codex for distributing skills and connectors. We covered skills here, not that directory, and we did not evaluate its listings.
+
+### Are Codex skills the same as Claude Code skills?
+
+The format is the same: a folder with a `SKILL.md` that has `name` and `description`, optionally with scripts, references and assets. OpenAI's docs say skills build on the open agent skills standard. What differs is the folder each tool scans, tool names inside some skills, and Codex-only metadata such as `agents/openai.yaml`.
+
+### Can I use a Claude Code skill in Codex?
+
+Usually, if you copy it to a Codex location and fix any Claude-specific paths or tool names. Read the SKILL.md first. Examples from this list: Webapp Testing and Frontend Design are plain and portable; UI UX Pro Max's catalog copy references a Claude plugin root variable.
+
+### How do I install a Codex skill from GitHub?
+
+Inside Codex, use `$skill-installer` and give it a repo path or URL, or run `install-skill-from-github.py --url <tree-url> --dest <skills-dir>`. We ran the second form on November 26, 2026 and it installed the skill's full folder. Codex should detect it automatically; if not, restart.
+
+### How do I call a skill explicitly?
+
+Type `$` in the CLI or IDE extension and pick the skill, or run `/skills`. You can also just describe the task and let Codex match the skill from its description, which is why a concise, front-loaded description matters.
+
+### How many skills can Codex hold at once?
+
+There is no fixed count in the docs we read. The limit is the context budget for the initial list: 2% of the model's context window by default (8,000 characters if unknown), configurable up to 10,000 tokens with `skills.max_context_tokens`. When it overflows, Codex shortens descriptions first and may omit skills with a warning.
+
+### How do I turn a skill off without deleting it?
+
+Add a `[[skills.config]]` entry to `~/.codex/config.toml` with `path = "/path/to/skill/SKILL.md"` and `enabled = false`, or select by `name`. When several entries match, the last one wins.
+
+### Are these skills safe to install?
+
+They are instructions that can include scripts. We read each SKILL.md and checked folder contents, but we did not security-audit the scripts. Install from sources you trust, read what you install, and prefer repo-scoped installs you can review in version control.
+
+### Do Codex skills cost extra?
+
+No separate fee for the skills in this list. You pay for Codex through your plan or API usage (see the pricing table). Some skills depend on other services, such as Figma's MCP server or cloud browser providers; those have their own terms that we did not verify.
+
+### Which skill should a web developer install first?
+
+Webapp Testing for verification, then Frontend Design for UI work, then GH Fix CI if you live in pull requests. Add the Next.js, Turborepo and security skills when your stack matches.
+
+## Sources
+
+All sources were fetched on November 26, 2026 unless noted.
+
+- [OpenAI: Build skills (Codex and ChatGPT)](https://developers.openai.com/codex/skills): locations, scopes, progressive disclosure, config
+- [OpenAI: Codex pricing](https://developers.openai.com/codex/pricing)
+- [Agent Skills specification](https://agentskills.io/specification)
+- [openai/codex on GitHub](https://github.com/openai/codex): skill-installer source and discovery code (136,569 stars as of Nov 26, 2026)
+- [openai/skills on GitHub](https://github.com/openai/skills): curated skills (29,160 stars)
+- [anthropics/skills on GitHub](https://github.com/anthropics/skills) (200,948 stars)
+- [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) (54,123 stars)
+- [vercel/turborepo](https://github.com/vercel/turborepo) (31,394 stars)
+- [vercel/examples](https://github.com/vercel/examples) and [vercel-labs/web-interface-guidelines](https://github.com/vercel-labs/web-interface-guidelines)
+- [lackeyjb/playwright-skill](https://github.com/lackeyjb/playwright-skill)
+- [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+- [davila7/claude-code-templates](https://github.com/davila7/claude-code-templates)
+- [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
+- [metabase/metabase](https://github.com/metabase/metabase)
+- [zenobi-us/dotfiles](https://github.com/zenobi-us/dotfiles) (source listed for Next.js Developer; path returned 404)
+- Client skill docs: [Claude Code](https://code.claude.com/docs/en/skills), [Cursor](https://cursor.com/docs/context/skills), [Gemini CLI](https://geminicli.com/docs/cli/skills), [OpenCode](https://opencode.ai/docs/skills), [Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills)
+- [Figma MCP server docs](https://developers.figma.com/docs/figma-mcp-server/)
+- agentskills.codes API and catalog pages for each skill linked above
+- X posts by [OpenAI Developers](https://x.com/OpenAIDevs) and [@thsottiaux](https://x.com/thsottiaux), verified via X syndication
+- Videos by [James NoCode](https://www.youtube.com/watch?v=4IWTdkwa9Js) and [JeredBlu](https://www.youtube.com/watch?v=MsJzacfjzp8), verified via YouTube oEmbed
