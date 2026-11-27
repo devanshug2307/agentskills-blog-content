@@ -1,0 +1,519 @@
+If you have opened the Claude download page lately and wondered whether you need Claude Code, Claude Cowork, Claude Desktop or something called Claude Duet, you are not alone. Anthropic now ships several surfaces that all sit on the same Claude account, and the names overlap: Claude Code is also a tab inside the Claude Desktop app, Cowork is a mode (and now, by Anthropic's own description, "part of Claude") that you reach from the same app, and the Agent SDK is Claude Code packaged as a library. This guide separates the products, says who each one is for, and shows what each can load: skills, plugins, MCP connectors, hooks and subagents.
+
+Short version, as of November 27, 2026: Claude Desktop is the app (free to download), Claude Code is the coding agent (paid plans, terminal, IDE, desktop Code tab, web), Claude Cowork is the same agentic approach pointed at documents, spreadsheets, research and other knowledge work (paid plans), Claude Duet is a separate proactive-agent app in research preview, and the Agent SDK and Managed Agents are the developer routes for building your own agents. Each is priced through your Claude plan or your API key, and every price below is dated.
+
+{% youtube id="UAmKyyZ-b9E" title="Introducing Cowork: Claude Code for the rest of your work" /%}
+
+*Official Anthropic video introducing Cowork. We verified the video id and title through YouTube oEmbed (channel: Anthropic). We did not independently verify every claim made in the video, and Cowork has changed since its January launch, so treat the later sections of this post as the current picture.*
+
+## Short answer and quick picks
+
+- **Best for software engineers: Claude Code.** It reads your repository, edits files, runs commands and talks to your dev tools, from the terminal, VS Code, JetBrains, the desktop app's Code tab, Slack and the web.
+- **Best for non-coding knowledge work: Claude Cowork.** Reports, decks, spreadsheet reconciliation, contract review and research, run as tasks you hand off, with scheduled and unattended runs.
+- **Best free way in: Claude Desktop.** The app is available on every plan including Free. Chat, skills and connectors are in Free; Claude Code and Cowork need a paid plan.
+- **Best proactive assistant: Claude Duet,** if you are in a supported country on a paid plan and are comfortable with a research preview that messages you first.
+- **Best for building your own agent: the Claude Agent SDK** if you want to run the agent loop in your own process, **Managed Agents** if you want Anthropic to host the loop and sandbox (beta).
+- **Best for skills and plugins authors:** Claude Code, because skills, plugins, hooks and subagents all run there, and skills you write follow the open Agent Skills format.
+
+{% callout type="info" %}
+The most common mix-up: "Claude Desktop" is an app that contains chat, Cowork and the Claude Code tab. Anthropic's desktop docs say it plainly: "In the Claude Desktop app, Claude Code is the Code tab. The app also has chat and Cowork." So claude code vs claude desktop is not an either/or. The real choice is which tab, which environment (local, cloud or SSH), and which plan.
+{% /callout %}
+
+{% figure src="https://assets.claude.com/1eec21fd9f2fe2cdc0afbb00e826d0bdccac7895.jpg?w=1200&h=630&fit=crop" alt="Claude download page social image showing the Claude desktop and mobile apps" caption="The Claude download page presents one app for chat, hand-off tasks and code. Source: Anthropic (claude.com/download)" /%}
+
+## Master comparison table
+
+Prices come from Anthropic's pricing page, checked November 27, 2026, monthly list prices excluding tax. None of the surfaces below has its own separate sticker price except where noted: access is bundled into a Claude plan.
+
+| Product | Entry paid price | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-code.png" name="Claude Code" size=24 /%} Claude Code | Pro $20 monthly ($17/mo billed annually); Max $100; Ultra $200; Team standard seat $20 annual or $25 monthly | No (Free plan lists Claude Code as No) | No (we did not find an open-source license) | Plan usage limits (5-hour and weekly windows) | Terminal, IDE, desktop and web coding agent with hooks, subagents, skills |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-cowork.png" name="Claude Cowork" size=24 /%} Claude Cowork | Included in Pro, Max, Ultra, Team, Enterprise | No (paid plans only) | No | Needs desktop app open for local files, browser or computer use | Hand-off tasks for documents and research, scheduled and unattended |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-desktop.png" name="Claude Desktop" size=24 /%} Claude Desktop | App is free; features follow your plan | Yes (all plan types can use the apps) | No | Some features paid only; Linux build is beta | One app with chat, Cowork and the Code tab, plus desktop extensions |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-duet.png" name="Claude Duet" size=24 /%} Claude Duet | Available in Pro, Max and Ultra (country limits); no separate price found | No | No | Research preview; US, India, Indonesia, Brazil and Japan per product page | Proactive agent that briefs you and drafts next steps |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-agent-sdk.png" name="Claude Agent SDK" size=24 /%} Claude Agent SDK | API key billing (see Claude Platform pricing) | Not a plan product | Changelogs are published for the Python and TypeScript SDKs; we did not verify license terms | API key auth only for third-party products by default | Claude Code's agent loop as a Python or TypeScript library |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-managed-agents.png" name="Claude Managed Agents" size=24 /%} Claude Managed Agents | API key billing (pricing not verified here) | Not a plan product | No | Beta; not eligible for Zero Data Retention or HIPAA (except self-hosted ZDR) | Anthropic-hosted agent harness and sandboxes |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-in-chrome.png" name="Claude in Chrome" size=24 /%} Claude in Chrome | Included in Pro and above | No | No | Browser-bound; Enterprise owners must enable it | Lets Claude drive your own browser |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-for-microsoft-365.png" name="Claude for Microsoft 365" size=24 /%} Claude for Microsoft 365 | Included in Pro and above | No | No | Pricing page lists it under paid plans only | Claude inside Excel, PowerPoint, Word and Outlook |
+
+## How to read the Claude lineup in one minute
+
+Anthropic's own pages describe the pieces this way, and the differences fall out of three questions: who the work is for, where the agent runs, and how much it does without you.
+
+1. **Who is the work for?** Code changes belong to Claude Code. Files, decks, research and spreadsheets belong to Cowork. A conversation belongs to chat. A daily operating picture belongs to Duet.
+2. **Where does it run?** Claude Code can run on your machine, in the cloud or over SSH from the desktop app. Since October 6, 2026, new Cowork tasks on Pro, Max and Ultra run in the cloud, with local folders, browser and computer use reached through the desktop app when it is open. The Agent SDK runs in your own process. Managed Agents run in an Anthropic-managed sandbox or a self-hosted one.
+3. **How autonomous is it?** Chat answers. Claude Code and Cowork take a goal and work for minutes or hours, asking before significant actions if permissions are on. Duet sends the first message.
+
+A fourth detail matters for skills authors: your plugins and skills are saved to your account, not your computer. Anthropic's plugin docs say plugins you add in Claude on the web or in the desktop app "follow you to chat, Cowork, and Claude Code." Plugins you install from the Claude Code command line stay on that machine.
+
+{% figure src="https://assets.claude.com/9716b96b8df867765a639f3ea8a07170508200bf.jpg?w=1200&h=630&fit=crop" alt="Claude Cowork product page social image" caption="Cowork is pitched as the work behind your best work: give it a goal and it works across your files and tools. Source: Anthropic (claude.com/product/cowork)" /%}
+
+## Claude Code
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-code.png" name="Claude Code" size=40 /%}
+
+**What it is.** Anthropic's docs describe Claude Code as "an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools," available in the terminal, IDE, desktop app and browser. The product page frames it as: hand Claude a bug fix, a test or a multi-day migration, set its permissions, then steer and review from your desktop, terminal, IDE, Slack or the web. Listed environments on the product page are Terminal, Web, iOS, Android, GitHub, VS Code, JetBrains and Slack.
+
+**Who it is for.** Developers and technical teams who want an agent working inside a repository: fixing bugs, writing tests, refactoring, reviewing diffs and opening pull requests.
+
+**Key features (from Anthropic's docs).**
+
+- Install on macOS, Linux or WSL with `curl -fsSL https://claude.ai/install.sh | bash`, on Windows with PowerShell or CMD installers, Homebrew (`brew install --cask claude-code`) or WinGet (`winget install Anthropic.ClaudeCode`).
+- Skills: a `SKILL.md` file with instructions that Claude loads when relevant or that you invoke with `/skill-name`. Custom commands "have been merged into skills." Bundled skills include `/doctor`, `/code-review`, `/batch`, `/debug`, `/loop` and `/claude-api`.
+- Plugins, MCP servers, hooks and subagents, all documented on the same docs site. Hooks and sub-agents run in Cowork and Claude Code but not in plain chat, per the plugins help article.
+- The desktop app's Code tab adds parallel sessions, visual diff review, an app preview pane, PR monitoring, an integrated terminal and file editor, computer use, and the option to run on your machine, in the cloud or over SSH.
+- Remote Control: the download page says you can use it on mobile to send tasks from your phone to the Claude Code CLI.
+
+**Pros**
+
+- The widest extension surface in the lineup: skills, plugins, MCP, hooks, subagents, memory files and a library form (the Agent SDK) share one set of concepts.
+- Many places to sit: terminal, VS Code, JetBrains, desktop, web, mobile, Slack.
+- Skills follow the open Agent Skills format, so what you write is portable to other tools that support it (per Anthropic's skills docs).
+- Installed through standard package managers on all three major desktop operating systems, with the desktop app on Windows x64, Windows ARM64 and macOS, and a Linux beta.
+
+**Cons**
+
+- No free plan: Anthropic's pricing table shows Claude Code as "No" on Free.
+- It runs on your plan's usage limits, and the pricing page shows one set of limits per plan, so a long coding session likely competes with chat and Cowork for the same limits.
+- Extension power means more to configure. A new user has to learn permission modes, memory files and skills before it feels tuned.
+- Not open source as far as we could verify.
+
+**Benefits for the reader's use case.** If your job is code, this is the product that was built for it, and the same account that runs Cowork for your non-engineering teammates also runs Claude Code for you.
+
+**Pricing (Anthropic pricing page, checked November 27, 2026).** Free: not included. Pro: $17 per month with an annual subscription ($200 billed up front), or $20 billed monthly. Max: $100 per month (5x Pro usage). Ultra: $200 per month (10x Pro weekly usage, no 5-hour limit for verified accounts). Team: standard seat $20 per seat per month billed annually ($25 monthly), premium seat $100 annually ($125 monthly), and both seat types include Claude Code and Claude Cowork per the Team plan listing. Enterprise: $20 per seat per month billed annually with a 20-seat minimum, plus usage at API rates, per the pricing page.
+
+**Standout use case.** A multi-session migration where one session refactors, another writes tests and a third reviews diffs, with hooks enforcing your lint rules and a skill carrying your team's conventions.
+
+**Skip it if** you mainly produce documents, decks and analysis and never touch a repository. Cowork is the closer fit.
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+cd your-project
+claude
+```
+
+{% figure src="https://assets.claude.com/f66071070c4701ea2c37fc01b3c0f83623cf29d3.jpg?w=2400&h=1260&fit=crop" alt="Claude Code product page social image" caption="Claude Code product page, which lists terminal, web, mobile, GitHub, VS Code, JetBrains and Slack as ways to use it. Source: Anthropic (claude.com/product/claude-code)" /%}
+
+## Claude Cowork
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-cowork.png" name="Claude Cowork" size=40 /%}
+
+**What it is.** Anthropic launched Cowork on January 12, 2026 with the line "Claude Code for the rest of your work." Its product page now describes it as "Claude Cowork completes tasks you can steer from anywhere. Give it a goal, and it works across your files and tools. You come back to polished work for your review." Cowork is no longer a separate product on every account: the Help Center says Cowork and chat are merging into one Claude, where "what you could previously only do in Claude Cowork is available from any conversation," and the product page says "Claude Cowork is now part of Claude." The rollout is gradual on Pro, Max and Ultra, and on Team and Enterprise it depends on whether the unified setting is turned on, so your message box may still show separate "Chat" and "Cowork" options.
+
+**Who it is for.** Analysts, operators, marketers, finance and legal teams, founders and anyone whose work is documents, spreadsheets, research and recurring reports. The product page's examples include a weekly marketing readout built from Amplitude and Drive data, spreadsheet reconciliation across regional exports, first-pass contract review against a playbook, and a quarterly objection analysis from call notes.
+
+**Key features.**
+
+- Runs tasks across folders and tools you choose, shows each step, and lets you redirect it.
+- Runs in the cloud on Pro, Max and Ultra since October 6, 2026: work continues if you close your laptop, scheduled tasks run with no device online, and sessions follow you across desktop, web and mobile. Local files, the built-in browser and computer use are reached through the Claude Desktop app, which must be open for tasks that touch your computer.
+- Scheduled tasks (announced on X on February 25, 2026) and parallel sub-tasks.
+- A built-in browser in the Cowork side panel, separate from your own browser and logins, available in the desktop app on Pro, Max, Ultra and Team.
+- Plugins that bundle skills, connectors and sub-agents. In Cowork you run a plugin's command with `/plugin-name:command`, and you can customize an installed plugin from inside Cowork.
+- Computer use: on September 2, 2026 Anthropic said Claude can use your computer in the background in Cowork and Claude Code.
+- Platforms: Claude Desktop for macOS, Windows and Linux (beta) on all paid plans, web and mobile on Pro, Max, Ultra and Team (beta on Team), Enterprise when an owner enables it, and the Claude in Chrome side panel on all paid plans.
+
+**Pros**
+
+- Handles file-heavy, multi-step, non-code work and returns finished files you can edit.
+- Unattended and scheduled runs, so a Monday readout can be ready before you sit down.
+- Plugins ship ready-made roles (the help center lists sales, finance, legal, marketing, HR, engineering, design, operations and data analysis).
+- Admin controls for Team and Enterprise, including OpenTelemetry streaming to a SIEM per the product page, and Anthropic's November 2 post that administrators can run their EDR against the local virtual machine (reported by a third-party news digest, satori.ml, quoting Anthropic's LinkedIn).
+
+**Cons**
+
+- Paid plans only.
+- The surface is in flux: Cowork and chat are merging, local-only mode was removed for Pro, Max and Ultra on October 6, and some steps in help articles may not match what you see.
+- Some features are desktop-only: per the Help Center, plugins with local MCP servers and live artifacts created before August 19, 2026 work through the desktop app only.
+- Cowork connectors reach outside services through Anthropic's cloud, so a custom connector must be reachable from Anthropic's IP ranges, which is a hurdle for servers behind a firewall.
+- It takes real actions on your files, so you need to set folder access and permissions deliberately.
+
+**Benefits for the reader's use case.** You get the agent loop developers enjoy in Claude Code without a terminal, and your skills and plugins travel with the account.
+
+**Pricing (checked November 27, 2026).** Included in Pro ($17 per month annual or $20 monthly), Max ($100), Ultra ($200), Team standard seat ($20 annual, $25 monthly) and premium seat ($100 annual, $125 monthly), and Enterprise. No Cowork-only price appears on the pricing page. Note a small wording inconsistency on Anthropic's own Cowork page: the Pro card under "Get started with Claude" says "Claude Cowork is included in your Max plan" in the text we fetched, while the help center says Cowork is available on Pro, Max, Ultra, Team and Enterprise. We went with the help center and the pricing page, and flagged it in our verification file.
+
+**Standout use case.** A scheduled weekly report: Cowork pulls numbers from connected tools, compares them with last week, builds the slides and saves them to a folder for review.
+
+**Skip it if** you want a coding-first workflow with git-aware diffs, hooks and IDE integration, or you cannot use a paid plan.
+
+{% x id="2010805682434666759" /%}
+
+{% x id="2026720870631354429" /%}
+
+## Claude Desktop (and claude.ai)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-desktop.png" name="Claude Desktop" size=40 /%}
+
+**What it is.** The Claude Desktop app is the container. Anthropic's download page says "All of Claude, in one app. Works with your files and apps to get things done," and the Code docs say that in the app, Claude Code is the Code tab, alongside chat and Cowork. Claude on the web (claude.ai) is the same account in a browser. The apps are available to all plan types, including Free.
+
+**Who it is for.** Everyone. It is the front door: you can chat, hand off tasks, and, on a paid plan, code, without installing anything else.
+
+**What the app adds over the browser.** Per the download FAQ, the app is always reachable from your dock with quick entry from anywhere on your system, supports desktop extensions that are installed locally to reach your file system, browsers and native apps, and syncs conversations, projects, memory and preferences across devices (local Cowork sessions stay on-device). It also connects to the Claude in Chrome extension so Claude can navigate, click and fill forms in your browser. Anthropic's ClaudeDevs account said on November 17 that you can opt into more frequent builds on Windows and Mac by switching to the Latest release channel, with Stable staying the default.
+
+**Pros**
+
+- Free to download, with chat, web search, file creation, memory, connectors and skills on the Free plan per the pricing table.
+- One app for chat, Cowork and Code, so switching tasks does not mean switching tools.
+- Mac, Windows and a Linux beta (apt or .deb for Ubuntu and Debian) per the Code desktop docs.
+- Enterprise deployment for the desktop app and admin controls for local connectors are listed on Team and Enterprise.
+
+**Cons**
+
+- Free is limited: usage windows every 5 hours and every week, no Claude Code, no Cowork, no scheduled tasks.
+- "Desktop" can mean three different experiences, which confuses new users.
+- Some capabilities (local files, built-in browser, computer use) depend on the app being open and connected.
+
+**Benefits for the reader's use case.** Start here, learn how the account works, and add Cowork or Code when you need them.
+
+**Pricing (checked November 27, 2026).** Free: $0 with limited usage. Pro: $17 per month on an annual plan, $20 monthly. Max: $100. Ultra: $200. Team and Enterprise as listed above.
+
+**Standout use case.** Using the same memory, skills and connectors for a chat question at 9 am, a Cowork report at noon and a Code session in the afternoon.
+
+**Skip it if** you only live in a terminal or an IDE and never use chat. The CLI or extensions alone may be all you need.
+
+## Claude Duet
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-duet.png" name="Claude Duet" size=40 /%}
+
+**What it is.** Claude Duet is a separate app announced on October 21, 2026 as a research preview: "a new app where Claude works as a proactive agent. It comes to you with what needs your attention, completes tasks you ask of it, keeps working when you step away, and checks with you before it acts on your behalf." The product page says it is "powered by Opus 5.5" and available in Pro, Max and Ultra plans in the US, India, Indonesia, Brazil and Japan. Anthropic's launch thread said it carries over "the memory, skills, and connected apps from your Claude account," and the product page cites "more than 6,000 connectors and plugins." CNBC reported that Anthropic positioned it for small businesses and professionals and said personal errands such as booking tickets are "not quite as strong."
+
+**Who it is for.** Founders, managers and professionals who want a morning brief on inbox and calendar, drafted replies and tasks that proceed without a prompt each time.
+
+**Pros**
+
+- It starts the conversation, which neither Cowork nor Claude Code does by default.
+- Reuses your Claude memory, skills and connected apps instead of a fresh setup.
+- Anthropic says it "never directly sees your passwords" and uses a new classifier to guard against sharing sensitive information (from the launch thread; we did not test this).
+
+**Cons**
+
+- Research preview: Anthropic says it can misjudge what is urgent.
+- Country limits, and the launch announcement mentioned a waitlist on Pro and Max in the US; the product page now lists more countries and plans, so availability has moved.
+- It is a different product from Claude Code and Cowork. Anthropic's promotional-credit terms say the credit does not cover Cowork sessions or Claude Code sessions that Duet starts.
+
+**Pricing (checked November 27, 2026).** No separate Duet price appears in the pages we fetched. It is offered on Pro, Max and Ultra. Separately, from November 23 to December 31, 2026, select eligible US accounts get promotional Duet credit of $500 USD each week, up to $3,000 in total, per Anthropic's help article; Enterprise is excluded and Anthropic may change or end it at any time.
+
+**Standout use case.** A daily brief that flags the contract redline, books the interview slots and drafts the replies, then waits for your approval.
+
+**Skip it if** you are outside the listed countries, need a production-grade agent today, or want to code (use Claude Code).
+
+{% x id="2112984664256241837" /%}
+
+## Claude Agent SDK
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-agent-sdk.png" name="Claude Agent SDK" size=40 /%}
+
+**What it is.** Anthropic describes it as "Build production AI agents with Claude Code as a library." It gives you the same tools, agent loop and context management that power Claude Code, programmable in Python and TypeScript.
+
+**Who it is for.** Developers embedding an agent in their own application, running in a process they operate.
+
+**Key capabilities (docs table).** Built-in tools (read, write, edit, run commands, search the web), hooks, subagents, MCP, permissions, sessions, and "skills, commands, and memory" that "load automatically from your project's `.claude/` and from `~/.claude/`, same as Claude Code," plus plugins loaded by local path.
+
+**Pros**
+
+- Everything you configured for Claude Code (skills, MCP, hooks) carries into your own agent.
+- Python and TypeScript, and a CLI subprocess mode (`-p` with `--output-format json`) for other languages.
+
+**Cons**
+
+- You operate it: hosting, secrets, monitoring and cost are yours.
+- Anthropic's docs say that, unless previously approved, third-party developers may not offer claude.ai login or rate limits in products built on the SDK. Use API keys.
+
+**Pricing.** Billed through your Claude API key. We did not verify the current per-token rates for this post, so check Anthropic's Claude Platform pricing page before budgeting.
+
+**Skip it if** you just want to use an agent, not build one.
+
+## Claude Managed Agents
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-managed-agents.png" name="Claude Managed Agents" size=40 /%}
+
+**What it is.** A hosted agent harness. Anthropic's docs: "Instead of building your own agent loop, tool execution, and runtime, you get a fully managed environment where Claude can read files, run commands, browse the web, and run code securely." Core concepts are Agent (model, system prompt, tools, MCP servers and skills), Environment (an Anthropic-managed cloud sandbox or a self-hosted one), Session and Events. Managed Agents is in beta and requires the `managed-agents-2026-04-01` header (the SDK sets it). A November 12 post from ClaudeDevs reported a private beta of self-hosted Managed Agents (we saw this on a third-party index of the account, not as an embedded post).
+
+**Pros.** No infrastructure to build, stateful sessions, scheduled runs, skills and MCP servers attach to the agent.
+
+**Cons.** Beta. Not currently eligible for Zero Data Retention or HIPAA BAA coverage, with an exception for self-hosted Managed Agents on ZDR, per the docs.
+
+**Pricing.** Billed through the Claude API. We did not verify current rates; see Anthropic's pricing documentation.
+
+**Skip it if** you want a finished app rather than a platform to build on.
+
+## Other alternatives worth considering inside the Claude family
+
+These are shorter entries. They are not replacements for the three main products but pieces you will meet while choosing.
+
+### Claude in Chrome
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-in-chrome.png" name="Claude in Chrome" size=40 /%}
+
+Claude in Chrome is a browser extension and side panel. Per the Cowork help article, the Chrome side panel starts a Cowork session directly, on all paid plans (Enterprise owners must enable it). The pricing page lists it as "No" on Free and "Yes" on Pro, Max and Ultra. An August 12 post from Anthropic said Chrome sessions now carry over to desktop, web and mobile, with skills and connectors working in the browser. Choose it if your work lives in browser tabs. Skip it if your tasks are mostly local files.
+
+### Claude for Microsoft 365
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-code-vs-claude-cowork-vs-desktop-2026/logos/claude-for-microsoft-365.png" name="Claude for Microsoft 365" size=40 /%}
+
+The download page lists Claude extensions for Excel, PowerPoint, Word and Outlook, and the pricing page lists Claude for Microsoft 365 and Outlook as paid features. Choose it if you want Claude inside Office documents rather than a separate task window. Skip it if you do not use Microsoft 365. We did not test these add-ins.
+
+## Pricing table (dated)
+
+All prices are from [claude.com/pricing](https://claude.com/pricing), checked November 27, 2026, in US dollars, excluding tax. Anthropic notes that prices and plans are subject to change and that usage limits apply.
+
+| Plan | Price | Claude Code | Cowork | Desktop app | Notes from the pricing page |
+| --- | --- | --- | --- | --- | --- |
+| Free | $0 | No | No | Yes | Limited usage every 5 hours and every week; chat, web search, file creation, memory, connectors, artifacts, skills |
+| Pro | $17 per month billed annually ($200 up front), $20 monthly | Yes | Yes | Yes | More usage than Free; hand off and schedule tasks; Claude in Chrome and Microsoft 365; Fable paid with usage credits |
+| Max | $100 per month | Yes | Yes | Yes | 5x Pro usage; $100 a month in API credits; priority access at high traffic times |
+| Ultra | $200 per month | Yes | Yes | Yes | 10x Pro weekly usage; no 5-hour limit for verified accounts; $200 a month in API credits |
+| Team (standard seat) | $20 per seat per month annual, $25 monthly | Yes | Yes | Yes | For teams of 2 to 150; more usage than Pro; up to $500 per month in pooled API credits |
+| Team (premium seat) | $100 per seat per month annual, $125 monthly | Yes | Yes | Yes | 5x more usage than standard seats |
+| Enterprise | $20 per seat per month billed annually, 20 seat minimum, plus usage at API rates | Yes | Yes | Yes | Admin spend limits, SSO, SCIM, audit logs, Compliance API, network-level access control |
+| Duet promotional credit | $0 (select eligible US accounts) | n/a | Not covered | n/a | $500 USD each week up to $3,000 total, November 23 to December 31, 2026; Enterprise excluded |
+
+Three pricing notes that save confusion:
+
+- **Cowork and Claude Code are not priced separately.** They are included in the plan, so the real cost question is which plan size gives you enough usage. Anthropic's pricing page shows usage multipliers (1x, 5x, 10x), not message counts, and we did not find published token or message numbers per plan.
+- **Usage is likely shared, but check.** Anthropic's pricing page shows one set of 5-hour and weekly limits per plan, and Duet's credit terms refer to "your plan limits" for Cowork and Claude Code sessions. We did not find a sentence spelling out how Cowork and Code draw on the pool, so treat a long Claude Code run plus a big Cowork job as competing for the same limits until you see otherwise.
+- **The API routes are separate.** The Agent SDK and Managed Agents bill through the Claude API, and Max and Ultra include monthly API credits ($100 and $200) according to the pricing page. We did not verify per-token rates.
+
+## Feature matrix: what each surface can do
+
+"Yes" means documented by Anthropic on a page we fetched. "Partial" means it works with limits we describe. "No" means documented as unavailable. If we could not find a statement, the cell says "Not documented", not a guess.
+
+| Capability | Claude Code | Cowork | Desktop app (chat) | Duet | Agent SDK | Managed Agents |
+| --- | --- | --- | --- | --- | --- | --- |
+| Needs a paid plan | Yes | Yes | No (Free works) | Yes | API key | API key |
+| Edits a code repository | Yes | Partial (works in folders you choose) | No | Partial (can code in its own tasks) | Yes | Yes (in a sandbox) |
+| Terminal / CLI | Yes | No | No | No | Library, plus CLI subprocess | No (API and `ant` CLI) |
+| IDE extension (VS Code, JetBrains) | Yes | No | No | No | No | No |
+| Desktop app tab | Yes (Code tab) | Yes | Yes | Separate app or website | n/a | n/a |
+| Web and mobile | Yes | Yes (Pro, Max, Ultra, Team) | Yes | Standalone app or website per CNBC | n/a | n/a |
+| Runs unattended or scheduled | Yes (desktop scheduled tasks, cloud sessions) | Yes (cloud, scheduled tasks) | No | Yes (keeps working while you are away) | You build it | Yes (scheduled deployments) |
+| Loads Agent Skills (SKILL.md) | Yes | Yes | Yes (Customize > Skills) | Yes (carried over from account) | Yes | Yes (attached to the agent) |
+| Plugins | Yes | Yes | Yes | Yes (per product page) | Yes (by local path) | Not documented |
+| MCP servers or connectors | Yes | Yes (cloud connectors; local MCP via desktop) | Yes (remote connectors; desktop extensions) | Yes | Yes | Yes |
+| Hooks | Yes | Yes | No (grayed out in chat) | Not documented | Yes | Not documented |
+| Subagents | Yes | Yes | No (grayed out in chat) | Not documented | Yes | Not documented |
+| Computer use | Yes (desktop) | Yes | Not documented | Not documented | Not documented | No (sandbox) |
+| Built-in browser | Yes (browser pane in Code tab) | Yes (side panel) | Via Claude in Chrome | Not documented | You add tools | Web search and fetch |
+| Windows | Yes | Yes (since February 10, 2026) | Yes | Not documented | Not documented | n/a |
+| Linux | Yes (CLI; desktop beta) | Yes (desktop beta) | Yes (beta) | Not documented | Not documented | n/a |
+| Enterprise admin controls | Yes | Yes (OpenTelemetry to SIEM per product page) | Yes | Excluded from promo; Enterprise availability not documented | Your own | Not ZDR/HIPAA eligible |
+
+Sources for the matrix: Anthropic's plugin help article (components by surface), Claude Code overview and desktop docs, Cowork product page and help articles, Duet product page, Agent SDK overview and Managed Agents overview. Cells marked "Not documented" are gaps in what we could verify, not claims that the feature is missing.
+
+## Head-to-head: Claude Code vs Claude Cowork
+
+The short version: same engine family, different job. Anthropic's own Cowork launch line was "Claude Code for the rest of your work," and its launch post on X added that Cowork "lets you complete non-technical tasks much like how developers use Claude Code."
+
+| Dimension | Claude Code | Claude Cowork |
+| --- | --- | --- |
+| Primary user | Engineers | Knowledge workers, operators, analysts |
+| Typical task | "Fix the double-charge bug and add tests" | "Build last week's marketing readout and save it to Drive" |
+| Output | Diffs, commits, pull requests, running apps | Documents, spreadsheets with formulas, slide decks, memos |
+| Where it works | Terminal, IDE, desktop Code tab, web, mobile, Slack | Desktop, web, mobile, Chrome side panel |
+| Where it runs | Your machine, cloud or SSH (desktop app) | Cloud since October 6, 2026 on Pro, Max and Ultra; desktop app bridges local files |
+| Extension model | Skills, plugins, MCP, hooks, subagents, memory files | Plugins (skills, connectors, sub-agents), skills, connectors |
+| Free tier | No | No |
+| Entry price | Pro $20 monthly | Pro $20 monthly (same plan) |
+
+**Which to pick.** If the deliverable is code, use Claude Code. If the deliverable is a file a non-engineer will open in Word, Excel or PowerPoint, use Cowork. If you are a developer who also writes weekly status decks, you can use both on one Pro plan, but watch your usage limits. A strength Cowork has over Code is the built-in browser panel that is separate from your own logins. A strength Code has over Cowork is the deeper dev-tool integration: diff review, PR monitoring, iOS simulator and an integrated terminal in the desktop Code tab.
+
+{% x id="2021336313979625910" /%}
+
+## Head-to-head: Claude Code vs Claude Desktop
+
+This is the pair people search for most, and the answer is that they overlap by design. The Code tab inside Claude Desktop is Claude Code with a graphical interface.
+
+| Dimension | Claude Code (CLI or IDE) | Claude Desktop (Code tab) |
+| --- | --- | --- |
+| Interface | Terminal prompt or editor extension | Graphical app with panes for chat, diff, browser, terminal and files |
+| Sessions | One per terminal or editor tab | Parallel sessions in a sidebar |
+| Environments | Local; cloud via web | Local, cloud or SSH from one selector |
+| Review | Text diffs, plan review in VS Code | Visual diff review with inline comments, PR checks |
+| Install | One-line installer, Homebrew, WinGet, apt, dnf, apk | Download for macOS, Windows (x64 and ARM64), Linux beta |
+| Non-code work | No | Yes: chat and Cowork in the same app |
+| Best for | Scripted workflows, remote servers, shell-native developers | People who want to watch several sessions and review visually |
+
+**Which to pick.** If you spend the day in a terminal or an IDE, start with the CLI or extension. If you want parallel sessions, a visual diff and the ability to switch to Cowork for documents in the same window, the desktop app is the better home. Claude Code docs state there is a CLI comparison page for what carries over between them, and ClaudeDevs said on November 23 that the desktop Code tab's side panel was redesigned (rolling out on Mac first). Because they share an account, you can use both.
+
+## Head-to-head: Claude Cowork vs Claude Duet
+
+Both run unattended, and both reuse your account's memory, skills and connectors. The difference is who starts the work.
+
+| Dimension | Claude Cowork | Claude Duet |
+| --- | --- | --- |
+| Starts when | You give it a goal | It flags what needs you, and you can also message it |
+| Status | Generally available on paid plans (unifying with chat) | Research preview |
+| Typical task | Reconcile spreadsheets, review contracts, build a deck | Morning brief, draft replies, chase a permit, build a dashboard |
+| Model | Your selection within plan | Built around Opus 5.5 per the product page |
+| Availability | Paid plans worldwide per help center (Enterprise on enablement) | Pro, Max and Ultra in US, India, Indonesia, Brazil and Japan |
+| Promo credit | Not covered | Select eligible US accounts, $500 a week, to December 31, 2026 |
+
+**Which to pick.** Use Cowork when you know the task. Try Duet when your problem is knowing what needs attention. A sensible way to start is small: pick one recurring task, let Duet run for a week and note every time it asked you first (our suggestion, echoing the advice in a third-party digest of Anthropic's posts).
+
+## Skills and MCP servers that work with these tools
+
+Every surface in this comparison can load Agent Skills, which is why the catalog matters more than the product name. A skill you install once is saved to your account (through Customize > Skills) or to your `.claude/skills` folder, and then works in Claude Code, Cowork and chat. Each entry below is a real page in the agentskills.codes catalog (we confirmed each returns HTTP 200 on November 27, 2026).
+
+| Skill | Why it fits | Best with |
+| --- | --- | --- |
+| [docx](https://agentskills.codes/skills/docx) | Word document creation, editing and analysis, including tracked changes and comments. The core "finished files" skill for Cowork-style tasks. | Cowork, Desktop |
+| [xlsx](https://agentskills.codes/skills/xlsx) | Spreadsheet creation, formulas, formatting and analysis. Suits the spreadsheet reconciliation tasks Anthropic uses to demo Cowork. | Cowork, Desktop |
+| [pptx](https://agentskills.codes/skills/pptx) | Presentation creation and editing, for the Monday-readout and deck use cases. | Cowork, Desktop |
+| [pdf](https://agentskills.codes/skills/pdf) | Extracts text and tables, creates and merges PDFs, handles forms. Useful for contract-review tasks. | Cowork, Claude Code |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | Guide for creating high-quality MCP servers, so Claude Code, Cowork and the Agent SDK can reach your own tools. | Claude Code, Agent SDK |
+| [mcp-integration](https://agentskills.codes/skills/mcp-integration) | Helps add and configure MCP servers in Claude Code plugins. | Claude Code |
+| [skill-creator](https://agentskills.codes/skills/skill-creator) | Guide for writing effective skills, the first step before packaging one as a plugin. | All surfaces |
+| [cowork-plugin-customizer](https://agentskills.codes/skills/cowork-plugin-customizer) | Customizes a plugin for an organization's tools and workflows, matching Cowork's "Customize" flow. | Cowork, Claude Code |
+| [claude-code-guide](https://agentskills.codes/skills/claude-code-guide) | A guide skill for configuring and using Claude Code effectively. | Claude Code |
+| [markitdown](https://agentskills.codes/skills/markitdown) | Converts PDF, Office documents and other formats to Markdown, which makes input files easier for any agent to read. | Cowork, Claude Code |
+
+How to install a catalog skill depends on the surface:
+
+```bash
+curl -L https://agentskills.codes/api/skills/download/<id> -o skill.zip
+unzip skill.zip -d ~/.claude/skills/<slug>
+```
+
+In Claude and Cowork, open Customize > Skills and upload the skill, per Anthropic's "Use skills in Claude" article. Team and Enterprise owners can provision skills for everyone from Organization settings > Plugins & skills. Anthropic's help article warns that skills (and plugins) run instructions and, in Cowork and Claude Code, may include local MCP servers, so install only from sources you trust.
+
+A few more things worth knowing about extensions across these surfaces:
+
+- **Plugins bundle everything.** A plugin packages skills, connectors and sub-agents. Skills and commands work in chat, Cowork and Claude Code, while hooks and sub-agents run in Cowork and Claude Code only. Anthropic's Plugin Create plugin helps you build one.
+- **Marketplaces.** Anthropic provides built-in marketplaces (a Knowledge Work marketplace is added by default) and you can add one from a Git repository, on github.com or public gitlab.com and bitbucket.org.
+- **Skills over MCP (beta).** On November 24, ClaudeDevs said "With Skills over MCP (beta), servers can publish skills alongside their tools." That means an MCP server can ship a playbook, not just tool names. We have not tested it.
+
+{% x id="2125289797199511594" /%}
+
+For more on how project memory files compare with skills, see our post on [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules). If you want your phone to start Claude Code tasks, read [Claude Code Remote Control for skill workflows](https://agentskills.codes/blog/claude-code-remote-control-for-skill-workflows). For the coding-agent comparison against a rival editor, see [Claude Code vs Cursor](https://agentskills.codes/blog/claude-code-vs-cursor-2026), and for plan questions see [Is Claude free?](https://agentskills.codes/blog/is-claude-free).
+
+## Best for X: decision table
+
+| If you are... | Start with | Why | Then add |
+| --- | --- | --- | --- |
+| A developer who lives in the terminal | Claude Code CLI | Native install, hooks, skills, subagents | Desktop app for parallel sessions |
+| A developer who wants to review visually | Claude Desktop, Code tab | Parallel sessions, visual diffs, PR monitoring | CLI for servers over SSH |
+| A finance, ops or legal user with files and spreadsheets | Cowork | Hand-off tasks, scheduled runs, finished files | docx, xlsx, pdf skills |
+| A marketer who needs weekly reporting | Cowork | Scheduled recurring tasks with connectors | pptx skill, a role plugin |
+| A founder drowning in email and calendar | Claude Duet (if in a supported country) | Proactive briefs and drafts | Cowork for heavy documents |
+| A team lead rolling out Claude to a group | Team plan | Claude Code and Cowork included per seat; org skills deployment | Plugin marketplaces |
+| A builder shipping an agent product | Agent SDK | Same loop as Claude Code in your process | Managed Agents when you want hosting |
+| A compliance-sensitive team | Check Enterprise terms | Admin controls, SCIM, audit logs | Do not assume Managed Agents covers HIPAA or ZDR |
+| Someone who only wants chat | Claude on web or the free desktop app | Free plan with limits | Pro when you hit limits |
+
+## Common mistakes
+
+1. **Thinking Claude Desktop replaces Claude Code.** The desktop app contains a Code tab. Claude Code also installs separately in terminals and IDEs, and both use your plan.
+2. **Buying a plan for one surface.** Pro, Max and Ultra include Claude Code and Cowork. Pick the plan by usage need, not product name.
+3. **Expecting Cowork tasks to read local files with the app closed.** Anthropic's help center says tasks that use files or apps on your computer need Claude Desktop open, even though sessions run in the cloud.
+4. **Installing plugins from unknown sources.** Plugins can include local MCP servers that run with your user permissions, per Anthropic. Review them.
+5. **Assuming the UI matches old screenshots.** Cowork and chat are merging gradually, so your message box may show "Chat" and "Cowork" or neither.
+6. **Using claude.ai login in your own SDK product.** Anthropic's Agent SDK docs say not to, unless previously approved.
+7. **Treating Duet as production-ready.** It is a research preview and Anthropic says it can misjudge urgency.
+8. **Ignoring plan limits.** Long Claude Code runs and big Cowork jobs both run on your plan's limits, so watch usage in Settings > Usage.
+
+## Buying and setup checklist
+
+1. Decide whether your main output is code, files or attention management.
+2. Download the app from claude.com/download, sign in, and try chat on the Free plan.
+3. If you need Claude Code or Cowork, move to Pro, then watch usage for a week before choosing Max.
+4. For code, install the CLI (`curl -fsSL https://claude.ai/install.sh | bash`) or open the Code tab in the desktop app.
+5. For Cowork, open Customize > Plugins and add one role plugin; connect only the connectors you need.
+6. Add skills in Customize > Skills (or `~/.claude/skills`). Start with docx, xlsx or pdf for Cowork, and skill-creator if you plan to write your own.
+7. Set permissions so Claude asks before significant actions; grant folder access narrowly.
+8. On Team or Enterprise, confirm with an owner whether unified chat and Cowork is on, which plugin marketplaces are allowed, and whether skills are provisioned organization-wide.
+9. For API-based builds, use an API key, not a claude.ai login, and read the Managed Agents data-handling page first.
+
+{% youtube id="qMUf-jwSpMo" title="Claude Cowork and chat are now one Claude" /%}
+
+*Official Claude channel video on the merge of Cowork and chat. Video id and title verified via YouTube oEmbed on November 27, 2026; we did not verify every claim.*
+
+{% figure src="https://claude.com/static/claude-duet/og.jpg" alt="Claude Duet product page social image" caption="Claude Duet, the proactive agent in research preview. Source: Anthropic (claude.com/product/claude-duet)" /%}
+
+## How we evaluated this
+
+We read primary sources: Anthropic's pricing page, product pages for Cowork, Claude Code and Duet, the download page, the Claude Code docs (overview, desktop, skills, Agent SDK), the Managed Agents overview on the platform docs, and Help Center articles on Cowork, chat-and-Cowork unification, plugins, skills and Duet's promotional credit. We also read Anthropic's X posts, checking each embedded post through the X syndication endpoint and each YouTube video through oEmbed. Where a claim came from a third party (a CNBC article on Duet, a digest of Anthropic's LinkedIn posts, a third-party index of ClaudeDevs posts), we say so in the text.
+
+What we did not do: we did not install Claude Code, run Cowork tasks, test Duet (we are not on its waitlist) or measure usage limits. We ran HTTP checks on every link and on every media URL. No benchmark or leaderboard compares these surfaces to each other, because they are access routes to the same underlying models rather than rival engines, so we did not invent one. Anthropic's pages change quickly (the Cowork and chat merge was still rolling out as we wrote), so check the dated sources below before buying.
+
+## FAQ
+
+### What is the difference between Claude Code, Claude Cowork and Claude Desktop?
+
+Claude Code is a coding agent that works in a repository from the terminal, IDEs, the desktop app and the web. Claude Cowork applies the same agentic approach to documents, spreadsheets, research and other knowledge work. Claude Desktop is the app that hosts chat, Cowork and a Code tab. Per Anthropic's desktop docs, "In the Claude Desktop app, Claude Code is the Code tab. The app also has chat and Cowork."
+
+### Is Claude Cowork the same as Claude Code?
+
+They share the idea (an agent that plans, uses tools and works for a while) but not the audience or interface. Anthropic launched Cowork as "Claude Code for the rest of your work." Cowork does not edit code in a repository the way Claude Code does, and Claude Code does not offer Cowork's document-focused workflow.
+
+### Do I need Claude Desktop to use Claude Code?
+
+No. Claude Code installs in a terminal, VS Code and JetBrains, and runs on the web. The desktop app adds a graphical Code tab with parallel sessions and visual diffs, but you can skip it.
+
+### Do I need Claude Desktop to use Cowork?
+
+Mostly yes for local work. Cowork is available on web and mobile for paid plans, but tasks that need local files, the built-in browser or computer use work through the desktop app, which must be open and connected, per Anthropic's help center.
+
+### How much does Claude Cowork cost?
+
+There is no separate Cowork price in what we fetched. It is included in Pro ($17 per month billed annually or $20 monthly), Max ($100), Ultra ($200), Team and Enterprise. Team standard seats are $20 per seat annually or $25 monthly, and premium seats are $100 annually or $125 monthly. Prices checked November 27, 2026.
+
+### Is Claude Code free?
+
+No. The pricing page lists Claude Code as not included on the Free plan. The cheapest route is Pro. You can also use some Claude Code surfaces with an Anthropic Console account or third-party providers, per the overview docs, which say most surfaces need a subscription or Console account and the CLI, VS Code and JetBrains also support third-party providers.
+
+### Is Claude Desktop free?
+
+The app is free to download and every plan type can use it, according to Anthropic's download FAQ. Some features, including Claude Code and Cowork, need a paid plan.
+
+### Does Cowork run locally or in the cloud?
+
+Since October 6, 2026, new Cowork tasks on Pro, Max and Ultra run in the cloud, and the "Only on your computer" option was removed. Tasks started earlier on your computer stay local until finished. Local folders are reached through the desktop app. A third-party digest of Anthropic's LinkedIn posts (satori.ml) also describes Cowork running commands in a local isolated virtual machine, so check your own account's behavior.
+
+### Can Cowork and Claude Code use the same skills and plugins?
+
+Yes. Anthropic says plugins added in claude.ai or the desktop app are saved to your account and available in chat, Cowork and Claude Code, and the skills and commands in a plugin work in all three. Hooks and sub-agents run only in Cowork and Claude Code. Plugins installed from the Claude Code command line stay on that machine.
+
+### What is Claude Duet and how is it different from Cowork?
+
+Duet is a separate proactive agent app in research preview, announced October 21, 2026. It briefs you on what needs attention and works when you are away, and it reuses your Claude memory, skills and connected apps. Cowork waits for you to hand it a task. Duet is listed for Pro, Max and Ultra in the US, India, Indonesia, Brazil and Japan.
+
+### What are the Agent SDK and Managed Agents for?
+
+They are for building your own agents. The Agent SDK is Claude Code as a Python or TypeScript library, run in your process. Managed Agents is a hosted harness where Anthropic runs the agent loop in a cloud or self-hosted sandbox. Managed Agents is in beta.
+
+### Is there a Claude Cowork for Windows or Linux?
+
+Windows: Anthropic announced Cowork on Windows on February 10, 2026 with "full feature parity with MacOS." Linux: Anthropic's help center lists Claude Desktop for Linux (beta) as available on all paid plans.
+
+### Which should a beginner pick?
+
+Start with the free desktop app or claude.ai. When you need more, take Pro. If your work is documents, use Cowork; if it is code, use Claude Code. Both are included in Pro.
+
+### Where do I find skills for these tools?
+
+Anthropic's built-in directory is under Customize in the app, and Anthropic's open-source skills repository is on [GitHub](https://github.com/anthropics/skills). The agentskills.codes catalog lists many community skills, such as the ones above.
+
+## Sources
+
+Checked November 27, 2026 unless noted.
+
+- [Anthropic: Plans and pricing](https://claude.com/pricing)
+- [Anthropic: Claude Cowork product page](https://claude.com/product/cowork)
+- [Anthropic: Claude Code product page](https://claude.com/product/claude-code)
+- [Anthropic: Claude Duet product page](https://claude.com/product/claude-duet)
+- [Anthropic: Download Claude](https://claude.com/download)
+- [Claude Code docs: Overview](https://code.claude.com/docs/en/overview)
+- [Claude Code docs: Desktop app](https://code.claude.com/docs/en/desktop)
+- [Claude Code docs: Skills](https://code.claude.com/docs/en/skills)
+- [Claude Code docs: Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
+- [Claude docs: Managed Agents overview](https://platform.claude.com/docs/en/managed-agents/overview)
+- [Help Center: Claude Cowork and chat are one Claude](https://support.claude.com/en/articles/16761823)
+- [Help Center: Use Claude Cowork on web, desktop, and mobile](https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile)
+- [Help Center: Get started with Claude Cowork](https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork)
+- [Help Center: Use plugins in Claude](https://support.claude.com/en/articles/13837440-use-plugins-in-claude)
+- [Claude docs: Plugins overview](https://claude.com/docs/plugins/overview)
+- [Help Center: Use skills in Claude](https://support.claude.com/en/articles/12512180-use-skills-in-claude)
+- [Help Center: Claude Duet promotional credit](https://support.claude.com/en/articles/18518702-claude-duet-promotional-credit)
+- CNBC, "Anthropic announces preview of Claude Duet" (October 21, 2026), fetched through our research tool (the site returned HTTP 403 to a plain curl request)
+- X posts by [@claudeai](https://x.com/claudeai) and [@ClaudeDevs](https://x.com/ClaudeDevs), dates as shown in the text
+- Third-party digest of Anthropic LinkedIn posts: satori.ml, "Claude news November 2026" (attributed in the text)
+- [Anthropic skills repository on GitHub](https://github.com/anthropics/skills)
