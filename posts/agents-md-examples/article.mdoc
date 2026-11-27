@@ -1,0 +1,790 @@
+Most advice about `AGENTS.md` is written by people describing what a good file should look like. This guide goes the other way: it reads 20 real files that maintainers committed to some of the most-starred repositories on GitHub, quotes them, measures them, and reports what they have in common. The 20 repos span Next.js, PyTorch, Rust, Kubernetes, Node.js, Bun, Ruff, VS Code, n8n, LangChain and more, and together they hold about 3,800 lines of agent instructions.
+
+The short result: there is no single shape. The files run from 7 lines (VS Code) to 532 lines (Next.js). Some are build manuals, some are almost pure AI-contribution policy, and a growing number are routers that point the agent at `SKILL.md` files. If you want to write your own, skip ahead to the [checklist](#best-practices-checklist) and the [starter template](#starter-template). If you want to know why those recommendations look the way they do, read the examples first.
+
+{% youtube id="6w88NVf2_lY" title="How I Write My AGENTS.md Files - Best Practices (NeuralNine)" /%}
+
+*An independent walkthrough of AGENTS.md best practices. We confirmed the video exists and its title through YouTube oEmbed on November 27, 2026; we did not use its claims as evidence for anything below.*
+
+## The short answer
+
+Across the 20 files (all fetched from GitHub on November 27, 2026), these are the findings that matter for anyone writing an `AGENTS.md` file:
+
+- **Length varies by a factor of 76.** The median file is about 190 lines (roughly 12 KB). Eight files are under 100 lines, eight are between 100 and 300, and four are over 300.
+- **Commands are common but not universal.** 15 of 20 files include at least one concrete build, test or lint command. Five (Excalidraw, Node.js, Svelte, VS Code and llama.cpp) include no build, test or lint command and point to `CONTRIBUTING.md`, a Copilot instructions file or contributor policy instead.
+- **"Do not" rules beat descriptions.** The files that read best contain traps ("never hand-edit generated files") rather than architecture tours. Zed's file says this outright, and we quote it below.
+- **AI-contribution policy is now part of the genre.** Six files (PyTorch, Rust, Transformers, Kubernetes, Node.js, llama.cpp) spend real space on when an agent may or may not act, what must be disclosed, and who is responsible for the result.
+- **Skills are the new split point.** 11 of 20 files tell the agent to load named skills or `SKILL.md` folders, usually to keep the root file short.
+
+Quick picks from the 20, as of November 27, 2026:
+
+- **Best to copy for a large monorepo:** [Next.js](#nextjs) and [n8n](#n8n) (commands, test loops, PR hygiene, skills).
+- **Best short file:** [Kubernetes](#kubernetes) (39 lines: constraints, contributor rules, commands, style).
+- **Best AI-contribution policy:** [PyTorch](#pytorch), [Node.js](#nodejs) and [llama.cpp](#llamacpp).
+- **Best use of skills routing:** [OpenAI Agents SDK](#openai-agents-sdk) and [Supabase](#supabase).
+- **Best advice on maintaining the file itself:** [Zed](#zed).
+- **Best minimal pointer file:** [VS Code](#vs-code) (7 lines that delegate to Copilot instructions).
+
+{% callout type="info" %}
+"agent.md examples" is a common spelling of the query, but the filename in every repo below is `AGENTS.md` (plural). For which tools read which filename, and how `AGENTS.md` relates to `CLAUDE.md`, `SKILL.md` and Cursor rules, see our companion guide [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules).
+{% /callout %}
+
+## What an AGENTS.md file is, and who reads it
+
+`AGENTS.md` is a plain Markdown file at the root of a repository (and optionally in subfolders) that gives coding agents the context a README does not: how to build, how to test, what conventions to follow, what to avoid. The project site at [agents.md](https://agents.md/) describes it as "a simple, open format for guiding coding agents" and says it is "used by over 60k open-source projects" (that is the site's own claim; we did not verify the number). Its own explanation of why the file exists is that README files are for humans, while `AGENTS.md` holds "the extra, sometimes detailed context coding agents need".
+
+{% figure src="https://agents.md/og.png" alt="Social preview card for agents.md, the site describing the AGENTS.md format" caption="The agents.md project's own social preview image. Source: agents.md" /%}
+
+The format has no required fields. OpenAI's Codex documentation, fetched November 27, 2026, describes the one mechanical behavior worth knowing: Codex builds an instruction chain by reading `AGENTS.md` files from the project root down to the current directory, concatenating them, and stopping once the combined size reaches `project_doc_max_bytes`, which defaults to 32 KiB. In each directory it checks `AGENTS.override.md` first, then `AGENTS.md`. Other tools document their own limits and precedence rules; the point for authors is that a very large root file competes with nested files for a finite budget.
+
+The format came out of a cross-vendor effort. These two posts from August 2025 announce it from the people involved:
+
+{% x id="1957924964105179455" /%}
+
+{% x id="1957945824404729997" /%}
+
+OpenAI's developer account has since pointed at `AGENTS.md` as a place for repository-specific review rules, which matters later when we look at the "Code Review Rules" sections in Ruff and the OpenAI Agents SDK:
+
+{% x id="2079627776722981348" /%}
+
+## How we picked the 20 files
+
+We started from roughly 55 popular repositories, fetched the root `AGENTS.md` of each through the GitHub contents API, and kept the 20 that satisfied all of these:
+
+1. The file exists at the repository root today (we fetched it on November 27, 2026 and recorded the size, line count and last commit touching that path).
+2. The repository is widely used (the smallest has 30,902 stars, the largest 229,614).
+3. The file contains real instructions rather than a one-line redirect, with two deliberate exceptions: VS Code (7 lines, kept as the minimal-pointer example) and Excalidraw (20 lines, kept as a "traps only" example).
+4. Together the 20 cover different domains: web frameworks, languages and runtimes, ML libraries, infrastructure, developer tools and AI agent frameworks.
+
+We did not pick by quality ranking. "Top" here means high-star and real. Two caveats on what you are about to read. First, star counts and file contents change daily; every number is dated. Second, the stars are for the repository, not the file: a famous repo can have a thin file and vice versa. That is why the table below sorts by nothing in particular and the per-repo sections explain what each file does well.
+
+## The 20 files at a glance (as of November 27, 2026)
+
+Stars are as returned by the GitHub API on November 27, 2026. "Lines" is the line count of the raw file. The last column is the one thing we think each file does best.
+
+| Repo | Stars | Lines | File | Standout |
+| --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/next-js.png" name="Next.js" size=24 /%} Next.js | 143,753 | 532 | [vercel/next.js](https://github.com/vercel/next.js/blob/canary/AGENTS.md) | Secrets rules, skill list, anti-patterns |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/n8n.png" name="n8n" size=24 /%} n8n | 212,389 | 481 | [n8n-io/n8n](https://github.com/n8n-io/n8n/blob/master/AGENTS.md) | "Verify changes" loop that reports what ran |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/langchain.png" name="LangChain" size=24 /%} LangChain | 150,078 | 390 | [langchain-ai/langchain](https://github.com/langchain-ai/langchain/blob/master/AGENTS.md) | Public-API stability rule, security hook |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/pytorch.png" name="PyTorch" size=24 /%} PyTorch | 105,760 | 381 | [pytorch/pytorch](https://github.com/pytorch/pytorch/blob/main/AGENTS.md) | Leads with a mandatory AI policy |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/bun.png" name="Bun" size=24 /%} Bun | 96,996 | 244 | [oven-sh/bun](https://github.com/oven-sh/bun/blob/main/AGENTS.md) | "Never use `bun test` directly" (symlink to CLAUDE.md) |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/playwright.png" name="Playwright" size=24 /%} Playwright | 101,193 | 189 | [microsoft/playwright](https://github.com/microsoft/playwright/blob/main/AGENTS.md) | When to run lint, and when not to |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/ruff.png" name="Ruff" size=24 /%} Ruff | 51,557 | 242 | [astral-sh/ruff](https://github.com/astral-sh/ruff/blob/main/AGENTS.md) | "Writing for human readers" |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/rust.png" name="Rust" size=24 /%} Rust | 122,513 | 265 | [rust-lang/rust](https://github.com/rust-lang/rust/blob/main/AGENTS.md) | LLM usage policy with a "when a gate fails" rule |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/node-js.png" name="Node.js" size=24 /%} Node.js | 124,005 | 64 | [nodejs/node](https://github.com/nodejs/node/blob/main/AGENTS.md) | Explicit prohibited activities and consequences |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/llama-cpp.png" name="llama.cpp" size=24 /%} llama.cpp | 136,493 | 251 | [ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp/blob/master/AGENTS.md) | "Common mistakes that AI agents usually make" |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/transformers.png" name="Transformers" size=24 /%} Transformers | 169,382 | 48 | [huggingface/transformers](https://github.com/huggingface/transformers/blob/main/AGENTS.md) | Tells the agent when to refuse the contribution |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/kubernetes.png" name="Kubernetes" size=24 /%} Kubernetes | 129,341 | 39 | [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes/blob/master/AGENTS.md) | Dense constraints in 39 lines |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=24 /%} OpenAI Agents SDK | 30,902 | 106 | [openai/openai-agents-python](https://github.com/openai/openai-agents-python/blob/main/AGENTS.md) | Skill routing table with required actions |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/supabase.png" name="Supabase" size=24 /%} Supabase | 115,580 | 77 | [supabase/supabase](https://github.com/supabase/supabase/blob/master/AGENTS.md) | Skills as the source of truth for conventions |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/opencode.png" name="opencode" size=24 /%} opencode | 229,614 | 221 | [anomalyco/opencode](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md) | Checks, tests and branch naming in one place |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/zed.png" name="Zed" size=24 /%} Zed | 95,845 | 190 | [zed-industries/zed](https://github.com/zed-industries/zed/blob/main/AGENTS.md) | Rules for maintaining the rules |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/angular.png" name="Angular" size=24 /%} Angular | 101,604 | 39 | [angular/angular](https://github.com/angular/angular/blob/main/AGENTS.md) | Opinionated testing rules, front matter |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/svelte.png" name="Svelte" size=24 /%} Svelte | 89,944 | 24 | [sveltejs/svelte](https://github.com/sveltejs/svelte/blob/main/AGENTS.md) | PR template and test-suite gate |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/excalidraw.png" name="Excalidraw" size=24 /%} Excalidraw | 136,406 | 20 | [excalidraw/excalidraw](https://github.com/excalidraw/excalidraw/blob/master/AGENTS.md) | Only non-obvious rules, plus a translation workflow |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/vs-code.png" name="VS Code" size=24 /%} VS Code | 195,800 | 7 | [microsoft/vscode](https://github.com/microsoft/vscode/blob/main/AGENTS.md) | Minimal pointer to Copilot instructions |
+
+The opencode repository appears under `anomalyco/opencode`: the GitHub API resolved our `sst/opencode` lookup to that name, so we link the name the API returns.
+
+{% callout type="warning" %}
+Bun's `AGENTS.md` is not a separate file. The git tree shows it as a symlink (mode 120000) whose target is `CLAUDE.md`, an 18,159-byte file. The content below is real and in force, but if you open `AGENTS.md` on GitHub you are reading `CLAUDE.md`. Symlinking is one answer to "which filename do I maintain?".
+{% /callout %}
+
+## Group 1: build-and-test playbooks
+
+These seven files are the closest to what most people imagine: commands first, then conventions, then PR rules. They are also the longest, which matters if your agent has a context budget.
+
+### Next.js
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/next-js.png" name="Next.js" size=40 /%}
+
+**Repo:** [vercel/next.js](https://github.com/vercel/next.js/blob/canary/AGENTS.md) | **Stars:** 143,753 | **Length:** 532 lines, 30,556 bytes | **Last commit to the file:** November 24, 2026
+
+The longest file in the set, and the one that most resembles an engineering handbook. Sections include Codebase structure, Build Commands, Fast Local Development, Bundler Selection, Testing, Writing Tests, Linting and Types, GitHub Pull Requests, GitHub Issues, Comments and Discussions, Secrets and Env Safety, Specialized Skills, Commit and PR Style, Rebuilding Before Running Tests and Development Anti-Patterns. At 30,556 bytes it uses about 93% of the 32 KiB default Codex limit on its own, so nested files and a global file would compete with it.
+
+From the Secrets and Env Safety section:
+
+> Never print or paste secret values (tokens, API keys, cookies) in chat responses, commits, or shared logs.
+>
+> If a required secret is missing locally, stop and ask the user rather than inventing placeholder credentials.
+
+**What makes it good:** the Specialized Skills section keeps the root file as the baseline policy and moves conditional workflows into named skills such as `$pr-status-triage`, `$create-pr`, `$rebase-pr`, `$deploy-release-test` and `$backport-pr`. The file also ends with a block about Turborepo that, according to the text itself, is written and re-added by `turbo` when it detects an AI agent. That is a tool vendor editing the project's `AGENTS.md` for you, which is a pattern worth knowing about before you wonder where a section came from.
+
+**Borrow this:** a dedicated secrets section. It is the only file in the set with one as a standalone heading.
+
+### n8n
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/n8n.png" name="n8n" size=40 /%}
+
+**Repo:** [n8n-io/n8n](https://github.com/n8n-io/n8n/blob/master/AGENTS.md) | **Stars:** 212,389 | **Length:** 481 lines, 25,546 bytes | **Last commit to the file:** November 27, 2026
+
+n8n's file has the clearest "definition of done" in the set. The Verify changes subsection tells the agent what to run, how many workers to use, what not to run locally, and what to say at the end:
+
+> Run tests that cover the changed behavior from the owning package:
+> `pnpm test <test-file> --maxWorkers=1`.
+
+> Report which checks ran and which checks were left to CI.
+
+Other sections: Project Overview, General Guidelines, Agent Skills and Claude Code Plugin, Essential Commands, Architecture Overview, Technology Stack, Key Development Patterns, Design Principles and Github Guidelines. One unusual rule asks the agent to write technical text (comments, PR descriptions, docs) in ASD-STE100 Simplified Technical English.
+
+**What makes it good:** it bounds resource use (one test worker, no full frontend typechecks locally, CI for the rest) and forces an honest handoff. Both address real agent failure modes: runaway local jobs and vague "all tests pass" claims.
+
+**Borrow this:** the "report what you ran and what you left to CI" line.
+
+### LangChain
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/langchain.png" name="LangChain" size=40 /%}
+
+**Repo:** [langchain-ai/langchain](https://github.com/langchain-ai/langchain/blob/master/AGENTS.md) | **Stars:** 150,078 | **Length:** 390 lines, 20,580 bytes | **Last commit to the file:** September 23, 2026
+
+Sections: Corridor security analysis, Project architecture and context, Core development principles, Model profiles, CI/CD infrastructure, GitHub Actions and Workflows, Additional resources, and OpenWiki. The architecture section is long, and it is the one place in this set where a big architecture tour is justified: LangChain is a multi-package monorepo, and the agent needs to know which package owns what.
+
+> CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
+
+**What makes it good:** the stability rule is the right kind of constraint for a library with many downstream users, and it is stated as a rule rather than a hope. The file also opens with a security hook: "When Corridor's `analyzePlan` tool is available, create a plan and use the tool to analyze it before generating or modifying code." That is a conditional instruction: it applies only when the tool exists.
+
+**Skip it if:** your repo is small. This file's value comes from monorepo scale.
+
+### PyTorch
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/pytorch.png" name="PyTorch" size=40 /%}
+
+**Repo:** [pytorch/pytorch](https://github.com/pytorch/pytorch/blob/main/AGENTS.md) | **Stars:** 105,760 | **Length:** 381 lines, 17,593 bytes | **Last commit to the file:** April 13, 2026
+
+PyTorch opens with its AI policy, before any build command. The first heading is an "AI Policy" marked mandatory, and the first rule is blunt:
+
+> **You may never act autonomously on GitHub.** Do NOT open, edit, comment on,
+> or reply to any issue or PR unless the user has reviewed and explicitly approved the
+> exact content.
+
+The rest of the file is detailed and specific: Scratch Space (`agent_space/`, git-ignored), PR Review (use the `/pr-review` skill), Environment, CI Docker Images, Build, Testing, Type Stubs, Linting, Git, Commit messages, ghstack workflow, Coding Style, plus topic sections on cuda.bindings, Dynamo config, logging and distributed changes. The build section is a single command and a prohibition:
+
+> All build (both codegen, C++ and python) is done via `pip install -e . -v --no-build-isolation`.
+> You should NEVER run any other command to build PyTorch.
+
+**What makes it good:** one canonical command and an explicit ban on alternatives removes a whole class of agent mistakes. The Linting section also includes a worked good/bad example for a recurring lint failure ("Never silence S101 with a noqa"), which is the best use of a code example in the set: it teaches one specific trap.
+
+**Borrow this:** one build command, stated as the only one.
+
+### Bun
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/bun.png" name="Bun" size=40 /%}
+
+**Repo:** [oven-sh/bun](https://github.com/oven-sh/bun/blob/main/AGENTS.md) | **Stars:** 96,996 | **Length:** 244 lines (symlink to an 18,159-byte `CLAUDE.md`)
+
+Sections: Building and Running Bun, Testing (Running Tests, Test Organization, Writing Tests), Code Architecture, JavaScript Modules (`src/js/`), Landing PRs: What Bun Reviewers Catch, Important Development Notes, Debugging CI Failures and Reading PR Feedback.
+
+> **Run tests with your debug build**: `bun bd test <test-file>`
+> **CRITICAL**: Never use `bun test` directly - it won't include your changes
+
+**What makes it good:** this is the clearest example of an agent trap that a README would never mention. A Bun contributor who runs the installed `bun test` is testing the wrong binary, and the file says so in the exact spot where the agent will look. It also tells the agent not to set a timeout when running the debug build. The "Landing PRs" section points at a separate `REVIEW.md` that, per the file, distils the review rules from about 2,500 merged PRs, then asks the agent to read it before making a non-obvious choice. That is progressive disclosure done with plain links.
+
+**Skip it if:** you need a tool-neutral file. As a symlink to `CLAUDE.md`, it was written with Claude Code in mind.
+
+### Playwright
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/playwright.png" name="Playwright" size=40 /%}
+
+**Repo:** [microsoft/playwright](https://github.com/microsoft/playwright/blob/main/AGENTS.md) | **Stars:** 101,193 | **Length:** 189 lines, 10,496 bytes | **Last commit to the file:** November 25, 2026
+
+Sections include Build, Lint and type check, Test Commands, DEPS System, Coding Convention, Commit Convention, Browser bugs and Development Guides. The Test Commands section is a table of commands and what each one runs.
+
+> **Run `flint` only before you upload a PR, and only after `npm run build`.** Do not run it before each commit. Do not use `tsc --noEmit` or individual lint commands separately.
+
+**What makes it good:** it sequences the work. The Build section tells the agent to "Assume watch is running and code is up to date", and the lint rule says exactly when the expensive check belongs. Most files list commands; few say when not to run them.
+
+**Borrow this:** order-of-operations rules ("only after", "not before each commit").
+
+### Ruff
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/ruff.png" name="Ruff" size=40 /%}
+
+**Repo:** [astral-sh/ruff](https://github.com/astral-sh/ruff/blob/main/AGENTS.md) | **Stars:** 51,557 | **Length:** 242 lines, 20,533 bytes | **Last commit to the file:** November 25, 2026
+
+Sections: Before contributing, PR conventions, Code Review Rules, Writing for human readers, Running Tests (with a fallback without nextest and snapshot updates), Writing mdtests, Running Clippy, Running Debug Builds, Working on ty (with related skills) and Development Guidelines. The repository holds both Ruff and the ty type checker, and the file says so in its first paragraph.
+
+> Write every mdtest paragraph, code comment, piece of documentation, PR description, and GitHub issue for its eventual reader, not for the current Codex conversation.
+
+**What makes it good:** "Writing for human readers" targets a failure mode that grows with agent use: PR text that narrates the session instead of explaining the change. The same section tells the agent not to mention discarded alternatives, intermediate edits or tool usage unless the reader needs them. The file also includes a Code Review Rules section, the same heading OpenAI's Codex docs recommend for review-specific guidance.
+
+**Borrow this:** a rule that PR descriptions describe the final diff, not the process.
+
+## Group 2: policy-first files
+
+These five files are less about how to build and more about what an agent may do. They respond to a specific maintainer problem: a flood of plausible but unwanted AI-generated contributions.
+
+### Rust
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/rust.png" name="Rust" size=40 /%}
+
+**Repo:** [rust-lang/rust](https://github.com/rust-lang/rust/blob/main/AGENTS.md) | **Stars:** 122,513 | **Length:** 265 lines, 13,848 bytes | **Last commit to the file:** November 2, 2026
+
+The file starts with an "LLM usage policy" and defers to the project's published policy page. Sections include When a gate fails, Personal use exemption and Persona, then a Repository guidance section that routes the agent to the right dev guide for std, compiler, tests, formatting and pull requests.
+
+> Follow the Rust project's [LLM usage policy]. It applies to all LLM-generated
+> text even if a human later edits it.
+
+The "When a gate fails" rule is the most carefully engineered paragraph in the set:
+
+> When a rule identifies banned work, **STOP** that work.
+
+It goes on to say that a named reviewer, tests, user confirmation or later human editing cannot permit it, and that the agent must not offer the banned work "under another name", such as a draft or template. It also requires a policy reminder in the same response turn as any text that could substitute for prohibited text.
+
+**What makes it good:** it anticipates workarounds. Rules that say "do not do X" invite "here is X as a draft"; this file closes that door by name. It also uses the format as a router: build commands live in the dev guide, and the file tells the agent which page to open (`./x fmt`, `./x test tidy --bless` appear inline as the preferred forms).
+
+**Borrow this:** closing the "draft" loophole explicitly.
+
+### Node.js
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/node-js.png" name="Node.js" size=40 /%}
+
+**Repo:** [nodejs/node](https://github.com/nodejs/node/blob/main/AGENTS.md) | **Stars:** 124,005 | **Length:** 64 lines, 3,083 bytes | **Last commit to the file:** September 12, 2026
+
+Sections: Agents and Automated Tools (H1), Code Contributions with Requirements, Prohibited Activities and Violations. It contains no build commands at all, and that is the point: it is a contributor policy addressed to agents.
+
+> New Node.js contributors should avoid using AI agents to interact with the project.
+
+> AI-assistance must be acknowledged using the `Assisted-by: <agent name>` annotation.
+
+The Prohibited Activities list includes pushing to any branch or tag, creating unsupervised pull requests or issues, and signing off commits as an agent. The Violations section lists consequences: closing the PR without review, blocking the tool, and blocking the account or its owner.
+
+**What makes it good:** it states consequences, which agents (and the people running them) can weigh. It also separates human DCO attestation from agent disclosure: `Signed-off-by` is for the human; `Assisted-by` is for the tool.
+
+**Skip it if:** you want a working-instructions file. Pair it with a separate build and test file or a link to `CONTRIBUTING.md`.
+
+### llama.cpp
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/llama-cpp.png" name="llama.cpp" size=40 /%}
+
+**Repo:** [ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp/blob/master/AGENTS.md) | **Stars:** 136,493 | **Length:** 251 lines, 11,761 bytes | **Last commit to the file:** October 17, 2026
+
+Sections: Guidelines for Contributors, Guidelines for AI Coding Agents (including Code and Commit Standards, Common mistakes that AI agents usually make and Prohibited Actions) and Useful Resources. It opens with a callout that sets the tone:
+
+> AI-generated code is allowed. What is **not** allowed is submitting code you do not understand. You are 100% responsible for every line, however it was produced.
+
+Under Prohibited Actions: "Do NOT write PR descriptions, commit messages, or reviewer responses". The file also bans pushing or creating PRs on the user's behalf and asks that any commit made at the user's request carry an `Assisted-by: <assistant name>` trailer.
+
+**What makes it good:** the "Common mistakes that AI agents usually make" list is unusually concrete. It includes writing comments before code (which leads to redundant comments) and a correction for stale training data: the file states that llama.cpp does not use Minja and has its own Jinja engine in `common/jinja`. Correcting what the model "knows" is something a README cannot do.
+
+**Borrow this:** a "what your training data gets wrong about this repo" list.
+
+### Transformers
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/transformers.png" name="Transformers" size=40 /%}
+
+**Repo:** [huggingface/transformers](https://github.com/huggingface/transformers/blob/main/AGENTS.md) | **Stars:** 169,382 | **Length:** 48 lines, 7,189 bytes | **Last commit to the file:** November 26, 2026
+
+Only four sections: Commands, Agent files, Before opening an issue or PR, and Copies and modular models. The file is short but about two thirds of its bytes (4,891 of 7,189) sit in the "Before opening an issue or PR" section, which tells the agent when to decline.
+
+> Don't submit perf PRs without proof. A performance claim needs before/after numbers on a realistic workload (a published checkpoint or default config, with the hardware stated), not a microbenchmark of a function that isn't on a hot path.
+
+The Agent files section settles the filename question in two sentences:
+
+> This file is the only copy of the agent instructions. `CLAUDE.md` and `GEMINI.md` just import it, so edit this one.
+
+**What makes it good:** it is explicit that an issue must be labeled before the agent works on it, that duplicate PRs are not welcome, and that maintainers are exempt from the contribution rules so the agent should not refuse to help them. The file also ends with "two modular traps", a clean example of listing traps instead of describing architecture.
+
+**Borrow this:** the three-line "single source of truth" note that tells the next editor which file to edit.
+
+### Kubernetes
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/kubernetes.png" name="Kubernetes" size=40 /%}
+
+**Repo:** [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes/blob/master/AGENTS.md) | **Stars:** 129,341 | **Length:** 39 lines, 1,885 bytes | **Last commit to the file:** October 15, 2026
+
+Sections: Communication Preferences, Constraints, Contributor Guidelines, Commands and Style. In 39 lines it covers tone, hard constraints, PR hygiene, the four `make` targets that matter and a style rule.
+
+> **Generated files are read-only.** Never hand-edit `zz_generated.*` or `generated.pb.go`. Run `make update`.
+
+Its contributor rules include: "When creating or submitting a pull request, disclose whether AI was used and briefly describe how". It also tells the agent to remind the human author that they are responsible for all submitted changes, not to add `Co-authored-by:` lines, and to squash review fixes back into the commits they fix. The Communication Preferences section is a single line of tone guidance: "Dry, concise, low-key humor. No flattery, no forced memes. Skip preambles and postambles."
+
+**What makes it good:** every line is a decision a new agent would otherwise guess. No architecture, no tutorial.
+
+**Borrow this:** the Constraints section, which names generated files and the exact command that regenerates them.
+
+## Group 3: skills routers and rule-keepers
+
+These five files treat the root `AGENTS.md` as an index or a living document rather than a manual. Supabase and the OpenAI Agents SDK are the best argument in the set for keeping the root file as an index and moving detail into skills.
+
+### OpenAI Agents SDK
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=40 /%}
+
+**Repo:** [openai/openai-agents-python](https://github.com/openai/openai-agents-python/blob/main/AGENTS.md) | **Stars:** 30,902 | **Length:** 106 lines, 16,627 bytes | **Last commit to the file:** November 6, 2026
+
+This is the densest file per line in the set: 106 lines but 16,627 bytes, because many bullets are long, rule-packed sentences. Sections: Authority and workflow, Mandatory skill routing, Scope and compatibility, Code Review Rules, Security checklist, Documentation, Runtime reference routing, Testing and Automated Checks, and GitHub-ready Output.
+
+The centerpiece is a table with the headers "When" and "Required action". Each row names a trigger and the skill to use:
+
+> Skills live in `.agents/skills/<name>/SKILL.md`. Read the selected skill and only its relevant supporting references.
+
+> Needing authoritative OpenAI API/platform facts | Use `openai-knowledge`.
+
+The Authority and workflow section also sets limits on git behavior: creating or switching branches or worktrees requires explicit approval for that action, and the agent should commit only when authorized. Status labels (`RUNNING`, `COMPLETE`, `NEEDS_DECISION`) are defined so the final message is machine-readable.
+
+**What makes it good:** a trigger-to-skill table is the most direct example of the root file acting as a router. The file also ends with a section on GitHub-ready output, covering how to format text meant for pasting into a PR.
+
+**Skip it if:** you are starting out. This is the product of heavy iteration and would overwhelm a small repo.
+
+### Supabase
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/supabase.png" name="Supabase" size=40 /%}
+
+
+**Repo:** [supabase/supabase](https://github.com/supabase/supabase/blob/master/AGENTS.md) | **Stars:** 115,580 | **Length:** 77 lines, 7,212 bytes | **Last commit to the file:** November 24, 2026
+
+Sections: Supabase Monorepo, Structure, Common Commands, CI, Conventions, Skills and Studio. The Common Commands block is a fenced list of `pnpm` scripts with one-line comments, for example `pnpm dev:studio`, `pnpm test:studio` (Studio unit tests, vitest) and `pnpm e2e` (Studio end-to-end tests, Playwright).
+
+> The skills in `.agents/skills/` are the source of truth for conventions. Load the relevant ones before working, don't guess.
+
+The Skills section then lists each skill with the situation that triggers it (for example `safe-sql-execution` for "any code that builds or executes SQL against user databases", and `react-hook-form` for any form code). The Conventions section is a short list of bolded one-liners: UI imports, Tailwind with semantic tokens, named exports only, "Use U.S. English everywhere", and a note on public surfaces ("this repo is public: PR descriptions, issues, and code comments are world-readable").
+
+**What makes it good:** it is the cleanest layout of the "short file plus skills" pattern: structure, commands, a few hard conventions, then one line per skill saying when to load it.
+
+**Borrow this:** the skill list format of `name`, a dash, and the trigger condition.
+
+### opencode
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/opencode.png" name="opencode" size=40 /%}
+
+**Repo:** [anomalyco/opencode](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md) | **Stars:** 229,614 | **Length:** 221 lines, 18,219 bytes | **Last commit to the file:** November 19, 2026
+
+The most-starred repository in the set is itself an agent, so its file reads like instructions to a peer. Sections include Live TUI Testing, Live Desktop Diagnostics, TUI Stories, TUI Theme Tokens, Branch Names, Commits and PR Titles, a long Style Guide, Testing, Checks, Plugin Loading and Session Core.
+
+> Avoid mocks as much as possible, you shouldn't be using globalThis.\* at all unless it's the only option.
+
+> Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package directories such as `packages/core`.
+
+It also fixes a convention that agents often get wrong: "Use a short branch name of at most three words, separated by hyphens. Do not use slashes or type prefixes such as `feat/` or `fix/`." The Checks section names `bun run check` from the repository root as the canonical full verification, and tells the agent never to run `tsc` directly.
+
+**What makes it good:** the testing rules say what not to do (mocks, `globalThis`), and the file names a guard (`do-not-run-tests-from-root`) for the repo-root rule, so the rule is enforced by tooling as well as written down. When tooling can enforce a rule, the file can say so.
+
+**Borrow this:** pair a "never do X" rule with a guard that makes X fail.
+
+### Zed
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/zed.png" name="Zed" size=40 /%}
+
+**Repo:** [zed-industries/zed](https://github.com/zed-industries/zed/blob/main/AGENTS.md) | **Stars:** 95,845 | **Length:** 190 lines, 12,476 bytes | **Last commit to the file:** November 16, 2026
+
+Sections: Rust coding guidelines, Timers in tests, GPUI (Context, Window, Entities, Concurrency, Elements, Input events, Actions, Notify, Entity events), Build guidelines, Pull request hygiene, Crash Investigation, and Rules Hygiene. The Rust guidelines are a good short style list:
+
+> Do not write organizational or comments that summarize the code. Comments should only be written in order to explain "why" the code is written in some way in the case there is a reason that is tricky / non-obvious.
+
+> Avoid using functions that panic like `unwrap()`, instead use mechanisms like `?` to propagate errors.
+
+The last section, Rules Hygiene, is the most useful passage in any file for people who maintain an `AGENTS.md`:
+
+> Rules should be **traps to avoid**, not **maps to follow**.
+
+Its rules for adding rules: a new rule must be non-obvious, repeatedly encountered and specific enough to act on; single-crate rules belong in that crate's own `AGENTS.md`; and an agent that finds a useful pattern should add a "Suggested AGENTS.md additions" heading to its PR description rather than edit the file inline.
+
+**What makes it good:** it treats the file as an artifact with a lifecycle (agent notes a pattern, the team validates it in review, a dedicated commit adds the rule with its reasoning). The repo also uses nested `AGENTS.md` files per crate, per the file's own text.
+
+**Borrow this:** the three-criteria test for adding a rule.
+
+### Angular
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/angular.png" name="Angular" size=40 /%}
+
+
+**Repo:** [angular/angular](https://github.com/angular/angular/blob/main/AGENTS.md) | **Stars:** 101,604 | **Length:** 39 lines, 2,052 bytes | **Last commit to the file:** October 14, 2026
+
+Sections: Environment, Key Documentation, Testing and Pull Requests. The file opens with YAML front matter (`trigger: always_on`), a convention used by some agent tools to mark a file as always loaded. The rest is a compact set of environment commands (`pnpm`, `pnpm bazel test //target`), links to three contributing docs and a testing section with firm rules:
+
+> Create standalone component/directives by default, DO NOT introduce new NgModules/non-standalone components even if sibling tests use them.
+
+> Prefer current best practices over existing authoring styles in the same file
+
+The Testing section also fixes an async pattern: assume a zoneless environment, never call `fixture.detectChanges()` to trigger updates, and use "Act, Wait, Assert" with `await fixture.whenStable()`.
+
+**What makes it good:** "Prefer current best practices over existing authoring styles in the same file" is a rare and valuable instruction, because agents tend to copy the nearest legacy pattern. The file overrides that habit directly. It also uses links for the rest ("definitive guide for running targets") rather than duplicating them.
+
+**Borrow this:** an explicit rule for what to do when existing code disagrees with the current standard.
+
+## Group 4: tiny files that still work
+
+These three are all under 25 lines. They show the minimum viable file.
+
+### Svelte
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/svelte.png" name="Svelte" size=40 /%}
+
+
+**Repo:** [sveltejs/svelte](https://github.com/sveltejs/svelte/blob/main/AGENTS.md) | **Stars:** 89,944 | **Length:** 24 lines, 1,551 bytes | **Last commit to the file:** November 15, 2026
+
+Sections: Svelte Coding Agent Guide, Security Policy, Quick Reference and Tests. It points at `CONTRIBUTING.md` and the PR template, and it has one skill reference.
+
+> When submitting a PR, you **MUST** read [`PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md) and fill it out correctly. **DO NOT** submit a PR without running the full test suite.
+
+The Tests section gives practical advice about where new tests go (the `runtime-runes` suite), and it admits that "a lot of mistakes were made while building the test suite", telling the agent to follow the existing conventions without being "beholden to them".
+
+**What makes it good:** short, honest and conditional: "If asked to do a performance investigation, use the `performance-investigation` skill." The one skill reference is the lightest possible way to start using skills from `AGENTS.md`.
+
+### Excalidraw
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/excalidraw.png" name="Excalidraw" size=40 /%}
+
+
+**Repo:** [excalidraw/excalidraw](https://github.com/excalidraw/excalidraw/blob/master/AGENTS.md) | **Stars:** 136,406 | **Length:** 20 lines, 2,191 bytes | **Last commit to the file:** November 19, 2026
+
+Two H1 sections: Guidelines and Crowdin (translations). No build commands, no architecture. The two guideline bullets are code-level traps:
+
+> When overriding properties of an existing type, prefer `Merge<Base, Overrides>` from `@excalidraw/common/utility-types` over `Omit<Base, keyof Overrides> & Overrides`.
+
+The Crowdin section is a numbered workflow for a single task that has real pitfalls, including a note that `--preserve-hierarchy` "is required" or the CLI fails even though `--dryrun` passes.
+
+**What makes it good:** it only documents what the agent cannot discover by reading the repo. A task-specific procedure with known failure modes is exactly the kind of content that belongs in an instruction file, and it is also a candidate to become a skill.
+
+### VS Code
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/agents-md-examples/logos/vs-code.png" name="VS Code" size=40 /%}
+
+
+**Repo:** [microsoft/vscode](https://github.com/microsoft/vscode/blob/main/AGENTS.md) | **Stars:** 195,800 | **Length:** 7 lines, 485 bytes | **Last commit to the file:** November 16, 2026
+
+The shortest file in the set, and the most delegated:
+
+> This file provides instructions for AI coding agents working with the VS Code codebase.
+>
+> For detailed project overview, architecture, coding guidelines, and validation steps, see the [Copilot Instructions](.github/copilot-instructions.md).
+
+It then adds one rule inline: prefer `CancellationToken`/`CancellationTokenSource` internally and adapt `AbortSignal` only at native or third-party API boundaries.
+
+**What makes it good:** it proves a thin pointer file is a legitimate pattern. A project that already maintains `.github/copilot-instructions.md` can make `AGENTS.md` a bridge for tools that look for the other filename, plus the one rule that deserves top billing.
+
+**Skip it if:** you have no existing instruction file. A pointer to nothing is not guidance.
+
+## Pattern table: what the 20 files contain
+
+We tagged each file by its headings (outside code blocks) and by what its text instructs. "Yes" means a section or clearly stated rule on that topic exists; "Cmds" means concrete commands appear. Counts come from reading the files, not from a tool that infers intent, so treat borderline cells (marked "Some") as judgment calls.
+
+| Repo | Lines | Build / run commands | Test rules | Style rules | PR / commit rules | AI-contribution policy | Skills referenced |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Next.js | 532 | Cmds | Yes | Yes | Yes | No | Yes |
+| n8n | 481 | Cmds | Yes | Yes | Yes | No | Yes |
+| LangChain | 390 | Cmds | Yes | Yes | Yes | No | No |
+| PyTorch | 381 | Cmds | Yes | Yes | Yes | Yes | Yes |
+| Rust | 265 | Some | Some | Some | Some | Yes | No |
+| llama.cpp | 251 | No | Some | Yes | Yes | Yes | Yes |
+| Bun | 244 | Cmds | Yes | Some | Yes | No | No |
+| Ruff | 242 | Cmds | Yes | Yes | Yes | No | Yes |
+| opencode | 221 | Cmds | Yes | Yes | Yes | No | Yes |
+| Zed | 190 | Some | Some | Yes | Yes | No | No |
+| Playwright | 189 | Cmds | Yes | Yes | Yes | No | Yes |
+| OpenAI Agents SDK | 106 | Cmds | Yes | Yes | Yes | No | Yes |
+| Supabase | 77 | Cmds | Some | Yes | Some | No | Yes |
+| Node.js | 64 | No | Some | No | Yes | Yes | No |
+| Transformers | 48 | Cmds | Some | Yes | Yes | Yes | Yes |
+| Kubernetes | 39 | Cmds | Some | Yes | Yes | Yes | No |
+| Angular | 39 | Cmds | Yes | Some | Yes | No | No |
+| Svelte | 24 | No | Some | No | Yes | No | Yes |
+| Excalidraw | 20 | No | No | Yes | No | No | No |
+| VS Code | 7 | No | No | Some | No | No | No |
+
+Several "No" cells in the AI-policy column are worth a footnote: Zed's file contains rules aimed at agents that open pull requests (title format, a "Suggested AGENTS.md additions" convention), and Next.js requires a `### Verification` section in agent-written PR descriptions. We counted a file in the AI-policy column only when it states what an agent may or may not do on the project's public surfaces (GitHub, disclosure, human accountability), not merely PR-formatting rules. Under that definition the Next.js, Zed and n8n rules are formatting rules, not policy. If you count formatting rules, more rows flip to "Yes".
+
+### Length and structure
+
+| Measure | Value across the 20 files |
+| --- | --- |
+| Total lines | 3,810 |
+| Median length | about 190 lines (about 12 KB) |
+| Shortest / longest | 7 lines (VS Code) / 532 lines (Next.js) |
+| Under 100 lines | 8 files |
+| 100 to 300 lines | 8 files |
+| Over 300 lines | 4 files (Next.js, n8n, LangChain, PyTorch) |
+| Largest by bytes | Next.js, 30,556 bytes, about 93% of Codex's default 32 KiB limit |
+| Files updated in the last 30 days (as of Nov 27, 2026) | 13 of the 19 files that are real files (Bun's is a symlink to a `CLAUDE.md`, which we did not date) |
+| Files that import or share a target with another filename | Bun (symlink to `CLAUDE.md`), Transformers (`CLAUDE.md` and `GEMINI.md` import it), VS Code (points at Copilot instructions) |
+
+### Sections by frequency
+
+We grouped headings (outside code fences) into themes. These are the numbers of files with at least one heading in each theme:
+
+| Theme (heading match) | Files |
+| --- | --- |
+| Pull requests, commits, git or GitHub | 13 |
+| Build, commands, environment or running | 12 |
+| Testing | 12 |
+| Style, conventions, guidelines, standards or lint | 12 |
+| AI or agent policy, automation, LLM usage | 11 |
+| Architecture, structure, overview | 6 |
+| Skills | 5 |
+| Security or secrets | 5 |
+
+Heading counts understate skills, because many files mention skills inside a rule instead of under a heading. Counting any line that tells the agent to load a skill or `SKILL.md`, 11 of 20 files do it (Next.js, PyTorch, Transformers, Playwright, Supabase, Ruff, opencode, OpenAI Agents SDK, llama.cpp, n8n and Svelte). Most of them are the larger files; Supabase, Transformers and Svelte are the exceptions.
+
+### What the table tells you
+
+1. **PR and commit rules are the most universal section.** Even files with no commands cover how to open a PR.
+2. **Testing rules are about the harness, not about "write tests".** The testing rules that earn their space name a specific runner or trap: `bun bd test` instead of `bun test`, `run_tests()` with `TestCase` in PyTorch, `pnpm test <file> --maxWorkers=1` in n8n, "Act, Wait, Assert" in Angular, `useAutoTick()` for mock-clock tests.
+3. **Style rules that survive are the ones a linter cannot enforce.** Zed bans comments that summarize code; Ruff bans PR text that narrates the session; llama.cpp bans non-ASCII punctuation and asks for short comments. None of them restates a formatter config.
+4. **Size is a policy choice, not a quality signal.** Kubernetes (39 lines) and Next.js (532 lines) both work, because each puts only non-guessable facts in the file.
+5. **The long files lean on structure.** All four files over 300 lines have 29 or more headings, and Next.js and LangChain both include many fenced command blocks. If your file passes 150 lines, headings and a skill split are not optional.
+
+## Patterns worth stealing
+
+These show up repeatedly in the examples above. Each is traceable to a quote in this guide.
+
+**1. One canonical command, with a ban on alternatives.** PyTorch: "You should NEVER run any other command to build PyTorch." Bun: "Never use `bun test` directly." Kubernetes: "Run `make update`." Agents default to generic commands; naming the only right one removes the choice.
+
+**2. Say when to run the expensive check.** Playwright: run `flint` "only before you upload a PR". n8n: "Do not run full frontend typechecks locally. Use CI for comprehensive lint, typechecks, and test suites."
+
+**3. Traps over maps.** Zed's own Rules Hygiene section states it; Excalidraw, Kubernetes and Transformers follow it. A rule is worth keeping if a competent newcomer would still get it wrong.
+
+**4. State the "definition of done".** n8n: "Report which checks ran and which checks were left to CI." Next.js requires a `### Verification` section in PR descriptions listing commands that were run.
+
+**5. Correct the model's stale knowledge.** llama.cpp: "Llama.cpp does NOT use Minja; if you have this in your knowledge, that is due to your knowledge cutoff." Next.js includes a Turborepo block titled "This is NOT the Turborepo you know".
+
+**6. Disclose, and keep the human accountable.** Kubernetes asks for disclosure of AI use in PRs; Node.js requires `Assisted-by`; llama.cpp says "You are 100% responsible for every line". Three different projects, one idea.
+
+**7. Route to skills for conditional workflows.** Next.js: "Use skills for conditional, deep workflows. Keep baseline iteration/build/test policy in this file." Supabase and OpenAI Agents SDK use triggers to say when to load each one.
+
+**8. Tell the next editor which file is the source of truth.** Transformers: "This file is the only copy of the agent instructions." Bun uses a symlink for the same purpose.
+
+## Best practices checklist
+
+This list is distilled from the patterns above and from the Codex documentation we fetched. It is a synthesis, not a quote from any one source.
+
+- [ ] Put the filename at the repo root as `AGENTS.md` (plural). Add nested files only where a package truly differs.
+- [ ] Start with the one or two facts the agent will get wrong without help, not with a project description.
+- [ ] Give one canonical command for build, test and lint, and say which alternatives are forbidden.
+- [ ] State the order of operations: what to run before a commit, what to run only before a PR, what to leave to CI.
+- [ ] Name generated files and the command that regenerates them.
+- [ ] List hard constraints as short bullets ("never hand-edit X", "never import Y from Z").
+- [ ] Write PR rules: title format, template, what the description must contain, and whether the agent may open the PR at all.
+- [ ] Add an AI-contribution rule: disclosure, who is accountable, and what the agent must not post on its own.
+- [ ] Include a secrets rule: never print values, ask when a secret is missing.
+- [ ] Prefer links to existing docs over copying them. Link to `CONTRIBUTING.md`, the PR template and the dev guide.
+- [ ] Move conditional workflows (release, backport, migration, docs authoring) into skills and list them with trigger conditions.
+- [ ] Keep it under the size budget of your heaviest tool. Codex defaults to 32 KiB combined across the chain (`project_doc_max_bytes`); check your other tools' documented limits.
+- [ ] Remove anything the agent can learn by reading the code: module layouts, file trees, data flow descriptions.
+- [ ] Say which file is the source of truth if `CLAUDE.md` or `GEMINI.md` exist.
+- [ ] Review the file when agents fail repeatedly on the same thing. Add a rule only if it is non-obvious, recurring and specific.
+- [ ] Do not paste secrets, internal URLs or private metrics. The file is public if the repo is.
+
+## Starter template
+
+This template reflects the patterns above. It is ours, not copied from any repository. Replace the bracketed parts and delete sections you do not need.
+
+```markdown
+<!-- AGENTS.md at the repo root -->
+
+[One sentence: what this repo is, and what language and package manager it uses.]
+
+## Commands
+
+- Install: `[pnpm install]`
+- Build: `[pnpm build]` (use only this command to build)
+- Test one file: `[pnpm test path/to/file.test.ts]`
+- Lint and format: `[pnpm lint]` (run before opening a PR, not before every commit)
+- Regenerate generated files: `[make update]`
+
+## Constraints
+
+- Never hand-edit generated files: `[pattern]`. Regenerate them with `[command]`.
+- Never import `[A]` from `[B]`.
+- Do not add new dependencies without asking.
+
+## Testing
+
+- Use `[runner]`; do not mock `[thing]` unless there is no other option.
+- A bug fix needs one regression test that fails without the fix.
+- Run tests from `[directory]`, not from the repo root.
+
+## Style
+
+- Comments explain why, not what.
+- [One or two rules a linter cannot enforce.]
+
+## Pull requests
+
+- Title format: `[type(scope): summary]`
+- Fill in `.github/pull_request_template.md`.
+- Add a Verification section listing the commands you ran, and say which checks you left to CI.
+- Disclose AI assistance. The human author is responsible for every change.
+- Do not push or open a PR without explicit approval from the user.
+
+## Secrets
+
+- Never print secret values. If a required secret is missing, stop and ask.
+
+## Skills
+
+- [`release`](.agents/skills/release/SKILL.md): when preparing a release.
+- [`migrations`](.agents/skills/migrations/SKILL.md): when changing the database schema.
+
+## Maintaining this file
+
+- Add a rule only if it is non-obvious, repeatedly encountered and specific.
+- If you find a pattern worth keeping, propose it in your PR description instead of editing this file.
+```
+
+If you already have a `CLAUDE.md`, make one the source of truth and have the other point at it. Transformers does it with imports and Bun with a symlink. For how each tool resolves the two names, see our comparison guide on [AGENTS.md, CLAUDE.md, SKILL.md and Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules).
+
+## Common mistakes seen in weak files
+
+These are our observations from the repos we scanned but did not feature (about 55 candidates, 38 fetched), plus the contrast with the 20 above. We do not name the repos, since the point is the pattern.
+
+- **A project description at the top.** The agent can read the README. Real files start with constraints or commands.
+- **A directory tree.** It goes stale and the agent can run `ls`. Zed's file says this directly.
+- **Vague style adjectives.** A generic instruction such as "write clean, idiomatic code" tells the agent nothing. A specific one, like the Zed rule to avoid using functions that panic such as `unwrap()`, does.
+- **No order of operations.** A command list with no "when" leads agents to run the slowest check on every edit.
+- **Copying the whole `CONTRIBUTING.md`.** Link to it instead, as Svelte does.
+- **Silent conflicts between files.** If `CLAUDE.md`, `AGENTS.md` and a Copilot instructions file disagree, the agent follows whichever one its tool loads. Pick one source of truth.
+- **Letting it grow forever.** Next.js is at 93% of Codex's default limit, with 532 lines. Add a rule only when it is justified, and move the rest to skills.
+
+## Skills and MCP servers that work with these tools
+
+An `AGENTS.md` file works best when it stays short and points at skills for the rest. The agentskills.codes catalog has skills that help you write, audit and extend instruction files. Install counts below are as shown by the registry API on November 27, 2026.
+
+| Skill | What it does | Why it fits this guide |
+| --- | --- | --- |
+| [agents-md](https://agentskills.codes/skills/agents-md) | Creates or updates root and nested `AGENTS.md` files with scoped conventions and monorepo module maps | Generates the nested-file structure that Zed, Supabase and n8n describe |
+| [agent-md-refactor](https://agentskills.codes/skills/agent-md-refactor) | Refactors a bloated `AGENTS.md` or `CLAUDE.md` using progressive disclosure | The cure for the "files that grow forever" problem, since it splits a monolithic file into linked parts |
+| [claude-md-improver](https://agentskills.codes/skills/claude-md-improver) | Audits and improves `CLAUDE.md` files in a repository (from Anthropic) | Useful when `CLAUDE.md` is your source of truth and `AGENTS.md` follows it |
+| [codex-cli-bridge](https://agentskills.codes/skills/codex-cli-bridge) | Generates `AGENTS.md` from `CLAUDE.md` and bridges Claude Code and Codex CLI | Covers the "two filenames, one source" case that Bun and Transformers solve in different ways |
+| [deepinit](https://agentskills.codes/skills/deepinit) | Deep codebase initialization with hierarchical `AGENTS.md` documentation | A starting point for large repos; review its output against the "traps, not maps" rule |
+| [conventional-commit](https://agentskills.codes/skills/conventional-commit) | Formats commit messages using Conventional Commits and project lint rules | Backs up the commit-format rules in opencode, Playwright and LangChain |
+| [code-review-excellence](https://agentskills.codes/skills/code-review-excellence) | Guidance on constructive, bug-catching code review | Pairs with the "Code Review Rules" sections in Ruff and the OpenAI Agents SDK |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | Guide for building MCP servers that let agents use external services (from Anthropic) | For when a rule in `AGENTS.md` should become a tool the agent can call |
+
+We opened each `/skills/` page above on November 27, 2026 and got HTTP 200. We did not install or run these skills for this guide, so the "why it fits" column reflects their registry descriptions, not a test. Browse more in the full [skills catalog](https://agentskills.codes/skills).
+
+If you are choosing a client to run these instructions, our guides to the [best Codex skills](https://agentskills.codes/blog/best-codex-skills-2026), the [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) and [Claude Code vs Cursor](https://agentskills.codes/blog/claude-code-vs-cursor-2026) cover the tools that read `AGENTS.md`.
+
+One more post from the OpenAI developer account (September 11, 2026) tells people to revisit their skills, `AGENTS.md` and task prompts, which is the same split this guide describes:
+
+{% x id="2098480213244117065" /%}
+
+A second independent video on the same topic, for readers who prefer to watch:
+
+{% youtube id="ON9jQQPRGpQ" title="The Definitive Guide to AGENTS.md (Jason Ku)" /%}
+
+*We verified the title and channel through YouTube oEmbed on November 27, 2026. We did not use the video's claims as evidence.*
+
+## Best for X: which example to read first
+
+| If you want to... | Read this file | Why |
+| --- | --- | --- |
+| Write your first `AGENTS.md` in 20 minutes | Kubernetes or Angular | 39 lines each, every line a decision |
+| Document a big monorepo | Next.js or n8n | Commands, test loops, PR rules and skills |
+| Set rules for AI contributions | PyTorch, Node.js or llama.cpp | Disclosure, accountability, prohibited actions |
+| Stop agents from wasting reviewer time | Transformers or Rust | Explicit "do not open this PR" rules |
+| Route to skills | OpenAI Agents SDK or Supabase | Trigger-to-skill tables and lists |
+| Keep the file clean over time | Zed | Rules for adding rules |
+| Reuse existing instructions | VS Code or Bun | Pointer file and symlink |
+| Teach one tricky workflow | Excalidraw | A single worked procedure with known pitfalls |
+| Write about commands and checks | Playwright, Bun or opencode | Order of operations and guarded rules |
+
+## How we did this
+
+- **Selection and fetching.** We scanned about 55 popular repositories with the GitHub CLI and API on November 27, 2026, fetched the root `AGENTS.md` for each through the contents API, and kept the 20 featured. Stars, default branch, size, line count and last-commit date come from `gh api repos/<owner>/<repo>`, the contents API and the commits API for the path `AGENTS.md`.
+- **Excerpts.** Every blockquote is copied from the raw file text we downloaded, trimmed to a sentence or two. Ellipses are not used inside quotes. Where we paraphrase, we do not use quotation marks.
+- **Counts.** Line counts are from `wc -l` equivalents on the raw files. The theme counts in the heading table were produced by matching heading text outside code fences, then reading the results; the pattern table was filled in by reading each file, and "Some" marks borderline cells.
+- **Bun's symlink.** We checked the git tree entry for `AGENTS.md` in `oven-sh/bun`: mode 120000, size 9 bytes, with `CLAUDE.md` alongside it at 18,159 bytes. We also confirmed Bun's content by reading it through the contents API.
+- **What we did not do.** We did not run any agent against these files, measure whether a rule changes agent behavior, or test how any tool truncates a large file. Statements about what makes a file "good" are our editorial judgment from reading them, not an experiment. We did not verify the agents.md site's "60k" claim, and we attribute it to the site.
+- **Media.** The two YouTube videos and four X posts were verified with oEmbed and the X syndication endpoint (details in the sources).
+
+## FAQ
+
+### What is an AGENTS.md file?
+
+It is a Markdown file at the root of a repository (and optionally in subfolders) that tells AI coding agents how to work on the project: build and test commands, conventions, and things to avoid. The [agents.md](https://agents.md/) site calls it "a simple, open format for guiding coding agents" and compares it to a README for agents.
+
+### What should go in an AGENTS.md file?
+
+The files in this guide agree on a few things: commands (build, test, lint), hard constraints, testing rules specific to the repo, PR and commit rules, and, increasingly, an AI-contribution policy and a list of skills. The best files include only what an agent could not infer from reading the code. See the [checklist](#best-practices-checklist).
+
+### How long should an AGENTS.md be?
+
+There is no fixed answer. In the 20 files we read, the median is about 190 lines, the shortest is 7 and the longest is 532. A practical ceiling is the size budget of your heaviest tool: Codex, for example, stops adding files once the combined size reaches 32 KiB by default (`project_doc_max_bytes`). Next.js's file, at 30,556 bytes, fits under that alone but leaves little room for anything else.
+
+### Is it AGENTS.md or agent.md?
+
+`AGENTS.md`, plural. "agent.md" is a common misspelling and a common search term, so people searching for "agent.md examples" are almost always looking for `AGENTS.md` examples. All 20 files here use the plural name. Some tools do accept other names through configuration; Codex, for example, supports `project_doc_fallback_filenames`.
+
+### Does Claude Code read AGENTS.md?
+
+Our companion guide documents the current behavior: [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules) covers which tools read which file, with sources. In practice several repos in this guide sidestep the question: Bun symlinks `AGENTS.md` to `CLAUDE.md`, and Transformers has `CLAUDE.md` and `GEMINI.md` import `AGENTS.md`.
+
+### Can I have more than one AGENTS.md in a repo?
+
+Yes. Codex's documentation says it reads files from the project root down to the current working directory, joins them with blank lines, and lets files closer to the working directory override earlier guidance because they appear later. It checks `AGENTS.override.md` before `AGENTS.md` in each directory. In this guide, Zed's file refers to per-crate `AGENTS.md` files, Supabase's refers to nested `AGENTS.md` files for some apps, and n8n links to a nested Playwright `AGENTS.md`.
+
+### What is the difference between AGENTS.md and a skill?
+
+`AGENTS.md` holds always-on guidance that every session should see. A skill (`SKILL.md` in a folder) holds a procedure that loads when it is relevant. Next.js puts it this way in its own file: "Use skills for conditional, deep workflows. Keep baseline iteration/build/test policy in this file." Our [comparison guide](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules) goes deeper.
+
+### Should an AGENTS.md include an AI-contribution policy?
+
+If your project gets unsolicited AI-generated pull requests, the maintainers of PyTorch, Rust, Node.js, llama.cpp, Kubernetes and Transformers all decided yes. Their files differ in tone, but share three elements: the human is accountable, AI use must be disclosed (`Assisted-by` in Node.js and llama.cpp, a disclosure note in Kubernetes), and the agent must not act autonomously on the public repo.
+
+### How do I make an AGENTS.md that agents actually follow?
+
+We did not test agent compliance, so this is a reading of the examples rather than a measurement. The files that get specific are the ones that name the exact command, say when to run it, and spell out what not to do in plain imperatives ("NEVER", "Do not"). Rules that restate what a linter enforces add length without adding signal. Zed's file recommends requiring that new rules be non-obvious, repeatedly encountered and specific.
+
+### Can an AGENTS.md be generated automatically?
+
+Tools can draft one. In the catalog, [agents-md](https://agentskills.codes/skills/agents-md) and [deepinit](https://agentskills.codes/skills/deepinit) both generate files from the codebase. Auto-generated drafts tend to fill the file with architecture descriptions, which is the pattern Zed's file warns against, so review and cut before committing. We did not run either skill for this guide.
+
+### Do I need to keep AGENTS.md and CLAUDE.md in sync?
+
+Not if you make one the source of truth. Transformers states in its file that `AGENTS.md` is the only copy and that `CLAUDE.md` and `GEMINI.md` import it. Bun uses a symlink from `AGENTS.md` to `CLAUDE.md`. [codex-cli-bridge](https://agentskills.codes/skills/codex-cli-bridge) can generate one from the other if you prefer to maintain both.
+
+### Is it safe to put commands in AGENTS.md?
+
+Commands are the most common content, but treat the file as public if the repo is public. Next.js and Supabase both warn about this: never print secret values, and keep absolute production metrics out of PR descriptions, issues and comments. Do not put credentials, internal URLs or private metrics in the file.
+
+### How current are these examples?
+
+All 20 files were fetched on November 27, 2026. Thirteen of the 19 non-symlink files had a commit touching them in the preceding 30 days, so some will have changed by the time you read this. Use the linked GitHub blob URLs for the latest version.
+
+## Sources
+
+All pages were fetched on November 27, 2026 unless noted. GitHub star counts, sizes and last-commit dates come from the GitHub REST API.
+
+**The 20 AGENTS.md files**
+
+1. [vercel/next.js AGENTS.md](https://github.com/vercel/next.js/blob/canary/AGENTS.md)
+2. [n8n-io/n8n AGENTS.md](https://github.com/n8n-io/n8n/blob/master/AGENTS.md)
+3. [langchain-ai/langchain AGENTS.md](https://github.com/langchain-ai/langchain/blob/master/AGENTS.md)
+4. [pytorch/pytorch AGENTS.md](https://github.com/pytorch/pytorch/blob/main/AGENTS.md)
+5. [oven-sh/bun AGENTS.md](https://github.com/oven-sh/bun/blob/main/AGENTS.md) (symlink to CLAUDE.md)
+6. [microsoft/playwright AGENTS.md](https://github.com/microsoft/playwright/blob/main/AGENTS.md)
+7. [astral-sh/ruff AGENTS.md](https://github.com/astral-sh/ruff/blob/main/AGENTS.md)
+8. [rust-lang/rust AGENTS.md](https://github.com/rust-lang/rust/blob/main/AGENTS.md)
+9. [nodejs/node AGENTS.md](https://github.com/nodejs/node/blob/main/AGENTS.md)
+10. [ggml-org/llama.cpp AGENTS.md](https://github.com/ggml-org/llama.cpp/blob/master/AGENTS.md)
+11. [huggingface/transformers AGENTS.md](https://github.com/huggingface/transformers/blob/main/AGENTS.md)
+12. [kubernetes/kubernetes AGENTS.md](https://github.com/kubernetes/kubernetes/blob/master/AGENTS.md)
+13. [openai/openai-agents-python AGENTS.md](https://github.com/openai/openai-agents-python/blob/main/AGENTS.md)
+14. [supabase/supabase AGENTS.md](https://github.com/supabase/supabase/blob/master/AGENTS.md)
+15. [anomalyco/opencode AGENTS.md](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)
+16. [zed-industries/zed AGENTS.md](https://github.com/zed-industries/zed/blob/main/AGENTS.md)
+17. [angular/angular AGENTS.md](https://github.com/angular/angular/blob/main/AGENTS.md)
+18. [sveltejs/svelte AGENTS.md](https://github.com/sveltejs/svelte/blob/main/AGENTS.md)
+19. [excalidraw/excalidraw AGENTS.md](https://github.com/excalidraw/excalidraw/blob/master/AGENTS.md)
+20. [microsoft/vscode AGENTS.md](https://github.com/microsoft/vscode/blob/main/AGENTS.md)
+
+**Format, tools and policy**
+
+- [agents.md: a simple, open format for guiding coding agents](https://agents.md/)
+- [agentsmd/agents.md on GitHub](https://github.com/agentsmd/agents.md)
+- [OpenAI Codex: Custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md)
+- [Rust project LLM usage policy](https://forge.rust-lang.org/policies/llm-usage.html)
+
+**Media (verified November 27, 2026)**
+
+- YouTube: [How I Write My AGENTS.md Files, Best Practices (NeuralNine)](https://www.youtube.com/watch?v=6w88NVf2_lY) and [The Definitive Guide to AGENTS.md (Jason Ku)](https://www.youtube.com/watch?v=ON9jQQPRGpQ), both checked with YouTube oEmbed.
+- X posts, checked with the X syndication endpoint: [@romainhuet, August 19, 2025](https://x.com/romainhuet/status/1957924964105179455), [@sqs, August 19, 2025](https://x.com/sqs/status/1957945824404729997), [@OpenAIDevs, July 21, 2026](https://x.com/OpenAIDevs/status/2079627776722981348) and [@OpenAIDevs, September 11, 2026](https://x.com/OpenAIDevs/status/2098480213244117065).
+- Image: [agents.md social preview](https://agents.md/og.png) (HTTP 200, image/png).
+
+**Related on agentskills.codes**
+
+- [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules)
+- [Best Codex skills](https://agentskills.codes/blog/best-codex-skills-2026)
+- [Best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026)
+- [Claude Code vs Cursor](https://agentskills.codes/blog/claude-code-vs-cursor-2026)
