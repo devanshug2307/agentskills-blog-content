@@ -1,0 +1,955 @@
+Most "best MCP servers" lists rank whatever has the most GitHub stars. That is a poor guide when you are wiring tools into a coding agent, because the question that matters is narrower: which servers change what your agent can actually do in a normal week of shipping software, and what do they cost you in setup, context tokens and risk? This roundup covers 15 servers that map to real developer jobs: source control, docs lookup, browser testing, error triage, databases, cloud, hosting, tickets, payments, design handoff, notes, containers and local machine control.
+
+The short version: GitHub MCP is the best default for almost everyone, Context7 fixes stale-docs hallucinations on a free tier, Playwright MCP and Chrome DevTools MCP split the browser work between them, and Sentry plus Supabase or Postgres MCP close the loop from a production error to a database fix. Prices, limits and star counts below are as of November 27, 2026, and each one comes from the vendor's own page or the GitHub API on that date. We did not install or run these servers for this post, so where we describe behavior it comes from vendor docs, not our own testing.
+
+{% youtube id="IBh3Wz5YIR8" title="What is the Chrome DevTools MCP server | Chrome for Developers" /%}
+
+*Caption: Google's Chrome for Developers team explains the Chrome DevTools MCP server (pick 4 below). It is a quick primer on what an MCP server gives a coding agent beyond plain shell commands.*
+
+## Quick picks
+
+- **Best overall:** GitHub MCP. Official, MIT licensed, a hosted remote endpoint plus a local Docker option, and it covers the work most agents do every day.
+- **Best free:** Context7 (1,000 API calls a month on the free plan) and Chrome DevTools MCP (open source, nothing to buy).
+- **Best open source:** Chrome DevTools MCP (Apache-2.0, 59,605 stars) and Playwright MCP (Apache-2.0, 40,217 stars).
+- **Best for debugging production:** Sentry MCP, paired with Supabase MCP or Postgres MCP when the fix lives in the database.
+- **Best for teams that want isolation:** Docker MCP Toolkit, which runs servers in containers with documented CPU, memory and filesystem limits.
+- **Best for design to code:** Figma Dev Mode MCP, as long as you read the per-seat rate limits first.
+- **Highest blast radius:** Desktop Commander, Stripe MCP and Supabase MCP. Each can change real things, so use read-only modes, sandboxes and approvals.
+
+If you want a Claude Code-specific ranking, read [AgentPedia's best MCP servers for Claude Code](https://agentpedia.codes/blog/best-mcp-servers-claude-code). If you are comparing the platforms that bundle many servers behind one connection, read [best MCP integration platforms in 2026](https://agentpedia.codes/blog/best-mcp-integration-platforms-2026). This post takes a different angle: it is client-agnostic, organized by developer job, and includes a works-with matrix for Claude Code, Codex, Cursor, Gemini CLI, Hermes and OpenCode. For adjacent categories see our posts on [memory MCP servers for Claude Code](https://agentskills.codes/blog/best-memory-mcp-servers-for-claude-code-2026) and [image and video MCP servers](https://agentskills.codes/blog/best-image-and-video-mcp-servers-2026).
+
+## Master comparison table
+
+| Server | Hosting | Pricing (Nov 27, 2026) | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/github-mcp.png" name="GitHub MCP" size=24 /%} GitHub MCP | Remote, or local Docker | No separate fee found; some Copilot-linked tools need paid GitHub plans | Yes | Yes (MIT, 34,804 stars) | GitHub Enterprise Server has no remote hosting | Issues, PRs, Actions, code security |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/context7.png" name="Context7" size=24 /%} Context7 | Remote, or local npx | Free $0, Pro $10 per seat per month | 1,000 calls a month | Yes (MIT, 65,551 stars) | Free plan blocks after 1,000 calls | Current library docs in the prompt |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/playwright-mcp.png" name="Playwright MCP" size=24 /%} Playwright MCP | Local npx | Free | Yes | Yes (Apache-2.0, 40,217 stars) | Verbose snapshots, still 0.0.x versions | Browser flows without a vision model |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/chrome-devtools-mcp.png" name="Chrome DevTools MCP" size=24 /%} Chrome DevTools MCP | Local npx | Free | Yes | Yes (Apache-2.0, 59,605 stars) | Chrome and Chrome for Testing only; usage stats on by default | Performance traces and live debugging |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/sentry-mcp.png" name="Sentry MCP" size=24 /%} Sentry MCP | Remote, or local via Sentry CLI | Developer $0, Team $26 per month, Business $80 per month | Yes (1 user, MCP access listed) | Toolkit repo (975 stars, license not detected by GitHub) | Seer AI debugging needs a subscription | Production errors in the agent |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/supabase-mcp.png" name="Supabase MCP" size=24 /%} Supabase MCP | Remote, or local CLI | Free $0, Pro from $25 per month | Yes (2 active projects) | Yes (Apache-2.0, 3,025 stars) | Docs warn of security risks; scope it | SQL, migrations, advisors, logs |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/postgres-mcp.png" name="Postgres MCP" size=24 /%} Postgres MCP | Local (Docker) | Free | Yes | Yes (MIT, 3,503 stars) | Index tuning needs two extensions | EXPLAIN plans, index tuning, health checks |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/cloudflare-mcp.png" name="Cloudflare MCP" size=24 /%} Cloudflare MCP | Remote | No MCP fee found; Workers Free, Paid from $5 per month | Yes | Repo is Apache-2.0 (4,499 stars) | Permissions are only as narrow as you scope them | Whole API in about 1,000 tokens (vendor-reported) |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/vercel-mcp.png" name="Vercel MCP" size=24 /%} Vercel MCP | Remote | Hobby $0, Pro $20 per month | Yes (all plans) | No (hosted) | Limited to your team permissions | Deployments, logs, analytics, AI Gateway |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/linear-mcp.png" name="Linear MCP" size=24 /%} Linear MCP | Remote | Free $0, Basic $10, Business $16 per user per month (billed yearly) | Yes (250 issues) | No MCP repo found | Hosted only | Issues and projects from the terminal |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/stripe-mcp.png" name="Stripe MCP" size=24 /%} Stripe MCP | Remote | No MCP fee found | Sandbox access | Toolkit repo (MIT, 2,101 stars) | Public preview; OAuth sessions last 14 days | Payments API plus docs search |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/figma-dev-mode-mcp.png" name="Figma Dev Mode MCP" size=24 /%} Figma Dev Mode MCP | Remote, or desktop app | Dev seat $12 (Professional) to $35 (Enterprise) per month | Starter plan: 20 calls a month | Guide repo only (2,242 stars, no license) | 200 calls a day on Professional | Design context into code |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/notion-mcp.png" name="Notion MCP" size=24 /%} Notion MCP | Remote | Free $0, Plus $10, Business $20 per seat per month | Yes | Old local repo MIT, not maintained | Workspace members only | Specs and docs in your workspace |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/docker-mcp-toolkit.png" name="Docker MCP Toolkit" size=24 /%} Docker MCP Toolkit | Local containers | Personal $0, Pro $9, Team $15, Business $24 per user per month (annual) | Yes | Gateway MIT (1,651 stars) | Beta; built around Docker Desktop | Signed, resource-limited MCP servers |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/desktop-commander.png" name="Desktop Commander" size=24 /%} Desktop Commander | Local npx | Free | Yes | Yes (MIT, 10,443 stars) | Guardrails are not a sandbox | Terminal and file control |
+
+Star counts, licenses and last-push dates came from the GitHub API on November 27, 2026. A star count measures attention, not quality, and several of these servers are hosted by their vendor, so the repo numbers describe a toolkit or client repo and not the hosted service you actually connect to.
+
+## How to read the 15 sections
+
+Each section follows the same order: what the server is, who it suits, what it does, pros, cons, benefits for a working developer, pricing and free tier, limits, a standout use case, a "skip it if" line and a setup snippet. Setup snippets are copied from the vendor's docs and trimmed. Config key names differ between clients (some use `mcpServers`, some use `servers`, Codex uses TOML), so treat each snippet as the shape of the config and check your client's own MCP docs for the exact file.
+
+Two terms come up a lot. A **remote** server is hosted by the vendor, usually behind OAuth, and you connect with a URL. A **local** server is a process your client starts on your machine, usually through `npx` or Docker, and it uses whatever credentials you hand it. Remote servers are easier to set up and keep current. Local servers keep traffic on your machine but make you responsible for updates and for what the process can touch.
+
+## The 15 servers, ranked
+
+### 1. GitHub MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/github-mcp.png" name="GitHub MCP" size=40 /%}
+
+**What it is:** GitHub's official MCP server, MIT licensed, in the `github/github-mcp-server` repo (34,804 stars as of November 27, 2026; latest release v2.3.0 on November 24, 2026). You can use GitHub's hosted endpoint at `https://api.githubcopilot.com/mcp/` or run the server locally with Docker.
+
+**Who it is for:** anyone whose code, issues and CI live on GitHub. If your agent writes code, this is the server that lets it read the ticket, look at the failing workflow and open the pull request without you pasting text between windows.
+
+**Key features:**
+
+- Tools are grouped into toolsets, and you pick which ones load with the `--toolsets` flag, the `X-MCP-Toolsets` header or a `/x/{toolset}` URL on the remote server. A default set loads if you name none.
+- Read-only mode (`--read-only`, the `X-MCP-Readonly` header, or a `/readonly` URL) acts as a strict filter that takes precedence over everything else, so write tools stay off even if you list them by name.
+- Lockdown mode (`--lockdown-mode` or the `X-MCP-Lockdown` header) is GitHub's guard for untrusted content in public repos.
+- Authentication is OAuth on the remote server where your client supports it, or a personal access token otherwise.
+
+**Pros:**
+
+- Official, maintained daily (the repo was pushed on the day we checked).
+- Fine-grained controls: toolsets, single tools, read-only and lockdown can be combined.
+- A hosted endpoint means no Docker and no local process for most clients.
+- GitHub's own docs say Copilot cloud agent starts with this server and Playwright MCP already configured, which tells you how central it is.
+
+**Cons:**
+
+- It acts with your account's rights. A broad token lets an agent push, merge or close things in every repo it can reach.
+- Issues, PR comments and commit messages are untrusted text, which makes them a prompt injection path. Lockdown mode helps but GitHub does not call it a guarantee.
+- GitHub Enterprise Server does not support the remote server, per the README. You run the local server instead.
+- Every extra toolset adds tool definitions to the model's context on every request.
+
+**Benefits for you:** fewer copy and paste steps between the agent and GitHub, and a safer starting point than a raw shell, because you can start with `repos,issues,pull_requests` read-only and widen only when you trust the workflow.
+
+**Pricing and free tier (as of November 27, 2026):** the server repo is MIT and we found no separate fee for it. GitHub's docs say some tools depend on other subscriptions: Copilot cloud agent needs a Copilot subscription and code scanning needs GitHub Advanced Security. For reference, GitHub's Copilot plans page lists Free at $0, Pro at $10 per month, Pro+ at $39 per month and Max at $100 per month. We did not verify whether the hosted endpoint itself requires a paid Copilot plan, so check before you commit a team to it.
+
+**Limits:** none documented beyond your own GitHub API rate limits and permissions.
+
+**Standout use case:** point it at a failing Actions run, ask the agent to read the log, find the commit that broke it, and open a draft PR with the fix. Read-only for the investigation, then switch write tools on for the last step.
+
+**Skip it if:** your code is not on GitHub, or the agent only needs local git history, where plain `git` is enough.
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+```
+
+Append `/readonly` to that URL for a read-only connection, per the server's configuration guide. Your client's OAuth prompt handles sign-in; if it does not support OAuth, use a fine-grained personal access token with the narrowest scopes you can.
+
+{% figure src="https://opengraph.githubassets.com/1/github/github-mcp-server" alt="GitHub repository card for github/github-mcp-server" caption="The github/github-mcp-server repository card. Source: GitHub" /%}
+
+Related catalog skill: [github-code-review](https://agentskills.codes/skills/github-code-review) (by ruvnet) is a review workflow skill that pairs with GitHub access.
+
+### 2. Context7
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/context7.png" name="Context7" size=40 /%}
+
+**What it is:** Upstash's documentation lookup server. It puts current, version-specific library docs and code examples into the prompt so the model stops writing against an API that changed after its training cutoff. The `upstash/context7` repo is MIT licensed with 65,551 stars as of November 27, 2026, and the latest release (`@upstash/context7-mcp@4.9.1`) was published on November 27, 2026.
+
+**Who it is for:** anyone working with fast-moving frameworks, which is most of us.
+
+**Key features:** the README documents two lookup tools, `resolve-library-id` and `query-docs`. You trigger it by ending a prompt with "use context7", or by letting a rule or skill do that for you. The hosted endpoint is `https://mcp.context7.com/mcp`, and `npx ctx7 setup` handles OAuth, generates an API key and installs either the MCP server or a CLI plus skill (no MCP needed). The `ctx7` CLI requires Node.js 22.13 or newer.
+
+**Pros:**
+
+- A tiny tool surface (two tools) means little context overhead.
+- Free plan covers the MCP server, the CLI and every public library.
+- CLI plus skill mode avoids loading MCP schemas at all.
+
+**Cons:**
+
+- Free accounts are blocked after 1,000 calls in a month, with 20 bonus calls per day until the reset.
+- Private repositories need a paid plan (Pro bills $5 per 1M parsed tokens).
+- Queries go to a hosted service, which some teams cannot allow.
+
+**Benefits for you:** fewer hallucinated method names and deprecated flags, and no per-project docs crawling.
+
+**Pricing (as of November 27, 2026):** Free $0 with 1,000 API calls a month. Pro $10 per seat per month with 2,000 calls per seat, then $5 per 1,000 extra calls. Enterprise is custom.
+
+**Standout use case:** "Set up the Next.js proxy file, use context7" against a framework version released after your model's cutoff.
+
+**Skip it if:** your libraries are internal or pinned to old versions, or you cannot send queries to a hosted service.
+
+**Setup:**
+
+```bash
+npx ctx7 setup
+```
+
+{% figure src="https://context7.com/opengraph-image?55026abe8d14202e" alt="Context7 website social card" caption="Context7's own Open Graph card from context7.com. Source: Context7 / Upstash" /%}
+
+Related catalog skill: [context7-auto-research](https://agentskills.codes/skills/context7-auto-research) (by davila7) fetches current library docs through the Context7 API.
+
+### 3. Playwright MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/playwright-mcp.png" name="Playwright MCP" size=40 /%}
+
+**What it is:** Microsoft's MCP server for Playwright (`microsoft/playwright-mcp`, Apache-2.0, 40,217 stars as of November 27, 2026; latest release v0.0.86 on November 18, 2026). It lets an agent drive a real browser using structured accessibility snapshots instead of screenshots, so a plain text model can pick the next element.
+
+**Who it is for:** developers who want the agent to open localhost, click through the flow it just built and report what broke.
+
+**Key features:** needs Node.js 20 or newer. `--browser` accepts chrome, firefox, webkit and msedge. `--caps` turns on extra groups (vision, pdf, devtools). `--extension` connects to a running Chrome or Edge instance with the Playwright extension installed.
+
+**Pros:**
+
+- No vision model required; the snapshot is structured text.
+- One-line setup in most clients: `claude mcp add playwright npx @playwright/mcp@latest`.
+- The README lists setup for Claude Code, Cursor, Gemini CLI and opencode, and the repo's docs cover Codex.
+
+**Cons:**
+
+- Snapshots and tool schemas use a lot of context. Microsoft's own README says coding agents may do better with Playwright CLI plus skills because it is more token-efficient.
+- Versions are still 0.0.x, so pin one in CI.
+- `--allowed-origins` is documented as not a security boundary.
+
+**Benefits for you:** the agent can verify its own UI work instead of telling you it is done.
+
+**Pricing:** free and open source. No plan exists.
+
+**Standout use case:** exploratory automation and self-healing tests, which the README says suit MCP better than the CLI.
+
+**Skip it if:** the agent mostly runs scripted tests (use Playwright CLI and skills) or you need performance traces (use Chrome DevTools MCP).
+
+**Setup:**
+
+```bash
+claude mcp add playwright npx @playwright/mcp@latest
+```
+
+Related catalog skill: [playwright-mcp](https://agentskills.codes/skills/playwright-mcp) (by sfc-gh-dflippo) covers browser testing and UI validation, with a focus on Streamlit apps.
+
+### 4. Chrome DevTools MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/chrome-devtools-mcp.png" name="Chrome DevTools MCP" size=40 /%}
+
+**What it is:** Google's server that lets a coding agent control and inspect a live Chrome browser (`ChromeDevTools/chrome-devtools-mcp`, Apache-2.0, 59,605 stars as of November 27, 2026; latest release chrome-devtools-mcp-v1.14.0 on November 24, 2026). The README now brands it "Chrome DevTools for agents" and says it ships as both an MCP server and a CLI.
+
+**Who it is for:** front-end developers chasing console errors, slow pages and network failures.
+
+**Key features:** performance traces and insights, network request inspection, screenshots, and console messages with source-mapped stack traces. It uses Puppeteer for automation and needs a current Node.js LTS and current stable Chrome.
+
+**Pros:**
+
+- Performance and network depth that Playwright MCP does not target.
+- Free and open source.
+- Its README names Antigravity, Claude, Cursor and Copilot as example clients, and the repo mentions Claude Code, Codex and Gemini CLI setup.
+
+**Cons:**
+
+- Officially supports Google Chrome and Chrome for Testing only.
+- Data collection of usage statistics is on by default (opt out with `--no-usage-statistics`).
+- Performance tools may send trace URLs to the Google CrUX API (disable with `--no-performance-crux`).
+- The README warns that it exposes browser content to the client, so avoid sensitive pages.
+
+**Benefits for you:** one agent session can reproduce a bug, read the console, record a trace and suggest the fix.
+
+**Pricing:** free and open source.
+
+**Standout use case:** "Why is localhost:8080 loading slowly?" followed by a trace and a code change.
+
+**Skip it if:** you only need cross-browser flows (use Playwright MCP) or you test in Firefox or Safari.
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--no-usage-statistics"]
+    }
+  }
+}
+```
+
+{% x id="1970505063064825994" /%}
+
+{% x id="1970503277621256263" /%}
+
+Related catalog skill: [chrome-devtools](https://agentskills.codes/skills/chrome-devtools) (by mrgoonie) is a Puppeteer CLI script skill for browser automation and performance analysis. It is a skill, not this MCP server, so pick it if you prefer scripts over a server.
+
+### 5. Sentry MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/sentry-mcp.png" name="Sentry MCP" size=40 /%}
+
+**What it is:** Sentry's MCP service for searching errors, analyzing performance, triaging issues, reading documentation and managing projects. The code lives in the `getsentry/toolkit` repo (975 stars as of November 27, 2026, a repo that also holds the Sentry CLI; GitHub does not detect a license). The remote server is at `https://mcp.sentry.dev/mcp`.
+
+**Who it is for:** teams already on Sentry who want the agent to start from the stack trace.
+
+**Key features:** all connections use OAuth. You can scope a connection to an organization (`/mcp/{organizationSlug}`) or a single project (`/mcp/{organizationSlug}/{projectSlug}`), and Sentry recommends project scope when possible. A local stdio option runs through the Sentry CLI (`sentry mcp`) using your CLI login. The older `npx @sentry/mcp-server` package is described as legacy.
+
+**Pros:**
+
+- Project scoping narrows what the agent sees.
+- Remote OAuth means no token in config.
+- Local CLI mode supports self-hosted Sentry.
+
+**Cons:**
+
+- The repo says its tool selection targets human-in-the-loop coding agents, not fully autonomous ones.
+- Seer, the AI debugging agent, needs a paid subscription.
+- We did not find a documented read-only switch, so scope by project and review tool calls.
+
+**Benefits for you:** paste nothing; ask for the top unresolved issue in the project and the agent pulls the event.
+
+**Pricing (as of November 27, 2026):** Developer $0 (one user, lists MCP access), Team $26 per month, Business $80 per month (both when billed annually with default pre-paid data), Enterprise custom.
+
+**Standout use case:** "Find the newest unresolved error in checkout, read the stack trace and open a fix."
+
+**Skip it if:** you do not use Sentry, or you need a documented read-only mode.
+
+**Setup:**
+
+```bash
+claude mcp add --transport http sentry https://mcp.sentry.dev/mcp/{organizationSlug}/{projectSlug}
+```
+
+{% figure src="https://mcp.sentry.dev/flow.jpg" alt="Sentry MCP flow diagram from mcp.sentry.dev" caption="Open Graph image from Sentry's MCP site. Source: Sentry" /%}
+
+Related catalog skill: [sentry](https://agentskills.codes/skills/sentry) (by openai) inspects Sentry issues and events.
+
+### 6. Supabase MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/supabase-mcp.png" name="Supabase MCP" size=40 /%}
+
+**What it is:** Supabase's official server for managing projects and querying the database from an agent (`supabase/mcp`, Apache-2.0, 3,025 stars as of November 27, 2026; latest release mcp-server-supabase-v0.21.0 on November 26, 2026). The hosted endpoint is `https://mcp.supabase.com/mcp`.
+
+**Who it is for:** teams on Supabase who want schema, migrations and logs in the agent loop.
+
+**Key features:** tools come in feature groups. The docs list database tools (including `apply_migration` and `execute_sql`), debugging tools (`query_logs` and `get_advisors`), docs search (`search_docs`) and more. Branching tools are experimental and need a paid plan. The setup panel lets you pick a project, switch on read-only mode and choose feature groups; the same switches exist as URL parameters (`project_ref`, `read_only=true`). Sign-in is OAuth, no personal access token needed. Running Supabase locally exposes the server at `http://localhost:54321/mcp`.
+
+**Pros:**
+
+- Project scoping and a read-only option (`read_only=true`, which runs queries as a read-only Postgres user) are built into the setup.
+- Advisors give the agent security and performance hints.
+- The docs page shows an update date of November 18, 2026.
+
+**Cons:**
+
+- The docs open with a warning that connecting an LLM to your projects carries security risks.
+- If you select no project, all projects are accessible.
+- `execute_sql` and `apply_migration` can change data and schema.
+
+**Benefits for you:** the agent writes a migration, applies it to a dev project and checks the advisors before you review it.
+
+**Pricing (as of November 27, 2026):** Free $0 (2 active projects, paused after 1 week of inactivity, 500 MB database). Pro from $25 per month. The MCP server adds no separate fee.
+
+**Standout use case:** debugging a failing query with `query_logs` and `get_advisors`, then applying the fix to a branch.
+
+**Skip it if:** you are not on Supabase, or you cannot keep the agent away from production data (point it at a dev project and use read-only).
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=<your-project-ref>&read_only=true"
+    }
+  }
+}
+```
+
+The URL parameters come from Supabase's docs. Your client may want a slightly different key layout, so check its MCP docs.
+
+Related catalog skills: [supabase-postgres-best-practices](https://agentskills.codes/skills/supabase-postgres-best-practices) (by davila7) for query and schema work, and [supabase](https://agentskills.codes/skills/supabase) (by alinaqi) for CLI, migrations and RLS.
+
+### 7. Postgres MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/postgres-mcp.png" name="Postgres MCP" size=40 /%}
+
+**What it is:** this slot goes to Postgres MCP Pro from Crystal DBA (`crystaldba/postgres-mcp`, MIT, 3,503 stars as of November 27, 2026), not the Anthropic-era reference server. The original Postgres reference server now lives in `modelcontextprotocol/servers-archived`, which GitHub marks as archived (last push May 28, 2025), and its npm package carries a deprecation notice reading "Archived and unmaintained; no security guarantees." Do not start new work on that one.
+
+**Who it is for:** developers who want an agent to tune queries on a real Postgres database, not just run SQL.
+
+**Key features:** database health checks (index health, connection utilization, vacuum health and more), index tuning, EXPLAIN plan review with hypothetical index simulation, and SQL execution with two access modes: unrestricted (read and write, for development) and restricted (read-only transactions plus an execution time limit, suggested for production). Index tuning needs the `pg_stat_statements` and `hypopg` extensions.
+
+**Pros:**
+
+- Restricted mode is built in.
+- Goes beyond raw queries into performance advice.
+- Runs locally under your own credentials.
+
+**Cons:**
+
+- The latest GitHub release is v0.3.0 from May 16, 2025, though the repo was pushed in the last day.
+- Index tuning needs extensions your database may not have.
+- Unrestricted mode can write.
+
+**Benefits for you:** "why is this query slow" becomes an EXPLAIN plus an index suggestion you can test.
+
+**Pricing:** free and open source.
+
+**Standout use case:** a slow-query review on a staging copy with restricted mode on.
+
+**Skip it if:** you are on Supabase and want its managed tools, or you only need read access to a small database.
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-e", "DATABASE_URI", "crystaldba/postgres-mcp", "--access-mode=restricted"],
+      "env": { "DATABASE_URI": "postgresql://username:password@localhost:5432/dbname" }
+    }
+  }
+}
+```
+
+{% figure src="https://opengraph.githubassets.com/1/crystaldba/postgres-mcp" alt="GitHub repository card for crystaldba/postgres-mcp" caption="The crystaldba/postgres-mcp repository card. Source: GitHub" /%}
+
+Related catalog skill: [postgres-patterns](https://agentskills.codes/skills/postgres-patterns) (by affaan-m) covers query optimization, schema design and indexing.
+
+### 8. Cloudflare MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/cloudflare-mcp.png" name="Cloudflare MCP" size=40 /%}
+
+**What it is:** Cloudflare's managed MCP servers, including the Cloudflare API MCP server at `https://mcp.cloudflare.com/mcp`. Cloudflare's docs say it covers over 2,500 API endpoints across DNS, Workers, R2, Zero Trust and more, plus the developer docs. The docs page was last updated October 27, 2026.
+
+**Who it is for:** developers who deploy on Cloudflare and want the agent to manage it.
+
+**Key features:** instead of exposing every endpoint as a tool, the server offers `search()` and `execute()` tools to find and call endpoints, and `docs()` to search docs. It uses a Code Mode pattern where the model writes JavaScript against a typed OpenAPI representation, run inside an isolated sandbox. OAuth lets you choose permissions, and a bearer API token works for CI.
+
+**Pros:**
+
+- Token cost: Cloudflare says Code Mode uses about 1,000 tokens regardless of endpoint count (vendor-reported), against about 1,170,000 for native MCP with full schemas for 2,594 tools.
+- One server instead of many.
+- Product-specific managed servers (docs, containers, browser rendering and more) also exist if you want narrower scope.
+
+**Cons:**
+
+- A wide API behind one `execute()` call is a large blast radius. Pick narrow OAuth permissions.
+- The `mcp-server-cloudflare` repo (4,499 stars, Apache-2.0) was last pushed October 22, 2026, so check the docs page for what is current.
+- Needs a Cloudflare account and permission choices up front, and we found no documented read-only switch.
+
+**Benefits for you:** one connection for DNS, Workers and storage chores that otherwise mean dashboard clicking.
+
+**Pricing (as of November 27, 2026):** we found no MCP fee. The platform itself has a Workers Free plan and a Workers Paid plan with a $5 per month minimum.
+
+**Standout use case:** "List my Workers and show which have no recent traffic."
+
+**Skip it if:** you do not use Cloudflare, or you cannot grant scoped permissions.
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "cloudflare-api": { "url": "https://mcp.cloudflare.com/mcp" }
+  }
+}
+```
+
+{% figure src="https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/og.png?v=2698c333db6912a5" alt="Cloudflare docs card for Cloudflare's own MCP servers" caption="Open Graph image from Cloudflare's MCP server docs. Source: Cloudflare" /%}
+
+Related catalog skill: [cloudflare-manager](https://agentskills.codes/skills/cloudflare-manager) (by qdhenry) covers Workers, KV, R2, Pages, DNS and routes.
+
+### 9. Vercel MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/vercel-mcp.png" name="Vercel MCP" size=40 /%}
+
+**What it is:** Vercel's official remote MCP server at `https://mcp.vercel.com`, with OAuth. Vercel's docs say it is available on all plans, and that connecting it gives the AI tool the same access as your Vercel user account.
+
+**Who it is for:** teams that deploy on Vercel and want the agent to look at deployments and logs without opening the dashboard.
+
+**Key features:** search and navigate Vercel documentation, manage projects and deployments, analyze deployment logs, and query visitors, page views and custom events. A Vercel changelog entry dated November 24, 2026 says agents can now manage AI Gateway through the server too: virtual models, routing rules and spending budgets, with team-level access and the required permissions. The docs list setup for Claude Code, Codex CLI, Cursor, VS Code, Gemini CLI, OpenCode and others, plus an `add-mcp` helper: `npx -y add-mcp https://mcp.vercel.com -g`.
+
+**Pros:**
+
+- Remote OAuth with no local process.
+- Requires explicit user consent for each client connection, which Vercel describes as protection against confused deputy attacks.
+- Broadest client list in the docs of any server in this post.
+
+**Cons:**
+
+- Same access as your user account, so a careless prompt can touch every project you can.
+- Hosted only; we found no open source repo for the server itself (Vercel's `mcp-handler` repo is a library for building your own).
+- Docs say the tool list you see depends on your server configuration, your client's OAuth grant and your team permissions, so two people can see different tools.
+
+**Benefits for you:** "why did the last deployment fail" becomes a log read inside the same session that wrote the code.
+
+**Pricing (as of November 27, 2026):** Hobby $0, Pro $20 per month (includes $20 of usage credit). Vercel MCP itself is available on all plans, with use subject to Vercel's AI Product Terms.
+
+**Standout use case:** diagnose a failed deploy from build logs and push the fix.
+
+**Skip it if:** you do not host on Vercel.
+
+**Setup:**
+
+```bash
+npx -y add-mcp https://mcp.vercel.com -g
+```
+
+Related catalog skill: [mcp-integration](https://agentskills.codes/skills/mcp-integration) (by anthropics) explains how to add and configure MCP servers in `.mcp.json`, which applies to any server in this list.
+
+### 10. Linear MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/linear-mcp.png" name="Linear MCP" size=40 /%}
+
+**What it is:** Linear's hosted MCP server at `https://mcp.linear.app/mcp`, built on Streamable HTTP with OAuth 2.1 and dynamic client registration. Linear's docs describe tools for finding, creating and updating objects such as issues, projects and comments.
+
+**Who it is for:** teams that track work in Linear and want the agent to create and update tickets while it codes.
+
+**Key features:** read-write access by default. For read-only you have three options per Linear's docs: choose read-only on the consent screen, connect to `https://mcp.linear.app/mcp/readonly`, or request only the read OAuth scope. Authentication can also use a bearer token or Linear API key. When you authenticate you can scope the connection to a subset of teams (workspace data stays visible). Linear's docs mention Claude and Cursor and include `codex mcp add linear --url https://mcp.linear.app/mcp` for Codex.
+
+**Pros:**
+
+- A documented read-only endpoint.
+- Team scoping.
+- Enterprise-managed authorization with Okta is documented.
+
+**Cons:**
+
+- Hosted only. We found no public MCP source repo (the `linear/linear` repo is Linear's SDK and tooling, 1,691 stars).
+- Codex users may need to enable the `rmcp` client feature in `~/.codex/config.toml` the first time, per Linear's note.
+- Team scoping does not hide workspace data.
+
+**Benefits for you:** turn a spec into a parent issue and sub-issues without leaving the terminal.
+
+**Pricing (as of November 27, 2026):** Free $0 (unlimited members, 2 teams, 250 issues), Basic $10 per user per month, Business $16 per user per month, both billed yearly. The MCP server has no separate listed fee.
+
+**Standout use case:** "Read this PRD, create a project and the issues to deliver it."
+
+**Skip it if:** your tracker is Jira or GitHub Issues (GitHub MCP already covers that).
+
+**Setup:**
+
+```bash
+claude mcp add --transport http linear https://mcp.linear.app/mcp
+```
+
+Related catalog skill: [linear](https://agentskills.codes/skills/linear) (by lobehub) is an issue management guide for creating issues, updating status and adding comments.
+
+### 11. Stripe MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/stripe-mcp.png" name="Stripe MCP" size=40 /%}
+
+**What it is:** Stripe's remote MCP server at `https://mcp.stripe.com`. Stripe's docs label it Public preview and say it provides tools for interacting with the Stripe API and searching the Stripe knowledge base, including documentation and support articles. The code lives in Stripe's `stripe/ai` toolkit repo (MIT, 2,101 stars as of November 27, 2026).
+
+**Who it is for:** developers building on Stripe who want the agent to look up API behavior and work in a sandbox.
+
+**Key features:** Stripe recommends agent plugins, installed through the Stripe CLI (`stripe agent setup`), which configure the server and install Stripe's skills. Manual setup is documented for several clients, including Cursor, Claude Code and Codex. OAuth consent can grant different permissions per live account or sandbox. For autonomous clients, Stripe says to use an agent API key with only the permissions the client needs.
+
+**Pros:**
+
+- Sandbox and live permissions are set separately.
+- Admins can switch MCP access on or off for the whole team, separately for live and sandbox.
+- Sessions are listed and revocable in the Dashboard.
+
+**Cons:**
+
+- Public preview, so behavior can change.
+- OAuth refresh tokens expire after 14 days, and refreshing does not extend the session beyond 14 days from the first authorization. You reconnect.
+- Starting January 11, 2027, Stripe MCP will stop accepting full-access secret keys and non-agent restricted API keys. Migrate to an agent API key or OAuth before then.
+
+**Benefits for you:** the agent can check the real API shape and test against a sandbox instead of guessing parameter names.
+
+**Pricing:** we found no MCP fee on Stripe's docs page. Stripe's own transaction pricing applies to what you process and was not part of this check.
+
+**Standout use case:** build a checkout flow in a sandbox account with the docs search tool open next to it.
+
+**Skip it if:** you do not use Stripe, or you cannot keep the agent on a sandbox and away from live-mode money movement.
+
+**Setup:**
+
+```bash
+stripe agent setup
+```
+
+Install the Stripe CLI first, following Stripe's docs for your operating system.
+
+Related catalog skill: [stripe-integration](https://agentskills.codes/skills/stripe-integration) (by wshobson) covers checkout, subscriptions and webhooks.
+
+### 12. Figma Dev Mode MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/figma-dev-mode-mcp.png" name="Figma Dev Mode MCP" size=40 /%}
+
+**What it is:** the Figma MCP server, which brings Figma into your AI workflow. Figma's developer docs say it gives agents design context to generate code from your files and, on the remote server, lets agents write native content back to the canvas. The remote server lives at `https://mcp.figma.com/mcp`. A desktop server also exists, which runs through the Figma desktop app and is intended for specific organization and enterprise needs. The `figma/mcp-server-guide` repo has 2,242 stars and no detected license.
+
+**Who it is for:** teams turning Figma frames into front-end code.
+
+**Key features:** generate code from selected frames, extract variables, components and layout data, retrieve FigJam content, and write to the canvas (Figma says writing outside your drafts needs a Full seat, and it is free during the beta but will eventually be a usage-based paid feature). Figma's client table lists Claude Code, Codex, Cursor and Gemini CLI, among others.
+
+**Pros:**
+
+- Official, with documented support across many clients.
+- Works with Code Connect for design system mapping.
+- Remote setup is the recommended path.
+
+**Cons:**
+
+- Rate limits are tight. Figma's table: Starter plan 20 tool calls per month; View or Collab seat 20 per month; Full or Dev seat on Professional 200 per day (10 per minute); Organization 200 per day (15 per minute); Enterprise up to 600 per day (20 per minute).
+- Big frames are slow, and Figma's docs advise avoiding selecting large, heavy frames.
+- The desktop server needs a Dev or Full seat on a paid plan.
+
+**Benefits for you:** the generated code starts from your real variables and components, not a screenshot.
+
+**Pricing (as of November 27, 2026):** Dev seat $12 per month on Professional, $25 on Organization, $35 on Enterprise; Full seat $16, $55 and $90; Collab seat $3, $5 and $5 (Figma's pricing page; Organization and Enterprise are billed annually). The MCP server is included with the seats above subject to the call limits.
+
+**Standout use case:** implement a selected frame as a component using your design tokens.
+
+**Skip it if:** your team is on the Starter plan (20 calls a month will not last a day), or your designs are not in Figma.
+
+**Setup:**
+
+```json
+{
+  "mcpServers": {
+    "figma": { "url": "https://mcp.figma.com/mcp" }
+  }
+}
+```
+
+{% x id="2066923337889305038" /%}
+
+{% x id="2070175613609202011" /%}
+
+{% youtube id="_gdtY2V3Zx8" title="Claude Code + Figma MCP Server for Design to Code | Builder" /%}
+
+*Caption: A Builder walkthrough of using Claude Code with the Figma MCP server for design to code. It is third-party, not a Figma video.*
+
+Related catalog skills: [figma-implement-design](https://agentskills.codes/skills/figma-implement-design) (by openai) translates Figma nodes into code, and [figma](https://agentskills.codes/skills/figma) (by openai) fetches design context, screenshots and variables.
+
+### 13. Notion MCP
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/notion-mcp.png" name="Notion MCP" size=40 /%}
+
+
+**What it is:** Notion's hosted MCP server at `https://mcp.notion.com/mcp`. Notion's developer docs say it lets an assistant search your workspace, create and edit pages and manage databases. Notion documents manual setup for Codex, Claude Code, Cursor, Hermes, VS Code and others, and says it will retire the legacy SSE endpoint, with a migration guide.
+
+**Who it is for:** developers whose specs, runbooks and meeting notes live in Notion.
+
+**Key features:** semantic workspace search, Markdown-native page reading and editing, and OAuth that respects each user's existing permissions, according to the notice in Notion's own local-server repo (vendor claim).
+
+**Pros:**
+
+- OAuth with no tokens to paste or pages to share by hand.
+- Less token spend than the old local server, per Notion's comparison table (vendor-reported).
+- Notion documents admin controls for MCP clients, including an enterprise-managed authorization page.
+
+**Cons:**
+
+- We did not verify rate limits or which roles can connect, so check Notion's help center before rolling it out to a team.
+- Your agent gets what your Notion account can see, so a broad account means broad reach.
+- The old self-hosted `makenotion/notion-mcp-server` repo (4,729 stars, MIT) says it is "no longer actively maintained or supported" and may be sunset. Do not start new work on it.
+
+**Benefits for you:** the agent reads the spec before it writes the code.
+
+**Pricing (as of November 27, 2026):** Free $0, Plus $10 per seat per month, Business $20 per seat per month. The MCP server has no separate fee listed.
+
+**Standout use case:** turn a PRD page into an implementation plan and tracked tasks.
+
+**Skip it if:** your docs live elsewhere, or you wanted the old local server.
+
+**Setup:**
+
+```bash
+claude mcp add --transport http notion https://mcp.notion.com/mcp
+```
+
+Related catalog skill: [notion-spec-to-implementation](https://agentskills.codes/skills/notion-spec-to-implementation) (by openai) turns Notion specs into plans, tasks and progress tracking.
+
+### 14. Docker MCP Toolkit
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/docker-mcp-toolkit.png" name="Docker MCP Toolkit" size=40 /%}
+
+
+**What it is:** a management layer in Docker Desktop for running containerized MCP servers in profiles and connecting them to agents. Docker's docs mark it Beta and describe the interface in Docker Desktop 4.62 and later. The open source piece, `docker/mcp-gateway`, is MIT with 1,651 stars as of November 27, 2026.
+
+**Who it is for:** teams that want many MCP servers with a consistent security posture and a single connection point.
+
+**Key features:** a catalog to browse and launch servers, profiles as named collections (one per project or environment), a gateway that clients connect to, and Dynamic MCP, which lets an agent search the catalog and add servers during a conversation. Docker's docs list setup for Claude Code, Codex, Cursor, Gemini and OpenCode.
+
+**Pros:**
+
+- Docker's docs say images under `mcp/` in the catalog are built and digitally signed by Docker, each with an SBOM.
+- Runtime limits: each tool container is restricted to 1 CPU and 2 GB of memory, and by default has no host filesystem access.
+- Docker says requests containing sensitive information such as secrets are intercepted and blocked.
+
+**Cons:**
+
+- Beta, and it is built around Docker Desktop.
+- Dynamic MCP lets agents add servers on their own, so review that setting for your team.
+- It adds a layer between you and each server, which is one more thing to debug.
+
+**Benefits for you:** one gateway config for every client, with limits you do not have to build.
+
+**Pricing (as of November 27, 2026):** Docker Personal $0, Pro $9 per user per month (annual; $11 monthly), Team $15 ($16 monthly), Business $24 (annual only). We did not verify which plans include the Toolkit beta, so check Docker's pricing page for your plan.
+
+**Standout use case:** a team standard of signed servers in a shared profile, with read-only filesystem defaults.
+
+**Skip it if:** you do not use Docker Desktop, or you need one hosted server only (a remote URL is simpler).
+
+**Setup:** in Docker Desktop, open Settings, choose Beta features, enable Docker MCP Toolkit, then create a profile and add servers from the catalog.
+
+Related catalog skill: [mcp-builder](https://agentskills.codes/skills/mcp-builder) (by anthropics) guides building MCP servers, useful if you plan to package your own for the catalog.
+
+### 15. Desktop Commander
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-mcp-servers-for-developers-2026/logos/desktop-commander.png" name="Desktop Commander" size=40 /%}
+
+
+**What it is:** a local MCP server that lets an agent run terminal commands and manage files (`wonderwhy-er/DesktopCommanderMCP`, MIT, 10,443 stars as of November 27, 2026; latest release v0.3.4 on November 18, 2026). It lives under an individual's GitHub account, not a large vendor's.
+
+**Who it is for:** developers using a chat client with no built-in shell, such as Claude Desktop, who want it to run commands and edit files.
+
+**Key features:** long-running terminal commands with process control, interactive sessions (SSH, databases, dev servers), in-memory code execution (Python, Node.js, R), full filesystem operations with surgical text edits, Excel, PDF and DOCX support, and local tool-call history through `get_recent_tool_calls`. The README lists setup for Claude Code, Cursor, Windsurf and Codex, including `codex mcp add desktop-commander -- npx -y @wonderwhy-er/desktop-commander@latest`. A Remote MCP option exists for ChatGPT and Claude web.
+
+**Pros:**
+
+- Gives a chat client terminal and file reach.
+- Local history of recent tool calls through `get_recent_tool_calls`.
+- Call history stays on your machine.
+
+**Cons:**
+
+- The README itself says its guardrails (symlink prevention, a command blocklist) are "not a sandbox." An agent with this server can do what your user can do.
+- Overlaps heavily with what Claude Code, Codex and similar CLIs already do natively.
+- It is community maintained, not vendor backed, so judge the support risk.
+
+**Benefits for you:** a terminal and filesystem for clients that have none.
+
+**Pricing:** free and open source.
+
+**Standout use case:** analyzing a CSV or Excel file in a chat client by having the agent run code locally.
+
+**Skip it if:** you already use a coding CLI with its own shell and file tools. The README offers Docker installation if you want isolation.
+
+**Setup:**
+
+```bash
+npx @wonderwhy-er/desktop-commander@latest setup
+```
+
+{% figure src="https://opengraph.githubassets.com/1/wonderwhy-er/DesktopCommanderMCP" alt="GitHub repository card for wonderwhy-er/DesktopCommanderMCP" caption="The wonderwhy-er/DesktopCommanderMCP repository card. Source: GitHub" /%}
+
+## Pricing table (as of November 27, 2026)
+
+Every figure below came from the vendor's own page on the date above. "No MCP fee found" means we read the vendor's MCP docs and pricing page and found no separate charge for the server, which is not the same as a promise that none exists.
+
+| Server | Plan and price | Free tier | What the MCP server costs on its own |
+| --- | --- | --- | --- |
+| GitHub MCP | Server is MIT; GitHub Copilot plans: Free $0, Pro $10, Pro+ $39, Max $100 per month | Yes | No separate fee found; Copilot cloud agent and code scanning tools depend on other subscriptions |
+| Context7 | Free $0 (1,000 calls a month), Pro $10 per seat per month (2,000 calls per seat, then $5 per 1,000), Enterprise custom | Yes | Metered by API calls; private repos $5 per 1M parsed tokens |
+| Playwright MCP | Free and open source | Yes | None |
+| Chrome DevTools MCP | Free and open source | Yes | None |
+| Sentry MCP | Developer $0 (one user), Team $26 per month, Business $80 per month (annual billing, default pre-paid data), Enterprise custom | Yes | Included with the Sentry plan; Seer AI debugging needs a subscription |
+| Supabase MCP | Free $0 (2 active projects), Pro from $25 per month | Yes | None found |
+| Postgres MCP | Free and open source | Yes | None |
+| Cloudflare MCP | Workers Free; Workers Paid from a $5 per month minimum | Yes | No MCP fee found |
+| Vercel MCP | Hobby $0, Pro $20 per month | Yes | Available on all plans |
+| Linear MCP | Free $0, Basic $10, Business $16 per user per month (billed yearly) | Yes | None listed |
+| Stripe MCP | No MCP fee found | Sandbox | None found; Stripe's processing fees are separate |
+| Figma Dev Mode MCP | Dev seat $12, $25, $35 per month (Professional, Organization, Enterprise); Full seat $16, $55, $90 | Starter: 20 calls a month | Included in paid seats, with daily call caps |
+| Notion MCP | Free $0, Plus $10, Business $20 per seat per month | Yes | None listed; limits are higher on Business and Enterprise |
+| Docker MCP Toolkit | Personal $0, Pro $9, Team $15, Business $24 per user per month (annual); monthly Pro $11, Team $16 | Yes | Beta feature; plan coverage not verified |
+| Desktop Commander | Free and open source | Yes | None |
+
+## Feature matrix
+
+"Yes" means we found it in the vendor's docs or README. "Partial" means a limited or indirect version exists. "No" means we did not find it in the docs we read, which can mean it does not exist or that we missed it. "Not verified" means we could not confirm it either way.
+
+| Server | Hosted remote | Local option | OAuth sign-in | Read-only or limited mode | Open source |
+| --- | --- | --- | --- | --- | --- |
+| GitHub MCP | Yes | Yes (Docker) | Yes | Yes (read-only and lockdown modes) | Yes |
+| Context7 | Yes | Yes (npx) | Partial (CLI setup uses OAuth, API key for the server) | Partial (lookup tools only) | Yes (client and CLI) |
+| Playwright MCP | No | Yes | No | No | Yes |
+| Chrome DevTools MCP | No | Yes | No | No | Yes |
+| Sentry MCP | Yes | Yes (via Sentry CLI) | Yes | No | Partial (toolkit repo) |
+| Supabase MCP | Yes | Yes (local CLI, self-hosted) | Yes | Yes | Yes |
+| Postgres MCP | No | Yes | No | Yes (restricted mode) | Yes |
+| Cloudflare MCP | Yes | No | Yes | No documented switch (scope OAuth permissions) | Partial |
+| Vercel MCP | Yes | No | Yes | Not verified | No |
+| Linear MCP | Yes | No (mcp-remote proxy for older clients) | Yes | Yes (read-only endpoint) | No |
+| Stripe MCP | Yes | Not verified | Yes | Partial (per-environment permissions, agent API keys) | Partial (toolkit repo) |
+| Figma Dev Mode MCP | Yes | Yes (desktop app server) | Not verified | No | Partial (guide repo only) |
+| Notion MCP | Yes | Partial (legacy repo, unmaintained) | Yes | Not verified | Partial |
+| Docker MCP Toolkit | No | Yes | Not verified | Partial (no host filesystem by default) | Partial (gateway MIT) |
+| Desktop Commander | Partial (Remote MCP option) | Yes | No | No | Yes |
+
+## Works-with matrix: Claude Code, Codex, Cursor, Gemini CLI, Hermes, OpenCode
+
+"Documented" means the vendor's own docs or README names the client. "Standard transport" means the vendor does not name the client, but the client's own MCP docs list the transport the server uses, so it should connect. We did not test any of these pairings. All six clients document support for local stdio servers and remote HTTP servers with OAuth: Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Hermes all say so in their own MCP docs, so a "Standard transport" cell is a reasonable expectation, not a promise.
+
+| Server | Claude Code | Codex | Cursor | Gemini CLI | Hermes | OpenCode |
+| --- | --- | --- | --- | --- | --- | --- |
+| GitHub MCP | Documented | Documented | Documented | Documented | Standard transport | Documented |
+| Context7 | Documented | Documented (Codex docs use it as an example) | Documented | Standard transport | Standard transport | Documented |
+| Playwright MCP | Documented | Documented | Documented | Documented | Standard transport | Documented |
+| Chrome DevTools MCP | Documented | Documented | Documented | Documented | Standard transport | Standard transport |
+| Sentry MCP | Documented | Standard transport | Documented | Standard transport | Standard transport | Standard transport |
+| Supabase MCP | Documented | Standard transport | Documented | Standard transport | Standard transport | Standard transport |
+| Postgres MCP | Standard transport | Standard transport | Documented | Standard transport | Standard transport | Standard transport |
+| Cloudflare MCP | Documented | Standard transport | Standard transport | Standard transport | Standard transport | Standard transport |
+| Vercel MCP | Documented | Documented | Documented | Documented | Standard transport | Documented |
+| Linear MCP | Documented | Documented | Documented | Standard transport | Standard transport | Standard transport |
+| Stripe MCP | Documented | Documented | Documented | Standard transport | Standard transport | Standard transport |
+| Figma Dev Mode MCP | Documented | Documented | Documented | Documented | Standard transport | Documented |
+| Notion MCP | Documented | Documented | Documented | Standard transport | Documented | Standard transport |
+| Docker MCP Toolkit | Documented | Documented | Documented | Documented | Standard transport | Documented |
+| Desktop Commander | Documented | Documented | Documented | Documented | Standard transport | Standard transport |
+
+Three caveats. First, Cloudflare's docs name Claude and a general OAuth flow for its MCP server, but the other client names on its page refer to its skills plugin, so those cells are "Standard transport". Second, "Documented" on a page only tells you the vendor wrote setup steps, not that every feature works equally well in that client (Figma notes that some canvas features are supported by select clients only). Third, Hermes is "Documented" only for Notion, the one vendor page we found that names it. Hermes's own docs say it accepts local stdio servers and remote HTTP servers (including OAuth) in one config and supports per-server tool filtering through a `tools.include` list, which helps with servers that expose many tools.
+
+## Head-to-head: the closest pairs
+
+### Playwright MCP vs Chrome DevTools MCP: which to pick
+
+Pick **Playwright MCP** when you need to click through a flow in Chrome, Firefox, WebKit or Edge and check the result. Pick **Chrome DevTools MCP** when you need console errors, network requests or a performance trace from a real Chrome. They do not compete as much as they overlap: both can open a page and take a snapshot, but Playwright's draw is cross-browser flows and Chrome DevTools' draw is depth in one browser. Playwright's `--caps devtools` option adds some DevTools-style tools, though we did not compare their depth with Chrome DevTools MCP. If you can only add one and you build front-end features, start with Playwright MCP; if you chase performance bugs, start with Chrome DevTools MCP. Privacy differs: Chrome DevTools MCP collects usage statistics by default (opt out with a flag), while we found no such default in Playwright MCP's README.
+
+### Supabase MCP vs Postgres MCP: which to pick
+
+Pick **Supabase MCP** if your database is on Supabase: it covers migrations, logs, advisors and branching and has a read-only option in the setup panel, but the docs warn about security risks and say that with no project selected all projects are reachable. Pick **Postgres MCP** (Crystal DBA's) if your Postgres lives anywhere else or you want index tuning and EXPLAIN analysis: restricted mode gives read-only transactions with a time limit, and it runs locally under your credentials.
+
+### Hosted servers vs Docker MCP Toolkit: which to pick
+
+Pick **individual hosted servers** (GitHub, Linear, Sentry, Vercel, Notion) when the vendor runs the server and you want OAuth and no local process. Pick **Docker MCP Toolkit** when you run local servers and want one gateway, signed images, CPU and memory limits and no host filesystem by default. It is Beta and tied to Docker Desktop, so for a team with strict controls, test it in a pilot profile first. For most solo developers, three or four hosted servers with read-only settings are less to maintain than a gateway.
+
+## Skills and MCP servers that work with these tools
+
+A server gives your agent tools. A skill gives it the know-how to use them well. These catalog entries on agentskills.codes pair with the servers above. Each page returned HTTP 200 on November 27, 2026.
+
+| Catalog entry | Author | Pairs with | Why it fits |
+| --- | --- | --- | --- |
+| [github-code-review](https://agentskills.codes/skills/github-code-review) | ruvnet | GitHub MCP | Review workflow once the agent can read PRs |
+| [context7-auto-research](https://agentskills.codes/skills/context7-auto-research) | davila7 | Context7 | Fetches current library docs through the Context7 API |
+| [playwright-mcp](https://agentskills.codes/skills/playwright-mcp) | sfc-gh-dflippo | Playwright MCP | Browser testing and UI validation (Streamlit focus) |
+| [chrome-devtools](https://agentskills.codes/skills/chrome-devtools) | mrgoonie | Chrome DevTools MCP | Puppeteer CLI scripts for automation and performance analysis |
+| [sentry](https://agentskills.codes/skills/sentry) | openai | Sentry MCP | Inspect Sentry issues and recent production errors |
+| [supabase-postgres-best-practices](https://agentskills.codes/skills/supabase-postgres-best-practices) | davila7 | Supabase MCP, Postgres MCP | Postgres performance and schema practices |
+| [postgres-patterns](https://agentskills.codes/skills/postgres-patterns) | affaan-m | Postgres MCP | Query optimization, indexing, security patterns |
+| [cloudflare-manager](https://agentskills.codes/skills/cloudflare-manager) | qdhenry | Cloudflare MCP | Workers, KV, R2, Pages, DNS and routes |
+| [linear](https://agentskills.codes/skills/linear) | lobehub | Linear MCP | Issue management guide |
+| [stripe-integration](https://agentskills.codes/skills/stripe-integration) | wshobson | Stripe MCP | Checkout, subscriptions, webhooks |
+| [figma-implement-design](https://agentskills.codes/skills/figma-implement-design) | openai | Figma Dev Mode MCP | Turns Figma nodes into code |
+| [figma](https://agentskills.codes/skills/figma) | openai | Figma Dev Mode MCP | Fetch design context, screenshots and variables |
+| [notion-spec-to-implementation](https://agentskills.codes/skills/notion-spec-to-implementation) | openai | Notion MCP | Turns Notion specs into plans and tasks |
+| [mcp-integration](https://agentskills.codes/skills/mcp-integration) | anthropics | Any server | How to add and configure MCP servers in `.mcp.json` |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | anthropics | Docker MCP Toolkit, custom servers | Guide for building your own MCP server |
+
+Two of these are skills about a server rather than the server itself (for example `chrome-devtools` is a Puppeteer script skill, not Google's MCP server), so read each page's description before installing. For skill-first lists, see our posts on [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) and [best Codex skills](https://agentskills.codes/blog/best-codex-skills-2026).
+
+## Best for X: decision table
+
+| If you need | Pick | Why |
+| --- | --- | --- |
+| One server to start with | GitHub MCP | Covers issues, PRs and CI; read-only mode available |
+| Fewer outdated API calls | Context7 | Two lookup tools, free tier |
+| The agent to test its own UI | Playwright MCP | Cross-browser, no vision model |
+| Console, network and traces | Chrome DevTools MCP | Real Chrome, performance insights |
+| Start debugging from a stack trace | Sentry MCP | Project scoping, OAuth |
+| Schema and migrations on Supabase | Supabase MCP | Migrations, logs, advisors, read-only option |
+| Query tuning on any Postgres | Postgres MCP | Restricted mode, index tuning |
+| Infra on Cloudflare | Cloudflare MCP | Whole API behind two tools |
+| Deployments on Vercel | Vercel MCP | Logs and deployments from the session |
+| Tickets next to the code | Linear MCP | Read-only endpoint and team scoping |
+| Payments work with guardrails | Stripe MCP | Sandbox and live permissions set separately |
+| Design to code | Figma Dev Mode MCP | Variables and components as input |
+| Specs and runbooks | Notion MCP | OAuth with existing permissions |
+| Governed local servers | Docker MCP Toolkit | Signed images, CPU and memory limits |
+| Terminal and files in a chat client | Desktop Commander | Process control and filesystem tools |
+
+## Common mistakes
+
+1. **Installing all 15.** Every connected server adds tool definitions to the context of every request. The Playwright README itself warns that its schemas and snapshots are heavy. Start with the two or three that match your stack.
+2. **Leaving write access on while you explore.** GitHub, Linear and Supabase each have a documented read-only path. Use it until the agent has earned more.
+3. **Giving an agent a live-mode Stripe or production database connection.** Use a Stripe sandbox, and a development Supabase project or Postgres MCP restricted mode.
+4. **Trusting the text the agent reads.** Issues, PR comments, Sentry events and Notion pages are untrusted input. They can carry instructions aimed at your agent. Keep approvals on for write tools.
+5. **Installing the archived Postgres reference server.** Its repo is archived and its npm package is deprecated. Use Postgres MCP Pro or your vendor's server.
+6. **Starting new work on Notion's old local server.** Notion says it is no longer actively maintained.
+7. **Ignoring rate limits.** Figma's Starter plan allows 20 tool calls a month; Context7's free plan blocks after 1,000 calls a month.
+8. **Forgetting the Stripe key deadline.** From January 11, 2027, full-access secret keys and non-agent restricted keys stop working with Stripe MCP.
+
+## Setup checklist
+
+1. List the three jobs your agent does most (for example: read tickets, test the UI, check production errors).
+2. Pick one server per job from the decision table.
+3. Prefer a hosted OAuth server where one exists, and a local server only when you need local data.
+4. Turn on read-only or restricted mode first, and scope to one project, team or repository.
+5. Use a sandbox account for payments and a development project for databases.
+6. Keep your client's approval prompts on for any tool that writes or spends.
+7. Check your client's own MCP docs for the config file format; Codex uses TOML, others use JSON.
+8. Review the connected tool list after setup and remove tools you will not use.
+9. Check each vendor's changelog every few weeks: several of these servers shipped releases within days of this post.
+
+## How we evaluated
+
+**What we did.** On November 27, 2026 we read each vendor's own documentation and pricing page, pulled stars, licenses, release tags and last-push dates from the GitHub API, read the READMEs for Playwright MCP, Chrome DevTools MCP, GitHub MCP, Context7, Postgres MCP and Desktop Commander, and checked the status of the archived reference servers with the GitHub API and `npm view`. We confirmed that every internal and AgentPedia link returns HTTP 200, that the YouTube ids resolve through oEmbed, and that the X post ids resolve through the syndication endpoint with the expected author.
+
+**What we did not do.** We did not install or run any of these servers for this post, so we make no claim about speed, accuracy or token use beyond what the vendors state, and those vendor numbers are labeled as such. We did not test any client and server pairing in the works-with matrix. We did not benchmark servers against each other, and we are not aware of a neutral benchmark that covers these 15.
+
+**Ranking.** The order is our judgment of how broadly each server helps a working developer, with GitHub, docs lookup and browser verification first because they apply to almost every project. Servers tied to one vendor (Sentry, Supabase, Cloudflare, Vercel, Linear, Stripe, Figma, Notion) rank by how many developers use that vendor and by how well the vendor documents controls. We have no affiliate relationship with any vendor listed.
+
+**Known gaps.** The full list of tools for several servers was not read end to end, and a few prices depend on a billing toggle on the vendor's page (see the notes under each pricing line). Check the vendor's page before you buy.
+
+## FAQ
+
+### What are the best MCP servers for developers in 2026?
+
+For most developers, start with GitHub MCP for source control, Context7 for current docs, and Playwright MCP or Chrome DevTools MCP for browser verification. Add vendor servers (Sentry, Supabase, Vercel, Cloudflare, Linear, Stripe, Figma, Notion) only for services you already use.
+
+### What are the best MCP servers for Claude Code?
+
+Everything in this list is documented for Claude Code except where the works-with matrix says "Standard transport" (Postgres MCP's README names Cursor only). Claude Code supports local stdio, remote HTTP and SSE servers. For a Claude Code-specific ranking see [AgentPedia's list](https://agentpedia.codes/blog/best-mcp-servers-claude-code).
+
+### Are MCP servers free?
+
+Many are. Playwright MCP, Chrome DevTools MCP, Postgres MCP and Desktop Commander are free and open source. GitHub MCP, Supabase MCP, Vercel MCP and Linear MCP show no separate server fee, but they connect to services that have paid plans. Context7 has a free plan limited to 1,000 calls a month. Figma's free tier is 20 calls a month.
+
+### What is the difference between a remote and a local MCP server?
+
+A remote server is hosted by the vendor and you connect with a URL, usually through OAuth. A local server is a process your client starts on your machine, through `npx` or Docker. Remote is easier and stays current; local keeps traffic on your machine and puts update and credential handling on you.
+
+### Is the Postgres MCP server archived?
+
+The original Postgres reference server is. It now lives in `modelcontextprotocol/servers-archived`, GitHub marks that repo archived (last push May 28, 2025), and the npm package carries a deprecation message that says it is archived and unmaintained with no security guarantees. This post uses Crystal DBA's Postgres MCP Pro, which was pushed on November 26, 2026.
+
+### Which MCP server is safest to start with?
+
+Context7 (two lookup tools) and GitHub MCP in read-only mode are the lowest-risk starting points in this list. Anything that writes, spends or runs commands (Desktop Commander, Stripe MCP, Supabase MCP, Cloudflare MCP) needs scoping and approvals.
+
+### Do MCP servers work with Codex, Cursor and Gemini CLI, not just Claude Code?
+
+Yes. The protocol is client-agnostic, and each of the six clients in our matrix documents local and remote server support. Vendor docs name Claude Code and Cursor most often, then Codex; Gemini CLI, OpenCode and Hermes appear less often, so check the works-with matrix above and the vendor's page.
+
+### How many MCP servers should I connect at once?
+
+As few as cover your daily jobs. Each server adds tool definitions to every request, and Playwright's own README says CLI plus skills can be more token-efficient than its MCP server. Hermes and other clients can filter a server's tools to only the ones you need.
+
+### Is Playwright MCP or Chrome DevTools MCP better?
+
+Playwright MCP is better for cross-browser flows, Chrome DevTools MCP for performance traces and network inspection in Chrome. Many teams use both. See the head-to-head above.
+
+### What changed in Stripe MCP recently?
+
+Stripe labels it a public preview. OAuth sessions expire after 14 days. From January 11, 2027, Stripe says MCP will no longer accept full-access secret keys or non-agent restricted API keys, so migrate to an agent API key or OAuth.
+
+### Does Notion still have a local MCP server?
+
+The `makenotion/notion-mcp-server` repo still exists (MIT, 4,729 stars, last pushed October 29, 2026), but its README says it is no longer actively maintained or supported and may be sunset, and points users to Notion's hosted remote MCP server.
+
+### Are MCP servers safe to use with production data?
+
+Not by default. Vendors warn about this themselves: Supabase's docs open with a security warning, Vercel notes the agent gets the same access as your user, and Desktop Commander's README says its guardrails are not a sandbox. Use read-only modes, development projects and sandboxes, and keep approval prompts on.
+
+### Where can I find skills that pair with these servers?
+
+See the catalog block above, with 15 entries linked to agentskills.codes, and our posts on [Claude Code skills](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) and [Codex skills](https://agentskills.codes/blog/best-codex-skills-2026).
+
+## Sources
+
+All sources were fetched on November 27, 2026 unless a date is shown.
+
+- GitHub MCP Server repo and README: https://github.com/github/github-mcp-server
+- GitHub MCP server configuration guide: https://github.com/github/github-mcp-server/blob/main/docs/server-configuration.md
+- GitHub Docs, MCP in Copilot: https://docs.github.com/en/copilot/concepts/customizations/mcp
+- GitHub Copilot plans: https://github.com/features/copilot/plans
+- Context7 repo: https://github.com/upstash/context7
+- Context7 plans: https://context7.com/plans
+- Playwright MCP repo: https://github.com/microsoft/playwright-mcp
+- Chrome DevTools MCP repo: https://github.com/ChromeDevTools/chrome-devtools-mcp
+- Sentry MCP docs: https://mcp.sentry.dev/
+- Sentry toolkit repo: https://github.com/getsentry/toolkit
+- Sentry pricing: https://sentry.io/pricing/
+- Supabase MCP docs: https://supabase.com/docs/guides/ai-tools/mcp
+- Supabase MCP repo: https://github.com/supabase/mcp
+- Supabase pricing: https://supabase.com/pricing
+- Postgres MCP Pro repo: https://github.com/crystaldba/postgres-mcp
+- MCP reference servers (archived list): https://github.com/modelcontextprotocol/servers
+- Archived reference servers: https://github.com/modelcontextprotocol/servers-archived
+- Cloudflare MCP docs: https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/
+- Cloudflare Workers pricing: https://developers.cloudflare.com/workers/platform/pricing/
+- Vercel MCP docs: https://vercel.com/docs/agent-resources/vercel-mcp
+- Vercel changelog, AI Gateway through Vercel MCP (November 24, 2026): https://vercel.com/changelog/agents-can-now-manage-ai-gateway-through-vercel-mcp
+- Vercel pricing: https://vercel.com/pricing
+- Linear MCP docs: https://linear.app/docs/mcp
+- Linear pricing: https://linear.app/pricing
+- Stripe MCP docs: https://docs.stripe.com/mcp
+- Figma MCP server docs: https://developers.figma.com/docs/figma-mcp-server/
+- Figma rate limits and access: https://developers.figma.com/docs/figma-mcp-server/plans-access-and-permissions/
+- Figma pricing: https://www.figma.com/pricing/
+- Notion MCP overview: https://developers.notion.com/guides/mcp/overview
+- Notion connect guide: https://developers.notion.com/guides/mcp/get-started-with-mcp
+- Notion local server repo: https://github.com/makenotion/notion-mcp-server
+- Notion pricing: https://www.notion.com/pricing
+- Docker MCP Toolkit docs: https://docs.docker.com/ai/mcp-catalog-and-toolkit/toolkit/
+- Docker MCP Toolkit getting started: https://docs.docker.com/ai/mcp-catalog-and-toolkit/get-started/
+- Docker pricing: https://www.docker.com/pricing/
+- Docker MCP gateway repo: https://github.com/docker/mcp-gateway
+- Desktop Commander repo: https://github.com/wonderwhy-er/DesktopCommanderMCP
+- Codex MCP docs: https://developers.openai.com/codex/mcp
+- Claude Code MCP docs: https://docs.claude.com/en/docs/claude-code/mcp
+- Cursor MCP docs: https://cursor.com/docs/context/mcp
+- Gemini CLI MCP docs: https://geminicli.com/docs/tools/mcp-server/
+- OpenCode MCP docs: https://opencode.ai/docs/mcp-servers/
+- Hermes MCP docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp
+- AgentPedia, best MCP servers for Claude Code: https://agentpedia.codes/blog/best-mcp-servers-claude-code
+- AgentPedia, best MCP integration platforms 2026: https://agentpedia.codes/blog/best-mcp-integration-platforms-2026
