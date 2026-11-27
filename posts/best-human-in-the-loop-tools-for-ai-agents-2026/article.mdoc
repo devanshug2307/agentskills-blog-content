@@ -1,0 +1,685 @@
+An agent that can only read is safe and not very useful. The moment it can refund a customer, merge a pull request, delete a table or wire money, someone has to decide which actions run on their own and which wait for a person. Writing "please ask me before touching prod" in CLAUDE.md is a request, not a control. A real approval gate sits between the agent and the tool, holds the call, asks the right human, and only releases it on a recorded yes.
+
+This post compares ten ways to build that gate in 2026: five new hosted or self-hosted approval products (withHuman, Pushary, HumanAuth, VeriProof, Crios), one team workspace (HumanLayer), one authorization vendor's MCP gateway (Permit.io), and three built-in mechanisms in frameworks you may already use (LangGraph interrupts, OpenAI Agents SDK approvals, Claude Code permission hooks). Short version: withHuman is the best purpose-built open source option, Pushary is the best for approving coding agents from your phone, HumanAuth and VeriProof are the picks when an auditor will ask who approved what, and the three framework features are the free baseline if you are happy to build the reviewer side yourself. Prices, limits and star counts are as of November 27, 2026.
+
+{% youtube id="IkaPHiMDazM" title="Hooks in Claude Code (official Claude channel)" /%}
+
+Official walkthrough of Claude Code hooks from Anthropic's Claude channel, the mechanism behind the "Claude Code permission hooks" entry below. I confirmed the title and channel with YouTube's oEmbed endpoint; I did not watch it end to end.
+
+## Short answer: quick picks
+
+- **Best overall for gating tool calls:** withHuman. Open source core (Apache-2.0), rule pipelines, many reviewer channels, and a free hosted tier for up to 5 members.
+- **Best free option:** the framework features (LangGraph `interrupt()`, OpenAI Agents SDK `needs_approval`, Claude Code hooks) cost nothing beyond what you already pay. Among products, withHuman Free ($0, up to 5 members) and HumanAuth (1,000 requests a month free) have real free tiers.
+- **Best open source:** withHuman (Apache-2.0) for a product; LangGraph (MIT) and the OpenAI Agents SDK (MIT) for libraries.
+- **Best for coding agents on your phone:** Pushary ($9.99 a month, lock-screen approve/deny, optional phone call).
+- **Best for audit evidence:** HumanAuth (signed, offline-verifiable receipts) and VeriProof (tamper-evident decision records, from $995 a month billed annually).
+- **Best for MCP tool governance in an enterprise:** Permit.io's MCP Gateway (human-in-the-loop is an Enterprise feature).
+- **Best self-hosted agent platform with approvals built in:** Crios (pricing is by contact; I could not find public prices).
+- **Best for teams steering coding agents together:** HumanLayer, with the caveat that it is a collaboration workspace more than an approval gate.
+
+{% callout type="warning" %}
+Five of these products are young. withHuman's own launch post on X is dated October 15, 2026, and the Pushary founder's LinkedIn lists the company from December 2025 (Pushary's About page says the operating company was founded in 2024). I confirmed that each official site loads and describes human approval for agents, and I read their pricing and docs pages. I did not install or run any of them, so treat the capability lines as vendor-described, not tested.
+{% /callout %}
+
+## Master comparison table
+
+| Product | Type | Pricing (as of Nov 27, 2026) | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/withhuman.png" name="withHuman" size=24 /%} withHuman | Approval layer (hosted + self-host) | Free $0; Scale $20 per user per month; Enterprise custom | Yes, up to 5 members, unlimited agents and requests | Yes (core, Apache-2.0) | Open source edition excludes MCP gateway and AI judge | Rule pipelines that auto-approve small actions |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/pushary.png" name="Pushary" size=24 /%} Pushary | Phone approvals + policy engine | Agent $9.99, Agent Pro $19.99, Team $59 (5 people), Partner from $99 a month | 3-day trial only | No (a small MIT skill repo exists) | Enforcement needs supported hooks or your code | Lock-screen approvals and a phone call if you miss it |
+| HumanAuth | Signed approval receipts | 1,000 requests a month free, then $0.03 each (see caveat) | Yes | Partly (MIT SDK, verifier, CLI, MCP server) | Pay-as-you-go activation is by email | Dual-signed receipts verifiable offline |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/veriproof.png" name="VeriProof" size=24 /%} VeriProof | Governance and audit evidence | Developer free 60 days; Production Control $995 a month billed annually; Portfolio Control $2,500; Private Enterprise from $90,000 a year | 60-day trial | No | Annual invoiced contracts for production | Rules, review routing and sealed records in one flow |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/crios.png" name="Crios" size=24 /%} Crios | Self-hosted agent orchestration | Contact sales; Crios Cloud is a monthly subscription (no public price) | None found | No | No public pricing | Approvals, spend caps, microVM sandboxes and Vault credentials together |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/humanlayer.png" name="HumanLayer" size=24 /%} HumanLayer | Multiplayer coding agent workspace | No public pricing page found | Unknown | Yes (Apache-2.0 repo) | Not a dedicated approval gate | Shared sessions, plans and diffs for Claude Code, Codex, OpenCode, Pi |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/permit-io.png" name="Permit.io" size=24 /%} Permit.io | Authorization vendor, MCP Gateway | Community free forever; MCP Gateway HITL on Enterprise (contact) | Community plan (1,000 MAU) | No (its OPAL project is Apache-2.0) | HITL needs Enterprise | Per-tool HITL switch and trust-level thresholds |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/langgraph-interrupts.png" name="LangGraph interrupts" size=24 /%} LangGraph interrupts | Framework feature | Free (MIT library) | Yes | Yes (MIT) | You build the reviewer UI and routing | Pause anywhere in a graph, resume with a value |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/openai-agents-sdk-approvals.png" name="OpenAI Agents SDK approvals" size=24 /%} OpenAI Agents SDK approvals | Framework feature | Free (MIT library) | Yes | Yes (MIT) | You build the reviewer UI; not exactly-once | `needs_approval` plus serializable `RunState` |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/claude-code-permission-hooks.png" name="Claude Code permission hooks" size=24 /%} Claude Code permission hooks | Local hook scripts | Feature of Claude Code | N/A | Hook scripts are yours | Local, one agent only | allow, deny, ask or defer per tool call |
+
+{% figure src="https://withhuman.ai/og.png" alt="withHuman social card from the official site" caption="withHuman's official site card, the open source approval layer in this roundup. Source: withhuman.ai" /%}
+
+## What a human-in-the-loop gate actually has to do
+
+Before the product sections, it helps to agree on what "approval" means, because the tools below solve different halves of it.
+
+1. **Intercept.** The call must be held before it reaches the tool. A prompt instruction does not do this. A hook, a gateway, a framework pause or an application check does.
+2. **Decide who decides.** A rule picks auto-approve, deny or ask, and, if it asks, which person, team or on-call rotation.
+3. **Reach the human.** Slack, email, a phone push, a phone call, a dashboard. An approval that nobody sees is a stalled agent.
+4. **Fail safe.** If nobody answers, the default must be deny (or keep waiting), never an accidental yes.
+5. **Resume.** The agent continues from where it paused, with the decision, and ideally with the arguments the human actually saw.
+6. **Record.** Who said yes, to what exact action, when. Some tools go further and make the record verifiable by a third party.
+
+Most products here are strong on three or four of these. The framework features (LangGraph, OpenAI Agents SDK, Claude Code hooks) are strong on 1 and 5 and leave 2, 3, 4 and 6 to you.
+
+## 1. withHuman: the open source approval layer
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/withhuman.png" name="withHuman" size=40 /%}
+
+**What it is.** withHuman describes itself as "the approval layer for AI agents": it intercepts a consequential tool call, runs it through an approval pipeline you define, and, when the rules say so, sends it to a human reviewer. Its homepage walks through a support agent that tries a $75 `stripe.refund`; a rule auto-approves refunds under $20, anything more goes to the Payments team's on-call person, who approves in Slack, Discord, email, SMS, WhatsApp or the iPhone and Android apps. The founders' launch post on X is dated October 15, 2026, so this is a very new product.
+
+{% x id="2110745909139300398" /%}
+
+**Who it is for.** Teams that want a framework-agnostic gate for both coding agents and their own production agents, and that value an open spec. withHuman is built on AAP, the Agent Approval Protocol, which it says it started as an open spec so that "your integrations are with AAP, not withHuman." The spec, SDKs, adapters and conformance tests are described as open source, and the core (queue, audit trail, web UI) is self-hostable. The GitHub repo `withHumanAI/withHuman` is Apache-2.0 licensed and had 23 stars as of November 27, 2026, last pushed November 25, 2026. Treat that star count as a sign of how early it is.
+
+**Key features.**
+- Approval pipelines with rules such as "automatic below $20, ask a human above."
+- Escalation paths and team escalation policies, so a request goes to whoever is on call.
+- Hooks for coding agents. The site says the CLI connects Claude Code, Codex, OpenClaw, Pi, Hermes and DeepSeek on the machine.
+- An MCP gateway and an MCP server, plus an HTTP API (`POST /api/aap/v1/requests`) and AAP SDKs for LangGraph, CrewAI, Mastra and others.
+- Reviewer identity on every decision, an append-only history, and the full request kept with each decision.
+
+```bash
+curl -fsSL https://downloads.withhuman.ai/install.sh | sh -s -- onboard
+```
+
+```json
+// HTTP API body shown on the site for POST /api/aap/v1/requests
+{
+  "tool": "issue_refund",
+  "server": "stripe",
+  "arguments": { "amount": 4900, "reason": "duplicate_charge" },
+  "timeout": "30m"
+}
+```
+
+**Pricing (withhuman.ai/pricing, as of November 27, 2026).**
+
+| Plan | Price | Members | Notes |
+| --- | --- | --- | --- |
+| Open Source | Free | Self-hosted | Hooks, AAP API, MCP server, approval pipelines and webhook blocks included; MCP gateway, gateway tunnels and AI judge not included |
+| Free | $0 hosted | Up to 5 | Unlimited agents and approval requests; MCP gateway included; AI judge "Limited" |
+| Scale | $20 per user per month | Unlimited | Everything in Free, AI judge included, pipeline suggestions marked "coming soon" |
+| Enterprise | Custom annual contract | Unlimited | Cloud, on-prem or BYOC; SSO, SCIM, SIEM export, dedicated support |
+
+**Pros**
+- Real free tier with unlimited agents and approval requests, and a self-hostable Apache-2.0 core.
+- Open protocol reduces lock-in; you can in theory swap providers.
+- Rule pipelines mean small actions never interrupt a human.
+- Widest reviewer-channel list in this roundup (Slack, Discord, email, text, WhatsApp, mobile apps).
+
+**Cons**
+- Very new, 23 GitHub stars, little public production track record.
+- The open source edition lacks the MCP gateway and AI judge; those are hosted features.
+- Some Scale features (pipeline suggestions) and an organization metrics view are labelled "coming soon" on the pricing page.
+
+**Benefits for your use case.** You can start with the free hosted tier, put one risky tool (refunds, deploys, `git push`) behind a rule, and keep the option to self-host later. The "who approved what" record answers the first question a manager or auditor asks.
+
+**Standout use case.** Customer-support or finance agents where small actions should run automatically and large ones need a named human.
+
+**Skip it if** you need cryptographic proof that a specific human approved (look at HumanAuth), or you need a vendor with a multi-year track record.
+
+{% figure src="https://pushary.com/og-ai-coding.webp?v=2" alt="Pushary official social image showing AI coding agent approvals" caption="Pushary's official site image for its coding-agent approvals. Source: pushary.com" /%}
+
+## 2. Pushary: approvals on your phone, with a phone call if you miss it
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/pushary.png" name="Pushary" size=40 /%}
+
+**What it is.** Pushary is "human-in-the-loop for AI agents": when an agent needs a yes, the question lands on your phone or Mac, you approve or deny, and the agent continues. For your own coding agents it installs permission hooks and a policy engine (auto-approve, deny, escalate and timeout rules per tool). For companies building agents, a Partner API lets the product's own end users approve. It is built by Aadil Ghani and operated by RalphNex OÜ, an Estonian company (registry code 16932562, per its own site). Its Product Hunt page lists the "Pushary Calls" launch of June 2, 2026.
+
+{% x id="2124542827279319267" /%}
+
+**Who it is for.** Solo developers and small teams running Claude Code, Codex, Cursor, Gemini CLI, Hermes and similar agents who get stuck waiting at a permission prompt while away from the keyboard. The founder's own posts describe an agent that waited 47 minutes for one yes.
+
+**Key features.**
+- iPhone lock-screen approve or deny; on Android, Deny is one tap and Approve opens the app (per the site).
+- A phone call if the push is missed, after 1, 2 or 3 minutes of your choosing, in calling hours you set, to numbers in the US, Canada, Germany and several European countries (per the site).
+- Per-tool policies: auto-approve safe commands, deny destructive ones, escalate risky ones; a timer rule decides what silence means.
+- A cross-agent audit trail, append-only and exportable on Team, with the answerer's name when the answer comes from the Pushary apps.
+- One-command setup: `npx -y pushary@latest setup`, which the site says wires the MCP server, permission hooks and event tracking. Adapters are listed for the Vercel AI SDK (`@pushary/ai-sdk`), LangGraph, CrewAI, Mastra, the OpenAI Agents SDK and others. I confirmed the `pushary` package exists on npm and PyPI and that `@pushary/ai-sdk` and `@pushary/server` exist on npm.
+
+```bash
+npx -y pushary@latest setup
+```
+
+**Pricing (pushary.com/pricing, as of November 27, 2026).** Monthly prices shown; a yearly toggle advertises "2 months free."
+
+| Plan | Price | Highlights |
+| --- | --- | --- |
+| Agent | $9.99 per month | One person, every agent; 5K notifications a month; permission policies; Mac app; 30-day history; 10 call minutes a month |
+| Agent Pro | $19.99 per month | Unlimited notifications; budgets; Policy Autopilot suggestions; 90-day history; 20 call minutes |
+| Team | $59 per month for 5 people | Shared audit trail with export; team activity; 365-day history; 60 call minutes. The homepage lists $12 a month per extra person |
+| Partner Launch | $99 per month | Up to 5K of your users, 25K approval requests a month, 3 operator seats |
+| Partner Growth | $299 per month | Up to 25K users, 100K requests a month, 10 seats |
+| Partner Scale | $799 per month | Up to 100K users, 500K requests a month, 25 seats |
+| Enterprise | Custom | Contact sales |
+
+A workspace's first paid plan starts with a 3-day free trial; there is no permanent free plan. The Pushary pricing page itself says plainly that Claude Code Remote Control "is good" and is enough if Claude Code is the only agent you run.
+
+**Pros**
+- The best "away from my desk" experience here: push, then a phone call.
+- Works across many coding agents with one rule set and one record.
+- Honest about limits: its FAQ says an MCP connection alone does not intercept every tool call, and a yes typed at the agent's own prompt is not recorded.
+- Public "receipts" page: the founder's own workspace showed 214 decisions, 40.2% auto-cleared by policy and a 3 second median approval latency over a 7 day window ending July 6, 2026 (vendor-reported, one user).
+
+**Cons**
+- No free tier beyond a 3-day trial, and the core product is closed source (only a small MIT skill repo, `pushary/pushary-skill`, 1 star as of today).
+- Enforcement depends on supported hooks or on your application gating the action.
+- The server-side policy engine for products you build is described on its About page as "being built."
+- Calls ring only certain countries, and some agents (Cursor) are not covered by calls, per the founder's Product Hunt reply.
+
+**Benefits for your use case.** If your pain is "the agent stopped and I did not notice," Pushary attacks that directly. For least-privilege setups, per-tool deny rules plus a human gate on the rest give you a workable policy for cloud coding agents without building a reviewer app.
+
+**Standout use case.** Long-running Claude Code or Codex sessions on a remote box while you are away.
+
+{% youtube id="rEcI1MYLdjc" title="Approve Claude Code and Codex From Your Mac's Notch or Phone (RalphNex, Pushary's operator)" /%}
+
+Vendor demo from RalphNex, the company that operates Pushary. Title and channel confirmed through YouTube oEmbed; I did not watch it end to end.
+
+{% x id="2124848540799438935" /%}
+
+**Skip it if** you only use Claude Code with a paid Claude plan (Remote Control may be enough), or you need a self-hosted open source gate.
+
+## 3. HumanAuth: approvals with signed, offline-verifiable receipts
+
+
+**What it is.** HumanAuth is "human-in-the-loop approval for AI agents, with signed proof." Your agent calls `authorize()` for a risky action (a wire, a payout, a merge); the platform pushes a plain-language request to the approver's phone or Mac; the approver confirms with Face ID or Touch ID; the device signs with a key that exists only on that device; the platform countersigns; and the service that executes the action verifies the receipt offline. Its argument against "pause-and-ping" tools is that the approval becomes a boolean in a database that nothing downstream can check.
+
+**Who it is for.** Teams in finance, healthcare, legal, insurance or any workflow where "who approved this" must survive an audit, and where the executing service can be changed to demand a receipt.
+
+**Key features.**
+- Dual-signed receipt bound to a plan hash (the parameters the human saw), single-use and replay-safe, verified offline with EdDSA and JWKS.
+- Quorum approvals ("2 of 3"), approver groups, TTLs from 10 seconds to 1 hour (24 hours on Enterprise), and webhooks.
+- Three MCP tools: `human_authorize`, `human_collect`, `human_inform`; a TypeScript SDK, a verifier library, a CLI and an OpenAPI 3.1 REST API.
+- Integrations listed for LangChain, CrewAI, AutoGen, the OpenAI Agents SDK and n8n.
+- The receipt spec, verifier, SDK, CLI and MCP server are described as MIT licensed and published on npm (I confirmed `@humanauth/cli`, `@humanauth/sdk` and `@humanauth/mcp` exist on npm). The platform itself can be self-deployed into your own Cloudflare account under an Enterprise agreement.
+
+```json
+{
+  "mcpServers": {
+    "humanauth": {
+      "command": "npx",
+      "args": ["@humanauth/mcp"],
+      "env": { "HUMANAUTH_API_KEY": "ha_live_..." }
+    }
+  }
+}
+```
+
+The snippet above is the vendor's published MCP config with the key left as a placeholder; I did not run it.
+
+**Pricing (humanauth.ai/pricing, as of November 27, 2026).**
+
+| Plan | Price | Notes |
+| --- | --- | --- |
+| Free allowance | 1,000 approval requests a month free | No card required; 200 requests a day fair-use guard |
+| Pay as you go | $0.03 per request after 1,000; $0.02 past 100k a month; $0.01 past 1M | Humans, devices and tenants are never billed. The FAQ says to email for early access when you hit the allowance, so it does not read as fully self-serve |
+| Enterprise | Contact | 99.9% SLA, TTLs up to 24 hours, SSO and SCIM, multi-year evidence archive, legal hold and evidence export, committed-use discounts |
+
+**Pros**
+- The strongest evidence story here: a receipt that a third party can verify without trusting HumanAuth's uptime.
+- Usage-based pricing with unlimited humans, and a real free allowance.
+- Biometric approval on the approver's device addresses "rubber stamp from a phished account."
+
+**Cons**
+- You must change the executing service to demand and verify a receipt, which is more work than a pause-and-resume hook.
+- Moving beyond the free 1,000 requests appears to need a manual step (email).
+- Young product with no independent reviews that I could find.
+
+**Benefits for your use case.** For high-value actions (money movement, data release, production deploys) the receipt turns "an agent said a human agreed" into something checkable.
+
+**Skip it if** you only need a quick Slack-style approval for low-risk actions, where the receipt machinery is overkill.
+
+{% figure src="https://humanauth.ai/og.png" alt="HumanAuth official social card" caption="HumanAuth's official site card. Source: humanauth.ai" /%}
+
+## 4. VeriProof: governance, review routing and sealed decision records
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/veriproof.png" name="VeriProof" size=40 /%}
+
+**What it is.** VeriProof (veriproof.app) is an AI agent governance product: your application sends a proposed action, VeriProof checks it against business rules, returns allow, deny or "needs review," routes exceptions to an authorized reviewer, and seals the rule result, approval and reported outcome in a tamper-evident record. Its demo follows a claims agent with a $15,000 authority limit: a $12,800 claim proceeds, an over-limit payment is held and sent to a reviewer in Slack, Microsoft Teams, ServiceNow or email.
+
+**Who it is for.** Regulated or risk-averse enterprises moving agents from pilot to production that need to show auditors the control. The site maps decisions to frameworks including the EU AI Act, NIST AI RMF 1.0, ISO/IEC 42001:2023, HIPAA, GDPR Article 22 and others, and can send approved reports to Vanta, ServiceNow and ComplyAssistant.
+
+**Key features.**
+- Rule checks before action, review routing with escalation of late reviews, and signed callbacks that return review decisions to your application.
+- An Agent Gateway you run in your own network, MCP and A2A support, SDKs, and guardrail flags from tools such as Lakera and Guardrails AI.
+- Shadow mode to test a rule on live activity before it blocks anything.
+- OpenTelemetry export, Splunk business-record feeds and Langfuse trace attachment.
+- An important honest line on its own page: "Your application still does the work." VeriProof returns a decision; your code must act on it, and approval and execution have separate records.
+
+**Pricing (veriproof.app/pricing, as of November 27, 2026).** Production contracts are annual and invoiced.
+
+| Plan | Price | Includes |
+| --- | --- | --- |
+| Developer | Free for 60 days | Sample data, 1,000 recorded sessions a month, 14-day retention, unlimited users and agents, Agent Gateway |
+| Production Control | $995 per month, billed annually | 5 agents, 50,000 sessions a month, $8 per extra 1,000, 1-year retention, SSO, SDKs, signed callbacks |
+| Portfolio Control | $2,500 per month, billed annually | 20 agents, 250,000 sessions a month, $4 per extra 1,000, 3-year retention, legal hold, custom roles, auditor links |
+| Private Enterprise | From $90,000 per year | Runs in your own Azure subscription; Azure Marketplace listing "coming soon" |
+
+**Pros**
+- The most complete compliance and evidence package in the set.
+- Reviews arrive where reviewers already work (Teams, Slack, ServiceNow, email).
+- A 60-day free trial with enterprise features, no payment details.
+
+**Cons**
+- Priced for enterprises: the cheapest production plan is $995 a month on an annual contract.
+- Heavier to integrate than a hook; you wire the check and outcome reporting into your application.
+- Not aimed at an individual developer who wants to approve `rm -rf` from a phone.
+
+**Benefits for your use case.** If a risk or compliance team has to sign off before agents touch money or claims, VeriProof gives them a shared record and a review workflow instead of a pile of Slack messages.
+
+**Skip it if** you are a small team or solo developer, or you need an open source tool.
+
+{% figure src="https://veriproof.app/veriproof-social-share-default.png" alt="VeriProof official social share image" caption="VeriProof's official share image. Source: veriproof.app" /%}
+
+## 5. Crios: a self-hosted agent platform with approvals built into the runtime
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/crios.png" name="Crios" size=40 /%}
+
+**What it is.** Crios (Crios Pte. Ltd., registered in Singapore per its site footer) is a self-hosted agent orchestration platform. Approvals are one part of a bigger package: the whole platform runs on your Kubernetes from one Helm chart, agents run in Kata Containers microVM sandboxes, credentials come from your Vault, and every approval, credential event and decision goes to an append-only audit log that can be delivered to your SIEM by webhook.
+
+**Who it is for.** Organizations that want agents running inside their own perimeter, under their SSO and spend caps, with approval chains defined as part of the agent rather than as a prompt.
+
+**Key features (all vendor-described).**
+- Tool approvals set to never, always or conditional, with assignees, quorum and timeout, and the approver can rewrite the arguments before approving.
+- Input and output guardrails on every turn; budget gates that park a run at a cost or iteration limit and ask for a decision.
+- An approvals inbox on the web and via Telegram, with unanswered approvals aging into a dead-letter queue that you can redrive.
+- Least-privilege connected accounts: credentials scoped to one repository, project or mailbox and revocable, with sensitive actions still needing an owner's approval.
+- It exposes itself as an MCP server, so you can start and steer work from Claude Code, Cursor or Claude Desktop. The site claims more than 250 integrations.
+
+**Pricing (as of November 27, 2026).** I could not find public prices. The `crios.ai/pricing` URL returned a 404 page when I checked. The homepage describes two options: Crios Cloud (a dedicated bare-metal cluster operated by Crios on a monthly subscription) and Crios Enterprise (self-hosted, hardened, with an offline-verifiable license); both are by contact at support@crios.ai. I found no free tier or trial.
+
+**Pros**
+- Approvals, spend caps, sandboxing and credential scoping in one runtime, which fits a least-privilege posture.
+- Argument editing at approval time is a useful control few others advertise.
+- Air-gap friendly, with no call-home license.
+
+**Cons**
+- No public pricing or trial, and no independent reviews or public repo that I could find.
+- It is a platform you adopt, not a gate you bolt on to an existing agent.
+- Everything above is vendor description; I did not run it.
+
+**Benefits for your use case.** If you are standing up cloud coding agents in your own cluster and want approvals, egress limits and scoped credentials from one vendor, Crios is the only product here that bundles all of that.
+
+**Skip it if** you already have an agent stack and only need an approval step, or you need transparent self-serve pricing.
+
+{% figure src="https://crios.ai/og-card.png" alt="Crios official social card" caption="Crios's official site card. Source: crios.ai" /%}
+
+## 6. HumanLayer: a multiplayer workspace for coding agents (not a pure approval gate)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/humanlayer.png" name="HumanLayer" size=40 /%}
+
+**What it is.** HumanLayer is the team behind the `12-factor-agents` guide, and its name is still what many people search for when they want humans in the loop of agents. Today humanlayer.dev describes "a multiplayer coding agent IDE and cloud": it runs coding agents (Claude Code, Codex, OpenCode, Pi) on your machines and lets a team steer them from one place, with tasks, sessions, plan artifacts and code diffs synced between a desktop app, a web app and a daemon on each host. A post from Dex Horthy (@dexhorthy) dated October 4, 2026 says you can now use HumanLayer directly from the Pi agent or OpenCode.
+
+{% x id="2106842513575416019" /%}
+
+I am including it because readers will look for it, and the current product is about team collaboration and review of agent work. I did not find an approval-API product page on the current site, so treat HumanLayer here as "human oversight of coding agents as a team," not "an approval gate you call from your own agent." The older `humanlayer/12-factor-agents` repo (27,454 stars as of November 27, 2026, license reported as NOASSERTION by GitHub) is a set of design principles that includes contacting humans with tool calls as a first-class pattern; it is a guide, not a product.
+
+**Who it is for.** Engineering teams that already run several Claude Code or Codex sessions and want shared plans, reviews and session history.
+
+**Key features.**
+- Shared tasks that group agent sessions, artifacts and worktrees.
+- Bring-your-own-key for Claude Code, Codex and other subscriptions, so there is no per-token bill from HumanLayer (per its FAQ).
+- Plugins that mirror Claude Code, OpenCode and Pi sessions into HumanLayer (from the repo README).
+- SOC 2 Type II compliance claimed on the site, with Enterprise adding SSO/SAML, audit logs and on-prem or private VPC.
+
+```bash
+brew trust humanlayer/humanlayer
+brew install humanlayer/humanlayer/humanlayer
+```
+
+**Pricing (humanlayer.dev, as of November 27, 2026).**
+
+| Plan | Price | Notes |
+| --- | --- | --- |
+| Starter | Free | Up to 3 team members, up to 200 sessions a month |
+| Pro | $100 per user per month | Unlimited tasks and sessions, multi-repo workspaces, BYOK, remote daemons |
+| Enterprise | Custom | SSO/SAML, audit logs, volume pricing, on-prem and private VPC |
+
+**Pros**
+- Real free tier for small teams, and a repo that is Apache-2.0 licensed with about 13,000 stars (12,969 as of November 27, 2026, last pushed November 23, 2026).
+- Strong fit for teams, with BYOK so your existing agent subscriptions keep working.
+- Mature community and a long public track record compared with the other new names here.
+
+**Cons**
+- Not a drop-in approval gate for your own production agents, which is what most readers of this post need.
+- The site contradicts the repo on licensing: the homepage FAQ says "Not yet" to "Is HumanLayer open source?" while the repo README says Apache-2.0 and calls the repo the full stack. The homepage footer still reads 2025, so the FAQ may be stale.
+- $100 per user per month is the highest per-seat price in this roundup.
+
+**Benefits for your use case.** If your agents are coding agents and your team needs to review plans and diffs together before work lands, this is the collaboration layer. Pair it with a per-call gate such as Pushary or withHuman if you also want tool-level approvals.
+
+**Skip it if** you want a drop-in approval API for customer-facing agents.
+
+## 7. Permit.io MCP Gateway: per-tool human approval for MCP tool calls
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/permit-io.png" name="Permit.io" size=40 /%}
+
+
+**What it is.** Permit.io is an authorization vendor (RBAC, ABAC, ReBAC and policy-as-code) that also ships an MCP Gateway for governing which MCP tools agents may call. Its docs describe human-in-the-loop (HITL) approvals that hold a sensitive tool call, such as deleting records or changing production data, until a human approves or rejects it. Calls that do not need approval run without a pause, and the MCP client simply waits for the response, so you do not change any client configuration.
+
+**Who it is for.** Platform and security teams that want one place to decide which agents may call which MCP servers and tools, with a human gate on the dangerous ones. This is the closest match in the roundup to least-privilege access control for cloud coding agents, because approval sits on top of an identity-and-permission model rather than replacing it.
+
+**Key features (from docs.permit.io).**
+- A HITL switch on each tool, plus a server-level approval policy: require approval for all tools, or for tools at or above a trust level (None, Low and above, Medium and above, High only).
+- A fixed check order: Permit checks and the trust ceiling run first (a denied call never reaches Approvals), then approval rules, then an optional "Guardian" that grades the call for intent and can ask a human when unsure.
+- Asks for at most one approval per call; approvers decide on a card in the admin dashboard, with an approval history and notifications.
+- A person-level switch, "Ask me before this agent changes or deletes anything," which routes write approvals to the person by email, with a recent sign-in check (15 minutes by default) and passkey confirmation where set up.
+- Safe defaults: a 5 minute default timeout that always rejects (never approves) on expiry, extendable in the last 60 seconds up to one hour in total; the gateway cancels if the agent disconnects or access is revoked; at most 50 pending requests per host by default.
+
+**Pricing (permit.io/pricing and docs, as of November 27, 2026).** The docs state that HITL approvals are available on Enterprise plans, with access by demo. The pricing page lists a Community plan, free forever, with limits such as 1,000 MAU, 20 tenants and 3 environments, and an Enterprise plan by contact. A Pro tier is referenced ("All Pro Features, plus") but its price did not appear in the page text I fetched, so I am not quoting one. The page also lists free access for open source projects and discounts for non-profits and young startups.
+
+**Pros**
+- Approval is built on a real authorization model with trust levels, not on string matching alone.
+- Fail-safe timeout behavior documented in plain terms.
+- No client changes: it works at the MCP gateway.
+
+**Cons**
+- HITL is gated behind Enterprise, so there is no self-serve path to try it.
+- Scope is MCP tool calls; it will not gate a non-MCP shell command or an in-process function.
+- Approvers use the Permit admin dashboard; I found no Slack or phone approval flow in the docs page I read.
+
+**Benefits for your use case.** For an organization that already uses or wants a central policy engine, you get approval plus identity, trust levels and audit logs in one place.
+
+**Skip it if** your agents are mostly local coding agents calling shell commands, or you need a free self-serve gate.
+
+{% figure src="https://www.permit.io/opengraph-image?c7c5d9b2de25f712" alt="Permit.io official site image" caption="Permit.io's official site image. Source: permit.io" /%}
+
+## 8. LangGraph interrupts: pause anywhere in the graph
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/langgraph-interrupts.png" name="LangGraph interrupts" size=40 /%}
+
+**What it is.** LangGraph is LangChain's graph-based agent framework. Its `interrupt()` function pauses a graph at any node, surfaces a JSON-serializable payload to the caller, saves state through a checkpointer, and waits indefinitely until you resume with `Command(resume=...)`. The resume value becomes the return value of `interrupt()` inside the node. The repo `langchain-ai/langgraph` is MIT licensed with 45,512 stars as of November 27, 2026 (last pushed November 26, 2026).
+
+**Who it is for.** Teams already building agents as LangGraph graphs who want approval, review-and-edit or input collection at precise points in the workflow, and who are happy to build the reviewer interface.
+
+**How it works (from docs.langchain.com).** You need a checkpointer to persist state, a `thread_id` in the config so the graph can load the right checkpoint, and an `interrupt()` call where you want to pause. The docs stress that the `thread_id` is your persistent cursor: reuse it to resume, use a new value to start a fresh thread. The payload you pass appears on `stream.interrupts` with event streaming, or under `__interrupt__` with the default `invoke()` API.
+
+```python
+from langgraph.types import interrupt, Command
+
+def approval_node(state):
+    # Pause and ask for approval; the payload must be JSON-serializable
+    approved = interrupt("Do you approve this action?")
+    return {"approved": approved}
+
+config = {"configurable": {"thread_id": "thread-1"}}
+result = graph.invoke({"input": "data"}, config=config, version="v2")
+    # result.interrupts holds the payload; later, resume with the human's answer:
+graph.invoke(Command(resume=True), config=config, version="v2")
+```
+
+The snippet follows the pattern in the LangGraph docs; I did not run it.
+
+**Pricing.** Free: the library is MIT licensed. LangSmith and LangGraph hosting are separate commercial products whose prices I did not check for this post.
+
+**Pros**
+- Fine-grained: you can pause before a specific tool, after a model draft, or mid-node.
+- Durable: state is checkpointed, so an approval can arrive hours later.
+- The largest ecosystem in this roundup, and several products above (withHuman, Pushary, HumanAuth) list LangGraph adapters.
+
+**Cons**
+- You build everything on the human side: who is asked, over which channel, with what timeout, and the audit trail.
+- The graph waits indefinitely by default, so a missing human means a stuck run unless you add timeouts.
+- Only protects agents built in LangGraph.
+
+**Benefits for your use case.** Zero extra vendor and complete control. It is the best choice when approval is part of a business workflow you already model as a graph.
+
+**Skip it if** your agents are not LangGraph agents, or you need Slack, phone and audit features out of the box.
+
+{% youtube id="QXmy8olBU44" title="Pause and Resume AI Agents with LangGraph Human-in-the-Loop (GenAI Practice)" /%}
+
+Third-party tutorial on LangGraph's human-in-the-loop pause and resume. Title and channel confirmed through YouTube oEmbed; I did not watch it end to end.
+
+## 9. OpenAI Agents SDK approvals: `needs_approval` and resumable run state
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/openai-agents-sdk-approvals.png" name="OpenAI Agents SDK approvals" size=40 /%}
+
+**What it is.** The OpenAI Agents SDK has a documented human-in-the-loop flow: tools declare when they need approval, run results surface pending approvals as `interruptions`, and `RunState` lets you serialize a paused run and resume it after decisions. The repo `openai/openai-agents-python` is MIT licensed with 30,902 stars as of November 27, 2026 (last pushed that same day).
+
+**Who it is for.** Teams building on the OpenAI Agents SDK, including agents that hand off to other agents or use agents as tools.
+
+**How it works (from the SDK docs).** Set `needs_approval=True` on a tool, or give it an async function that decides per call. If the arguments are missing, malformed or not a JSON object, the callable is not invoked and the call requires manual approval, so the rule fails closed. When a tool needs approval, the run pauses, and `RunResult.interruptions` lists `ToolApprovalItem` entries with the agent name, tool name and arguments. You convert the result to a `RunState`, call `state.approve(...)` or `state.reject(...)`, then resume with `Runner.run(agent, state)`. Approvals raised after a handoff or inside a nested `Agent.as_tool()` surface on the outer run. Local MCP servers support `require_approval`, and hosted MCP tools support it through `HostedMCPTool`.
+
+```python
+from agents import Agent
+from agents.decorators import tool
+
+@tool(needs_approval=True)
+async def cancel_order(order_id: int) -> str:
+    return f"Cancelled order {order_id}"
+
+agent = Agent(name="Support agent", tools=[cancel_order])
+```
+
+The decorator form above is taken from the SDK documentation; I did not run it.
+
+**Pricing.** Free: the SDK is MIT licensed. Model usage is billed separately by whichever provider you use.
+
+**Pros**
+- Fail-closed argument handling and per-call decisions scoped to a call ID.
+- Strong production guidance: the docs say to keep the full snapshot on the server, authenticate the reviewer, and never accept replacement tool calls or serialized state from the client.
+- Honest about an important failure mode: approval permits a call to run but does not guarantee exactly-once execution, so use idempotency keys for payments.
+
+**Cons**
+- You build the reviewer UI, routing and audit log.
+- Sticky `always_approve` decisions for local shell and file-edit tools match tool type and name, not the agent, so they can apply to another agent after a handoff. The docs advise per-call decisions when executors differ.
+- Local shell and `apply_patch` approval is opt-in: `needs_approval` defaults to `False`.
+
+**Benefits for your use case.** If your agents already run on the Agents SDK, this is the shortest path to a real pause, with documented guidance on how not to build an insecure approval endpoint.
+
+**Skip it if** you are not on the Agents SDK, or you want a managed reviewer experience.
+
+## 10. Claude Code permission hooks: the local gate for coding agents
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-human-in-the-loop-tools-for-ai-agents-2026/logos/claude-code-permission-hooks.png" name="Claude Code permission hooks" size=40 /%}
+
+**What it is.** Claude Code has a hooks system: shell commands, HTTP calls or other handlers that run at lifecycle events. A `PreToolUse` hook can return a `permissionDecision` of `allow`, `deny`, `ask` or `defer`, and can also rewrite the tool input with `updatedInput`. A separate `PermissionRequest` event fires when a tool call needs a permission decision. Hooks can match tools by name, such as `Bash` or `Edit|Write`, and MCP tools appear as regular tools you can match with patterns like `mcp__memory__.*`. The `anthropics/claude-code` repo showed 157,310 stars as of November 27, 2026; GitHub reports no license field for it.
+
+**Who it is for.** Anyone running Claude Code who wants a deterministic, code-defined gate: block `rm -rf`, force an ask on `git push`, auto-allow read-only commands. Several products above (Pushary, withHuman) install their own hooks to do exactly this and forward the "ask" to a phone or Slack.
+
+**Key facts from the hooks reference (code.claude.com/docs/en/hooks).**
+- The hook receives JSON on stdin, including `tool_name` and `tool_input`, and returns a decision in a `hookSpecificOutput` object.
+- `ask` shows the permission prompt to the user, with your reason in the prompt; `deny` blocks the call and the reason goes to Claude; `defer` ends the turn so the tool can be resumed later and requires non-interactive mode (`-p`).
+- When several PreToolUse hooks disagree, precedence is `deny`, then `defer`, then `ask`, then `allow`. Deny and ask rules in settings still apply whatever a hook returns.
+- Exit code 2 blocks the call; any other non-zero exit does not count as an allow, and even a JSON `allow` cannot override a blocking error.
+
+```bash
+#!/bin/bash
+COMMAND=$(jq -r '.tool_input.command')
+if echo "$COMMAND" | grep -q 'rm -rf'; then
+  jq -n '{
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "Destructive command blocked by hook"
+    }
+  }'
+else
+  exit 0   # no decision; normal permission flow applies
+fi
+```
+
+**Pricing.** Hooks are a feature of Claude Code; you pay for Claude Code itself. I did not check Claude Code's plan prices for this post.
+
+**Pros**
+- Deterministic and local: it runs your code, so the model cannot talk its way past it.
+- Can modify input, not just allow or deny.
+- A good building block: third-party phone and Slack tools plug in here.
+
+**Cons**
+- Covers Claude Code only (other agents have their own mechanisms).
+- A hook on your laptop gives you no team routing, no phone, and no shared audit trail unless you build it.
+- Hook scripts are code you must write, test and maintain; a buggy matcher is a silent hole.
+
+**Benefits for your use case.** For least-privilege coding agents it is the cheapest enforcement point: deny the dangerous, ask on the borderline, allow the rest. Combine it with sandboxing for anything that must not happen.
+
+**Skip it if** you run a mix of agents or need approvals from other humans.
+
+## Pricing table (all dated November 27, 2026)
+
+| Product | Entry paid price | Free option | Notes |
+| --- | --- | --- | --- |
+| withHuman | Scale $20 per user per month | Free hosted: up to 5 members; Open Source self-host | Enterprise custom, annual |
+| Pushary | Agent $9.99 per month | 3-day trial only | Agent Pro $19.99; Team $59 for 5 people; Partner $99, $299, $799 per month |
+| HumanAuth | $0.03 per request after 1,000 a month | 1,000 requests a month | $0.02 past 100k, $0.01 past 1M; Enterprise by contact |
+| VeriProof | $995 per month, billed annually | 60-day Developer trial | $2,500 per month Portfolio; Private Enterprise from $90,000 a year |
+| Crios | Contact sales | None found | pricing page returned 404 |
+| HumanLayer | Pro $100 per user per month | Starter: 3 members, 200 sessions a month | Enterprise custom |
+| Permit.io | Enterprise by contact (HITL) | Community plan free forever | Pro price not captured |
+| LangGraph interrupts | Free | MIT library | Hosting products priced separately |
+| OpenAI Agents SDK approvals | Free | MIT library | Model usage billed separately |
+| Claude Code permission hooks | Part of Claude Code | N/A | Not priced here |
+
+## Feature matrix
+
+"Yes" means the vendor's own docs or pages describe it. "Partial" means it exists with a stated limit or only through your own code. I did not test any of these.
+
+| Capability | withHuman | Pushary | HumanAuth | VeriProof | Crios | HumanLayer | Permit.io | LangGraph | OpenAI SDK | Claude hooks |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Holds a tool call before it runs | Yes | Yes | Partial | Partial | Yes | No | Yes | Yes | Yes | Yes |
+| Rule-based auto-approve and deny | Yes | Yes | Partial | Yes | Yes | No | Yes | Partial | Partial | Yes |
+| Human reviewer channels (Slack, phone, email) | Yes | Yes | Yes | Yes | Partial | Partial | Partial | No | No | No |
+| Phone push or call | Yes | Yes | Yes | No | No | No | No | No | No | No |
+| Quorum or multi-approver | Partial | Partial | Yes | Yes | Yes | No | Partial | Partial | Partial | No |
+| Cryptographic proof of approval | No | No | Yes | Yes | No | No | No | No | No | No |
+| Audit trail | Yes | Yes | Yes | Yes | Yes | Enterprise | Yes | Partial | Partial | Partial |
+| Safe timeout behavior documented | Partial | Yes | Yes | Yes | Yes | No | Yes | No | Partial | Partial |
+| Self-hostable | Yes | No | Yes | Yes | Yes | Partial | No | Yes | Yes | Yes |
+| Free to start | Yes | No | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes |
+
+Notes on the "Partial" cells: HumanAuth and VeriProof return a signed receipt or decision that your own service must enforce, rather than intercepting the call themselves. withHuman's and Pushary's multi-approver support is limited to team routing as described on their sites. Self-hostable for HumanAuth means an Enterprise deployment into your Cloudflare account; for VeriProof it means Private Enterprise in your Azure subscription; for HumanLayer the repo README calls its self-hosting guide "a reference, not a supported install."
+
+## Head-to-head: the closest pairs
+
+### withHuman vs Pushary: which to pick
+
+Both put a phone or chat in front of a risky call. **Pick withHuman** if you want an open protocol, a self-hostable Apache-2.0 core, a free hosted tier and approvals for production agents (refunds, payments) as much as for coding agents. **Pick Pushary** if your pain is coding agents waiting while you are away, and you want lock-screen approvals plus a phone call for $9.99 a month. Pushary is closed source and has no free plan beyond a 3-day trial; withHuman is younger in public terms (23 stars) but cheaper to try. If you only run Claude Code on a paid Claude plan, check whether Claude Code Remote Control already covers you; Pushary's own pricing page says it might.
+
+### HumanAuth vs VeriProof: which to pick
+
+Both are about proving control, not just pausing. **Pick HumanAuth** when you want a cryptographic receipt for a specific high-value action and your executing service can verify it; it is usage priced with 1,000 free requests a month. **Pick VeriProof** when a risk or compliance team needs rule management, review routing, framework mappings and sealed records across many agents, and an annual contract from $995 a month is acceptable. HumanAuth is a developer-first primitive; VeriProof is a governance program.
+
+### LangGraph interrupts vs OpenAI Agents SDK approvals: which to pick
+
+The choice is almost always made by your framework. LangGraph pauses at any point in a graph and waits indefinitely, which suits workflows with several review steps. The OpenAI Agents SDK attaches approval to tools with `needs_approval`, fails closed on malformed arguments and ships explicit guidance on server-side storage and idempotency. If you are free to choose, LangGraph is more flexible and the Agents SDK documents its security caveats more thoroughly.
+
+## Skills and MCP servers that work with these tools
+
+These are real entries in the agentskills.codes catalog (each page returned HTTP 200 on November 27, 2026). They are community-authored; I confirmed the pages load and read the catalog descriptions, but I did not install or run them, and install counts are low.
+
+- [langchain-langgraph-human-in-loop](https://agentskills.codes/skills/langchain-langgraph-human-in-loop): a skill for building LangGraph 1.0 human-in-the-loop approval flows, a direct companion to the LangGraph section above.
+- [hooks-system](https://agentskills.codes/skills/hooks-system): lifecycle hook patterns for Claude Code including `PreToolUse`, useful when writing the approval hooks described above.
+- [create-hooks](https://agentskills.codes/skills/create-hooks): guidance for creating and configuring Claude Code hooks and validating tool input.
+- [debug-hooks](https://agentskills.codes/skills/debug-hooks): a systematic workflow for when a hook does not fire or returns the wrong output, which is the most common failure of a permission gate.
+- [mcp-gateway-security](https://agentskills.codes/skills/mcp-gateway-security): patterns for MCP gateway security, token handling, request validation and audit logging, relevant to the Permit.io, withHuman and Crios gateway approaches.
+- [devisland-approval-proxy](https://agentskills.codes/skills/devisland-approval-proxy): a skill for changing an approval-proxy project's policy evaluation and pending-approval queues; it documents a specific open project rather than a vendor in this list.
+- [autonomous-agent-patterns](https://agentskills.codes/skills/autonomous-agent-patterns): design patterns for autonomous coding agents covering permission systems and human-in-the-loop.
+
+Related reading on this site: [Claude Code Remote Control for skill workflows](https://agentskills.codes/blog/claude-code-remote-control-for-skill-workflows) covers supervising long Claude Code runs from your phone with Remote Control, no third-party tool, and [Codex security and cloud agent workflows](https://agentskills.codes/blog/codex-security-cloud-agent-workflows) covers how Codex Security Cloud scans repos in a validation sandbox and the limits OpenAI states itself, useful context for least-privilege cloud coding agents. For a broader catalog view, see [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026). A sister-site comparison on a different topic, [best AI agent memory tools of 2026](https://agentpedia.codes/blog/best-ai-agent-memory-tools-2026), shows the same style of evidence-first roundup.
+
+## Best for X: decision table
+
+| If you need | Pick | Why |
+| --- | --- | --- |
+| A free, open source approval layer for production agents | withHuman | Apache-2.0 core, free hosted tier, rule pipelines |
+| Approve Claude Code or Codex from a phone | Pushary | Lock-screen approvals plus a call if you miss it |
+| Cryptographic proof a human approved one action | HumanAuth | Dual-signed, offline-verifiable receipt |
+| Enterprise governance with auditor-ready records | VeriProof | Rules, routing, framework mappings, sealed records |
+| Approvals, sandboxes and scoped credentials in your own cluster | Crios | One self-hosted runtime (get a quote; no public price) |
+| Shared review of coding-agent sessions across a team | HumanLayer | Multiplayer workspace, BYOK |
+| MCP tool governance on top of an authorization model | Permit.io | Trust levels, per-tool HITL, Enterprise plan |
+| Pause inside a LangGraph workflow | LangGraph interrupts | Checkpointed, resumable |
+| Pause tool calls in an OpenAI Agents SDK app | OpenAI Agents SDK approvals | `needs_approval`, resumable `RunState` |
+| Cheapest local guard for Claude Code | Claude Code permission hooks | Deterministic, no vendor |
+
+## Common mistakes
+
+- **Treating a prompt as a control.** An instruction in CLAUDE.md or a system prompt is advice. Put the gate in a hook, a gateway or application code.
+- **Assuming an MCP connection intercepts calls.** Pushary's own FAQ says an MCP connection alone does not gate every tool call. Enforcement needs supported hooks or your code.
+- **Letting silence mean yes.** Check what each tool does on timeout. Permit.io's gateway always rejects on timeout; Pushary lets you set the rule; LangGraph waits indefinitely unless you add your own timer.
+- **Trusting a boolean.** A yes stored in a database cannot be checked by the system that executes the action. Bind the approval to the exact parameters (HumanAuth's plan hash, Crios's argument editing, or your own check).
+- **Skipping idempotency.** The OpenAI Agents SDK docs warn that approval does not guarantee exactly-once execution. Give payments and deploys idempotency keys.
+- **Sticky approvals across agents.** `always_approve` in the Agents SDK can apply across handoffs for shell and file-edit tools. Use per-call decisions when executors differ.
+- **Approval fatigue.** If everything asks, humans rubber-stamp. Auto-approve reads and low-value actions, as withHuman's pipelines and Pushary's policies are designed to do.
+
+## Buying and setup checklist
+
+1. List the actions that cannot be undone (money, deletes, merges, deploys, outbound messages to customers).
+2. Decide whether the agent is yours (framework feature or hook) or a vendor's (gateway or hook-based product).
+3. Pick the reviewer channel your approvers actually read (Slack, phone, email) and test that a missed notification fails safe.
+4. Set the timeout default to deny, and write down who the fallback approver is.
+5. Make the executing service the final enforcer where you can: demand a receipt or a decision, do not rely on the agent to behave.
+6. Turn on the audit trail and check that the record names the person and the exact arguments.
+7. Run a drill: ask the agent to do the dangerous thing and confirm it is held, denied or approved as designed.
+8. Re-check prices: several vendors here are weeks old and pricing pages are changing.
+
+## How we evaluated
+
+**Sources.** Vendor homepages and pricing pages (withhuman.ai, pushary.com, humanauth.ai, veriproof.app, crios.ai, humanlayer.dev, permit.io), vendor documentation (docs.permit.io, docs.langchain.com, openai.github.io, code.claude.com), the GitHub API for stars, licenses and push dates, and public X posts from vendor and founder accounts. All of it was fetched on November 27, 2026.
+
+**What I did.** I read each page and doc listed above, checked that each URL returns HTTP 200, queried the GitHub API for the repositories named, confirmed that the npm and PyPI packages mentioned for Pushary and HumanAuth exist, and verified every YouTube and X embed through YouTube's oEmbed endpoint and X's syndication endpoint. I confirmed each product's official site loads and describes approval for agents.
+
+**What I did not do.** I did not install or run any product, hook or SDK, did not create accounts, and did not test latency, reliability or security. Capability statements are vendor-described. No neutral benchmark of approval tools exists that I could find, so the post has none. Numbers such as Pushary's 214 decisions and 3 second median latency come from the founder's own workspace and are vendor-reported.
+
+**Ranking.** The order of sections puts purpose-built products first and framework features last. It is not a score. I have no affiliate or sponsored relationship with any product here.
+
+**Product set.** The record for this post named ten products. I verified that all ten (withHuman, Pushary, HumanAuth, VeriProof, Crios, HumanLayer, LangGraph interrupts, OpenAI Agents SDK approvals, Claude Code permission hooks, Permit.io) exist and describe human approval, with the caveat that HumanLayer's current product is team collaboration around coding agents rather than a standalone approval API. No swaps were made.
+
+## FAQ
+
+### What is human-in-the-loop approval for AI agents?
+
+It is a control that holds an agent's tool call until a person approves it. A good implementation intercepts the call, applies rules, routes the request to the right person, defaults to deny on silence, resumes the agent with the decision, and records who decided what.
+
+### What is the difference between a human approval gate and just asking the model to confirm?
+
+A model asking "are you sure?" in chat is not a control: the model can proceed, and the confirmation is not tied to a person. An approval gate runs outside the model, in a hook, gateway or application code, and the tool call does not execute without a recorded human decision.
+
+### Which tool is best for approving Claude Code from my phone?
+
+Pushary is built for that and supports iPhone lock-screen approvals and a phone call if you miss the push, from $9.99 a month. Claude Code also has its own Remote Control feature included with paid Claude plans, which Pushary's own pricing page says is enough if Claude Code is your only agent. withHuman also supports Claude Code hooks and has iPhone and Android apps.
+
+### Is there a free human-in-the-loop tool for AI agents?
+
+Yes. withHuman has a free hosted tier for up to 5 members and an open source self-hosted edition. HumanAuth gives 1,000 approval requests a month free. LangGraph and the OpenAI Agents SDK are MIT-licensed libraries with built-in pause and resume. Claude Code hooks are part of Claude Code. VeriProof offers a 60-day trial, and Pushary offers a 3-day trial.
+
+### How do human approval gates work in a LangGraph agent?
+
+You call `interrupt()` inside a node with a JSON-serializable payload. LangGraph saves state with a checkpointer, returns the payload to the caller, and waits until you invoke the graph again with `Command(resume=...)` using the same `thread_id`. The resume value becomes the return value of `interrupt()`.
+
+### How do approvals work in the OpenAI Agents SDK?
+
+You mark a tool with `needs_approval=True` or a callable. When the model calls it, the run pauses and `interruptions` lists the pending calls. You turn the result into a `RunState`, call `approve` or `reject`, and resume with `Runner.run`. The docs advise keeping the snapshot on your server, authenticating the reviewer, and using idempotency keys for side effects.
+
+### Can Claude Code hooks require approval for specific commands?
+
+Yes. A `PreToolUse` hook can return `ask` to show the permission prompt, `deny` to block, `allow` to skip the prompt, or `defer` to end the turn so the tool can be resumed later in non-interactive mode. You match tools by name, for example `Bash` or `mcp__.*`. Deny and ask rules in your settings still apply whatever the hook returns.
+
+### What is the best way to apply least-privilege access to cloud coding agents?
+
+Layer controls. Give the agent narrowly scoped credentials, run it in a sandbox, deny known-destructive commands in a hook, and put a human gate on the actions that remain risky. Among the products here, Crios bundles scoped credentials, microVM sandboxes and approvals, and Permit.io puts approval on top of trust levels at the MCP gateway. Both are vendor-described and I did not test them.
+
+### What happens if nobody answers an approval request?
+
+It depends on the tool. Permit.io's gateway rejects after a 5 minute default timeout and never approves on timeout. Pushary lets each rule choose keep waiting, deny, escalate or allow, and its call feature can ring you. LangGraph waits indefinitely unless you add a timer. HumanAuth uses TTLs from 10 seconds to 1 hour. Always test the timeout path before relying on it.
+
+### Do I need cryptographic receipts for agent approvals?
+
+Not for every action. A rule plus a logged yes is enough for low-risk work. Receipts matter when someone else, such as an auditor, a counterparty or a downstream service, must be able to verify that a specific human approved specific parameters. HumanAuth makes that its core design; VeriProof provides sealed records for a governance program.
+
+### Are these new products safe to adopt?
+
+Treat them as early. withHuman's launch post on X is dated October 15, 2026 and its repo had 23 stars as of November 27, 2026. Pricing pages and features are changing, some features are labelled "coming soon," and I found no independent reviews or security audits for several of them. Start with one non-critical action, keep the executing service as the final enforcer, and keep the option to switch (withHuman's open protocol and HumanAuth's offline-verifiable receipts both aim at this).
+
+### How is Permit.io different from an approval tool like withHuman?
+
+Permit.io is an authorization vendor first: its MCP Gateway applies identity, trust levels and permission checks to MCP tool calls, with approval as one step, and human-in-the-loop is available on Enterprise plans. withHuman is purpose-built for approvals across any agent, with a free tier. If you already need centralized authorization, Permit.io fits. If you need a quick gate for one risky action, withHuman or a hook is lighter.
+
+### Why is HumanLayer in this list if it no longer looks like an approval API?
+
+Because people searching for human-in-the-loop for agents still land on it, and because its current product (shared coding-agent sessions, plans and reviews) is a form of human oversight. I flag clearly that it is not a drop-in approval gate for your own production agents.
+
+## Sources
+
+All sources were fetched on November 27, 2026.
+
+- withHuman: [homepage](https://withhuman.ai/), [pricing](https://withhuman.ai/pricing), [GitHub repo](https://github.com/withHumanAI/withHuman), [launch post on X](https://x.com/withHumanAI/status/2110745909139300398)
+- Pushary: [homepage](https://pushary.com/), [pricing](https://pushary.com/pricing), [receipts page](https://pushary.com/receipts), [GitHub skill repo](https://github.com/pushary/pushary-skill), [founder post on X](https://x.com/aadilbuilds/status/2124542827279319267)
+- HumanAuth: [homepage](https://humanauth.ai/), [pricing](https://humanauth.ai/pricing)
+- VeriProof: [homepage](https://veriproof.app/), [pricing](https://veriproof.app/pricing)
+- Crios: [homepage](https://crios.ai/) (the /pricing URL returns a 404 page)
+- HumanLayer: [homepage and pricing](https://www.humanlayer.dev/), [GitHub repo](https://github.com/humanlayer/humanlayer), [12-factor-agents](https://github.com/humanlayer/12-factor-agents)
+- Permit.io: [human approval docs](https://docs.permit.io/permit-mcp-gateway/human-in-the-loop/), [pricing](https://www.permit.io/pricing)
+- LangGraph: [interrupts docs](https://docs.langchain.com/oss/python/langgraph/interrupts), [GitHub repo](https://github.com/langchain-ai/langgraph)
+- OpenAI Agents SDK: [human-in-the-loop docs](https://openai.github.io/openai-agents-python/human_in_the_loop/), [GitHub repo](https://github.com/openai/openai-agents-python)
+- Claude Code: [hooks reference](https://code.claude.com/docs/en/hooks), [GitHub repo](https://github.com/anthropics/claude-code)
+- Catalog and posts: [agentskills.codes skills](https://agentskills.codes/skills/langchain-langgraph-human-in-loop), [Claude Code Remote Control for skill workflows](https://agentskills.codes/blog/claude-code-remote-control-for-skill-workflows), [Codex security and cloud agent workflows](https://agentskills.codes/blog/codex-security-cloud-agent-workflows)
