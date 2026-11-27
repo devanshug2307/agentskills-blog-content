@@ -1,0 +1,16 @@
+{
+  "title": "Claude Agent SDK vs OpenAI Agents SDK vs Google ADK (2026)",
+  "slug": "claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026",
+  "category": "Comparisons",
+  "description": "Claude Agent SDK vs OpenAI Agents SDK vs Google ADK, with versions checked Nov 27, 2026, how each handles skills, sandboxes, MCP and tracing, plus 5 alternatives.",
+  "publishedDate": "2026-11-27",
+  "author": "Agent Skills",
+  "keywords": [
+    "openai agents sdk",
+    "claude agent sdk vs langgraph",
+    "openai agents sdk skills",
+    "openai agents sdk sandbox"
+  ],
+  "draft": false,
+  "hero": "https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/hero.png"
+}

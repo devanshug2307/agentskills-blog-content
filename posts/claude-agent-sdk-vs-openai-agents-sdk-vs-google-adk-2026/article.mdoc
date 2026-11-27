@@ -1,0 +1,809 @@
+If you are picking an agent SDK in late 2026, you are really choosing between three different ideas of what an "agent framework" is. The Claude Agent SDK hands you the same agent loop, tools and permission system that power Claude Code, packaged as a library. The OpenAI Agents SDK is a small set of primitives (agents, tools, handoffs, guardrails, sessions) with tracing built in, and since April 2026 a sandbox layer for agents that work on real files. Google's Agent Development Kit (ADK) is the broadest of the three: five languages, graph-based workflows in the 2.0 line, and deep hooks into Google Cloud.
+
+The short version, as of November 27, 2026: pick the Claude Agent SDK if you want a ready-made coding or computer-using agent with files, shell, hooks and skills out of the box. Pick the OpenAI Agents SDK if you want the lightest orchestration layer with first-party tracing and a choice of sandbox providers. Pick Google ADK if you need deterministic workflows, Java, Go or Kotlin, or you already deploy on Google Cloud. All three are free to install; you pay for model tokens. This post also covers how each one handles agent skills (SKILL.md folders), because that is where they differ most, and five alternatives (LangGraph, Vercel AI SDK, Mastra, Microsoft Agent Framework and Strands Agents).
+
+{% youtube id="tK32trvj_b4" title="Build Hour: Agents SDK" /%}
+
+*OpenAI's "Build Hour: Agents SDK" video. We confirmed it exists and its title via YouTube oEmbed on November 27, 2026; we did not watch it or check its upload date, so APIs and model names in it may be older than the docs quoted below.*
+
+## Short answer and quick picks
+
+- **Best for a ready-made, Claude Code-style agent: Claude Agent SDK.** Built-in file, shell and search tools, hooks, subagents, sessions and filesystem skills, in Python and TypeScript.
+- **Best for light orchestration plus tracing: OpenAI Agents SDK.** Handoffs, guardrails, sessions and a default-on trace dashboard, with optional sandbox agents on seven-plus providers.
+- **Best for deterministic workflows and language choice: Google ADK.** Python, TypeScript, Go, Java and Kotlin, graph workflows (ADK 2.0), and a skills toolset based on the open Agent Skills spec.
+- **Best free way to start:** all three SDKs are free open-source packages. The model is the cost: Google's Gemini API has a free tier, while Claude and OpenAI models are paid API products.
+- **Best fully open-source stack:** Google ADK (Apache-2.0 across Python, TypeScript, Go and Java repos) or the OpenAI Agents SDK (MIT). The Claude Agent SDK's Python repo is MIT, but Anthropic's docs say use is governed by its Commercial Terms.
+- **Best if you do not want to be tied to one model vendor:** Vercel AI SDK, Mastra or LangGraph (see the alternatives section). We confirmed provider standardization for the AI SDK and `provider/model` naming for Mastra; check LangGraph and others for your target model.
+- **Best for pure TypeScript web apps:** Vercel AI SDK or Mastra.
+
+{% callout type="info" %}
+Version check, November 27, 2026: the latest stable `openai-agents` on PyPI is **0.26.0** (uploaded November 24). The "1.0 alpha" in some write-ups is real but separate: GitHub has a pre-release **v1.0.0-alpha.2** (November 23) that is a GitHub-only preview bundling `openai-agents` with a native Codex runtime. It is not on PyPI. The Claude Agent SDK is at **0.2.189** (PyPI, November 25) and **0.3.332** (npm, November 24); the two registries use separate version lines. Google ADK is at **2.15.1** (PyPI, November 25).
+{% /callout %}
+
+## Version and activity snapshot (November 27, 2026)
+
+Package versions come from the PyPI and npm registries; stars, licenses and push dates come from the GitHub API. All checked on November 27, 2026.
+
+| SDK | Python (PyPI) | JS/TS (npm) | Other languages | GitHub stars (Python repo) | License signal |
+| --- | --- | --- | --- | --- | --- |
+| Claude Agent SDK | `claude-agent-sdk` 0.2.189 (Nov 25) | `@anthropic-ai/claude-agent-sdk` 0.3.332 (Nov 24) | None documented | 8,657 (TS repo: 1,911) | Python repo MIT; npm says "SEE LICENSE IN README.md"; docs say Commercial Terms apply |
+| OpenAI Agents SDK | `openai-agents` 0.26.0 (Nov 24); GitHub pre-release v1.0.0-alpha.2 (Nov 23) | `@openai/agents` 0.22.0 (Nov 12) | None documented | 30,902 (JS repo: 4,038) | MIT |
+| Google ADK | `google-adk` 2.15.1 (Nov 25) | `@google/adk` 2.5.0 (Nov 12) | Go (9,020 stars), Java (1,783), Kotlin | 22,378 (TS repo: 1,497) | Apache-2.0 |
+| LangGraph | `langgraph` 1.2.24 (Nov 20) | `@langchain/langgraph` 1.7.5 (Nov 17) | None | 45,512 | MIT |
+| Vercel AI SDK | None | `ai` 7.0.183 (Nov 26) | None | 28,255 (repo) | Apache-2.0 on npm; GitHub shows NOASSERTION |
+| Mastra | None | `@mastra/core` 1.86.0 (Nov 25) | None | 29,861 (repo) | Apache-2.0 on npm; GitHub shows NOASSERTION |
+| Microsoft Agent Framework | `agent-framework` 1.26.0 (Nov 12) | Not checked | .NET (not verified here) | Not captured (see verify notes) | MIT classifier on PyPI |
+| Strands Agents | `strands-agents` 1.67.0 (Nov 25) | `@strands-agents/sdk` 1.26.0 (Nov 19) | None | 9,300 (harness-sdk repo) | Apache-2.0 |
+
+Two things stand out. First, release cadence is fast everywhere: ADK shipped 2.14.0, 2.14.1, 2.15.0 and 2.15.1 between November 7 and November 25, and the OpenAI Python SDK shipped 0.24.0 (October 15), 0.25.0 (November 18) and 0.26.0 (November 24). Second, both Anthropic and OpenAI are still on 0.x versions, which by OpenAI's own release policy means minor-version bumps can contain breaking changes. Pin your versions.
+
+## Master comparison table
+
+Prices below are for the SDK itself (all free) plus the model it most naturally pairs with. Model prices are per million tokens (MTok) from each vendor's pricing page, checked November 27, 2026.
+
+| Product | SDK price | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/claude-agent-sdk.png" name="Claude Agent SDK" size=24 /%} Claude Agent SDK | Free; Claude models billed per token (Sonnet 5.5 $2 in / $10 out per MTok) | No free model tier; SDK itself free | Python repo MIT; TS package license points to README; Commercial Terms apply | Python and TypeScript only; spawns a `claude` CLI subprocess; claude.ai login not allowed for third-party products | Same loop, tools, hooks and skills as Claude Code |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=24 /%} OpenAI Agents SDK | Free; OpenAI models billed per token (gpt-6.2-sol $2 in / $10 out per MTok) | SDK free; no free model tier confirmed on the pricing page | Yes, MIT | Pre-1.0 (0.26.0); sandbox agents launched Python-first | Handoffs, guardrails, default tracing, sandbox providers |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/google-adk.png" name="Google ADK" size=24 /%} Google ADK | Free; Gemini models billed per token (Gemini 4 Hydrogen $1.50 in / $7.50 out per MTok) | Gemini API Free tier exists (not for every model) | Yes, Apache-2.0 | Skills experimental in TypeScript and Kotlin; Python 3.11+ | Five languages, graph workflows, Google Cloud deploy |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/langgraph.png" name="LangGraph" size=24 /%} LangGraph | Free (LangSmith is a separate product) | Yes | Yes, MIT | Low-level; you design the architecture | Durable execution, streaming, human-in-the-loop |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/vercel-ai-sdk.png" name="Vercel AI SDK" size=24 /%} Vercel AI SDK | Free | Yes | Apache-2.0 (npm) | TypeScript only | Provider-agnostic, UI hooks, harness abstraction |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/mastra.png" name="Mastra" size=24 /%} Mastra | Free | Yes | Apache-2.0 (npm) | TypeScript only | Studio UI, agent harness, skills for coding agents |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/microsoft-agent-framework.png" name="Microsoft Agent Framework" size=24 /%} Microsoft Agent Framework | Free | Yes | MIT classifier on PyPI | Azure-leaning docs; some pages need sign-in | Workflows plus a batteries-included Harness Agent |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/strands-agents.png" name="Strands Agents" size=24 /%} Strands Agents | Free | Yes | Apache-2.0 | Packaging spans SDK and harness packages | Model-driven agents, batteries-included harness, Python and TypeScript |
+
+## How these SDKs differ in one paragraph each
+
+**Claude Agent SDK** is a wrapper around a running agent: it launches the Claude Code CLI as a subprocess and gives you a typed message stream. You do not write the loop, you configure it (tools, permissions, hooks, subagents, MCP servers, skills). **OpenAI Agents SDK** gives you the loop as a library: an `Agent`, a `Runner`, and composable pieces you wire yourself, with the new `SandboxAgent` for file-heavy work. **Google ADK** gives you an agent runtime and a workflow engine: in 2.0, agents, tools and plain functions are nodes in a graph, and a CLI (`adk create`, `adk run`, `adk web`) scaffolds and tests projects.
+
+{% figure src="https://adk.dev/assets/adk-graphs-fp.png" alt="Image from the ADK documentation on graph-based workflows" caption="ADK 2.0 treats agents, tools and functions as nodes in a graph. Source: Google (adk.dev)" /%}
+
+## Claude Agent SDK
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/claude-agent-sdk.png" name="Claude Agent SDK" size=40 /%}
+
+### What it is
+
+The Claude Agent SDK is Anthropic's library for building agents on top of the Claude Code runtime. Anthropic's overview describes it as building production agents "with Claude Code as a library". It was renamed from the Claude Code SDK on September 29, 2025, and Anthropic's Alex Albert wrote at the time that it was meant for "any general purpose agent, not just coding agents".
+
+{% x id="1972718342197981194" /%}
+
+The Python package (`claude-agent-sdk`) and the TypeScript package (`@anthropic-ai/claude-agent-sdk`) both expose a `query()` function that streams messages while Claude plans, calls tools and edits files. Because it drives Claude Code, you get Claude Code's built-in tools (Read, Edit, Glob, Grep, Bash and more), its permission modes, hooks, subagents and its `.claude/` conventions without writing them yourself.
+
+{% x id="1972758349944111445" /%}
+
+### Who it is for
+
+Teams that want an agent that works on files and code today: internal coding agents, code review bots, document processing agents, and "Claude Code but inside my product" features (these are our suggested uses, not a vendor list). Apple's Xcode shipped a direct integration with the SDK in February 2026, which is the clearest first-party example.
+
+{% x id="2018771170938724682" /%}
+
+{% figure src="https://assets.claude.com/6d4a0d28992ade92d6fa63646fd9c9d318245c6c.jpg" alt="Social card image from Anthropic's announcement of the Xcode integration with the Claude Agent SDK" caption="Image Anthropic uses for its Xcode and Claude Agent SDK announcement. Source: Anthropic (anthropic.com)" /%}
+
+### Key features
+
+- **Built-in tools and permissions.** `allowed_tools` auto-approves tools; `permission_mode` supports default, `acceptEdits`, `bypassPermissions` and `plan` modes. Deny rules and ask rules from settings files apply even in bypass mode, per the permissions docs.
+- **Hooks.** `PreToolUse`, `PostToolUse` and other events let you block or rewrite tool calls in code (the docs example protects `.env` files with a `PreToolUse` hook on `Write|Edit`).
+- **Subagents.** Define them inline with `AgentDefinition` (description, prompt, tools, model) or via filesystem agents.
+- **MCP.** Pass `mcp_servers` for external servers, or build in-process tools with `@tool` and `create_sdk_mcp_server` (TypeScript: `tool()` and `createSdkMcpServer`).
+- **Sessions.** Continue, resume by ID and fork a session; `ClaudeSDKClient` (Python) or `continue: true` (TypeScript) handles multi-turn chat in one process.
+- **Skills and project memory.** The SDK loads `CLAUDE.md`, `.claude/skills/`, agents and commands from the filesystem through `setting_sources` / `settingSources`.
+- **Observability.** Traces, metrics and log events export over OpenTelemetry (OTLP) to any compatible backend.
+- **Model providers.** Set `ANTHROPIC_API_KEY`, or use `CLAUDE_CODE_USE_BEDROCK=1`, `CLAUDE_CODE_USE_VERTEX=1` or `CLAUDE_CODE_USE_FOUNDRY=1` with the matching cloud credentials.
+
+### Skills support
+
+This is the most mature skills story of the three, because skills were a Claude Code concept first. From Anthropic's skills page: skills are filesystem artifacts (`.claude/skills/<name>/SKILL.md`), discovered at startup from user and project directories, loaded fully only when Claude invokes them, and also invocable by you with `/<name>` in a prompt. You scope them with the `skills` option: a list of names, `"all"`, or `[]` for none. One important limit: **there is no programmatic API to register a skill**. Unlike subagents (the `agents` option), skills must exist as files on disk, or arrive through the `plugins` option.
+
+```python
+import asyncio
+import os
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+async def main():
+    options = ClaudeAgentOptions(
+        cwd=os.getcwd(),                      # .claude/skills/ here or in a parent
+        setting_sources=["user", "project"],  # load skills from the filesystem
+        skills="all",                         # let Claude invoke every discovered skill
+        allowed_tools=["Read", "Write", "Bash"],
+    )
+    async for message in query(prompt="Help me process this PDF document", options=options):
+        print(message)
+
+asyncio.run(main())
+```
+
+*Adapted from Anthropic's "Extend agents with skills" docs page, fetched November 27, 2026.*
+
+Skills in the [agentskills.codes catalog](https://agentskills.codes/skills/mcp-builder) use the same `SKILL.md` folder format that Claude Code reads, so a skill folder placed in `.claude/skills/` should be discoverable by an SDK agent. We did not test any specific catalog skill this way.
+
+### Setup
+
+```bash
+pip install claude-agent-sdk      # or: npm install @anthropic-ai/claude-agent-sdk
+export ANTHROPIC_API_KEY=your-api-key
+```
+
+```python
+import asyncio
+from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt="Review utils.py for bugs that would cause crashes. Fix any issues you find.",
+        options=ClaudeAgentOptions(
+            allowed_tools=["Read", "Edit", "Glob"],  # auto-approve these tools
+            permission_mode="acceptEdits",           # auto-approve file edits
+        ),
+    ):
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if hasattr(block, "text"):
+                    print(block.text)
+        elif isinstance(message, ResultMessage):
+            print(f"Done: {message.subtype}")
+
+asyncio.run(main())
+```
+
+*Adapted from Anthropic's Agent SDK quickstart, fetched November 27, 2026.*
+
+A subagent definition from the docs shows how focused roles are declared:
+
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions, AgentDefinition
+
+options = ClaudeAgentOptions(
+    allowed_tools=["Read", "Grep", "Glob", "Agent", "Bash(npm test *)"],
+    agents={
+        "code-reviewer": AgentDefinition(
+            description="Expert code review specialist. Use for quality, security, and maintainability reviews.",
+            prompt="You are a code review specialist with expertise in security, performance, and best practices.",
+            tools=["Read", "Grep", "Glob"],   # read-only
+            model="sonnet",
+        ),
+    },
+)
+```
+
+### Pros
+
+- Production-tested loop and tools: you inherit Claude Code's behavior instead of rebuilding it.
+- Best-in-class skills, hooks and permission controls, documented in one place.
+- Subagents with per-agent tool allowlists and model overrides.
+- OpenTelemetry export means traces land in whatever backend you already run.
+- Runs against Bedrock, Vertex and Microsoft Foundry as well as Anthropic's API.
+- Fast release cadence: 0.2.188 (November 23) and 0.2.189 (November 25).
+
+### Cons
+
+- Claude models only, as far as the docs we read show; we found no documented path to non-Claude models.
+- It spawns and supervises a `claude` CLI subprocess, so hosting is heavier than a pure library: Anthropic's hosting guide spends pages on containers, session persistence and multi-tenant isolation.
+- Anthropic's hosting guide lists "state that lives on local disk" and "ephemeral sessions" as hosting concerns: the CLI subprocess owns a working directory and session files, so you must plan persistence yourself.
+- No in-SDK sandbox class; isolation is your job (Docker, Kubernetes, gVisor or a sandbox provider), or you move to Anthropic's separate Managed Agents product.
+- Python and TypeScript only.
+- Anthropic does not allow third parties to offer claude.ai login or rate limits in products built on the SDK, unless previously approved; you must use API-key style authentication.
+
+### Benefits for your use case
+
+If your agent mostly reads, edits and runs code or documents, you save weeks: file tools, shell, diff-style edits, permission prompts and context management already exist and are used daily by Claude Code users. If you already maintain `CLAUDE.md` and `.claude/skills/` for your human team, the SDK reuses them, so your agent and your developers follow the same instructions.
+
+### Pricing and limits
+
+The SDK is free. You pay Claude API rates, which (as of November 27, 2026, from Anthropic's pricing page) include Claude Opus 5.5 at $4 input / $20 output per MTok, Claude Sonnet 5.5 at $2 / $10, and Claude Fable 5.2 at $8 / $40. Prompt cache hits are billed at a fraction of base input (for example $0.10 per MTok on Sonnet 5.5). The hosting docs show a 20-turn cap (`max_turns=20`) as an example; you set the limit yourself.
+
+### Standout use case
+
+Building a coding or review agent that you can also hand to humans: the same `.claude/` folder drives both. The AI Engineer workshop below is a longer walkthrough.
+
+{% youtube id="TqC1qOfiVcQ" title="Claude Agent SDK [Full Workshop] with Thariq Shihipar, Anthropic" /%}
+
+*Conference video from the AI Engineer channel, confirmed to exist via YouTube oEmbed on November 27, 2026. We did not watch it or check its upload date; prefer the docs for current APIs.*
+
+### Skip it if
+
+You need a non-Claude model, need a tiny dependency footprint, or cannot run a CLI subprocess in your deployment target (for example a strict edge runtime). Also skip it if you want a deterministic graph of steps rather than a model-driven loop; ADK 2.0 or LangGraph fit that better.
+
+## OpenAI Agents SDK
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/openai-agents-sdk.png" name="OpenAI Agents SDK" size=40 /%}
+
+### What it is
+
+The OpenAI Agents SDK is a lightweight, open-source (MIT) framework for building multi-agent workflows. Its core is `Agent` (instructions, tools, handoffs, guardrails) plus `Runner`, which manages turns. The docs recommend the Responses API model class and also provide a Chat Completions model class; we did not verify how well non-OpenAI providers are supported.
+
+On April 15, 2026, OpenAI announced "the next evolution of the Agents SDK": a more capable harness (configurable memory, sandbox-aware orchestration, Codex-like filesystem tools) and **native sandbox execution**, with built-in support for Blaxel, Cloudflare, Daytona, E2B, Modal, Runloop and Vercel, or bring your own.
+
+{% x id="2044466699785920937" /%}
+
+### Who it is for
+
+Teams that want to assemble agent workflows from small parts, want hosted tracing without extra setup, and mostly use OpenAI models. The sandbox layer targets agents that inspect files, run commands and edit code, the same workload the Claude Agent SDK targets.
+
+{% figure src="https://openai.github.io/openai-agents-python/assets/images/harness_with_compute.png" alt="Diagram from the OpenAI Agents SDK documentation about the harness and sandbox compute" caption="Image from the OpenAI Agents SDK docs (file name: harness_with_compute.png). Source: OpenAI (openai.github.io/openai-agents-python)" /%}
+
+### Key features
+
+- **Agents, handoffs and agents-as-tools.** A triage agent can hand off to specialists, or a manager agent can call specialists through `Agent.as_tool()` and keep control of the final answer. Handoffs appear to the model as `transfer_to_<agent_name>` tools by default.
+- **Guardrails.** Input and output checks that can use a cheap, fast model and stop a run early.
+- **Sessions.** Built-in implementations include `SQLiteSession`, `RedisSession`, `SQLAlchemySession`, `MongoDBSession`, `DaprSession`, `EncryptedSession`, `AdvancedSQLiteSession` and `OpenAIConversationsSession`, so history can be stored where you already run data.
+- **Tracing.** On by default, with a Traces dashboard; disable with `OPENAI_AGENTS_DISABLE_TRACING=1` or in code.
+- **Human in the loop.** Tools declare when they need approval; pending approvals appear as run interruptions, and `RunState` can be serialized so you can resume after a person decides, including for nested `Agent.as_tool()` calls.
+- **MCP.** `MCPServerStdio`, `MCPServerStreamableHttp`, `MCPServerSse` and the hosted `HostedMCPTool`.
+- **Hosted tools.** Web search, file search, shell, apply patch, computer use, code interpreter, image generation, and hosted tool search for deferring tool loading (Responses models only).
+- **Sandbox agents.** `SandboxAgent` plus a `Manifest` (files, repos, mounts), capabilities (Shell, Filesystem, Skills, Memory, Compaction) and `SandboxRunConfig` to choose where work runs.
+
+### Skills support
+
+OpenAI's launch post lists "progressive disclosure via skills" among the primitives the harness integrates, and the docs give two concrete routes:
+
+1. **Sandbox `Skills` capability.** Mount a local skills directory with `LocalDirLazySkillSource`; requested skills are copied into the sandbox workspace on demand. The docs say to prefer this over manually mounting `.agents/skills`.
+2. **Hosted container shell skills.** `ShellTool` with `container_auto` can take `skills` entries: references to skills registered with OpenAI (a `skill_id` and `version`) or inline skill bundles, run in an OpenAI-managed container.
+
+```python
+from agents import Runner
+from agents.run import RunConfig
+from agents.sandbox import Manifest, SandboxAgent, SandboxRunConfig
+from agents.sandbox.capabilities import Capabilities, LocalDirLazySkillSource, Skills
+from agents.sandbox.entries import LocalDir
+from agents.sandbox.sandboxes.unix_local import UnixLocalSandboxClient
+
+agent = SandboxAgent(
+    name="Sandbox engineer",
+    model="<your model id>",   # the docs example passes a model name string here
+    instructions="Read repo/task.md before editing files. Mention the verification command you ran.",
+    default_manifest=Manifest(entries={"repo": LocalDir(src="./repo")}),
+    capabilities=Capabilities.default() + [
+        Skills(lazy_from=LocalDirLazySkillSource(source=LocalDir(src="./skills"))),
+    ],
+)
+
+result = await Runner.run(
+    agent,
+    "Open repo/task.md, fix the issue, run the targeted test, and summarize the change.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(client=UnixLocalSandboxClient())),
+)
+print(result.final_output)
+```
+
+*Adapted from the OpenAI Agents SDK "Sandbox agents" docs page, fetched November 27, 2026. We replaced the model string with a placeholder.*
+
+So yes, the OpenAI Agents SDK has skills support, but it is tied to the sandbox or hosted-shell paths rather than being a general-purpose `skills=[...]` option on every agent. If you run a plain `Agent` with function tools, there is no skill loader; you would add one yourself. For deeper coverage of this layer, see our sister site's [OpenAI Agents SDK sandbox, memory and long-horizon coding guide](https://agentpedia.codes/blog/openai-agents-sdk-sandbox-memory-coding-guide).
+
+### Setup
+
+```bash
+pip install openai-agents      # or: uv add openai-agents
+export OPENAI_API_KEY=sk-...
+```
+
+```python
+from agents import Agent
+from agents.decorators import tool
+
+@tool
+def get_weather(city: str) -> str:
+    """returns weather info for the specified city."""
+    return f"The weather in {city} is sunny"
+
+agent = Agent(
+    name="Haiku agent",
+    instructions="Always respond in haiku form",
+    model="gpt-5-nano",
+    tools=[get_weather],
+)  # run with: result = await Runner.run(agent, "Weather in Paris?")
+```
+
+*Adapted from the OpenAI Agents SDK "Agents" docs page, fetched November 27, 2026. The `Runner.run` call is from the same page's examples; we did not execute this.*
+
+A handoff setup, from the handoffs docs page:
+
+```python
+from agents import Agent, handoff
+
+billing_agent = Agent(name="Billing agent")
+refund_agent = Agent(name="Refund agent")
+triage_agent = Agent(name="Triage agent", handoffs=[billing_agent, handoff(refund_agent)])
+```
+
+And an MCP server over stdio (adapted from the MCP docs page):
+
+```python
+from agents import Agent, Runner
+from agents.mcp import MCPServerStdio
+
+async with MCPServerStdio(
+    name="Filesystem Server via npx",
+    params={"command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "./sample_files"]},
+    client_session_timeout_seconds=30,
+) as server:
+    agent = Agent(
+        name="Assistant",
+        instructions="Use the files in the sample directory to answer questions.",
+        mcp_servers=[server],
+    )
+    result = await Runner.run(agent, "List the files available to you.")
+    print(result.final_output)
+```
+
+### Pros
+
+- Small, readable surface: `Agent`, `Runner`, tools, handoffs. Easy to reason about and test.
+- Tracing is on by default with a dashboard, and custom trace processors can push traces to other destinations.
+- Broadest documented session backends (SQLite, Redis, SQLAlchemy, MongoDB, Dapr, encrypted, OpenAI-managed).
+- Sandbox layer with many providers (Blaxel, Cloudflare, Daytona, E2B, Modal, Runloop, Vercel, Docker, Databricks) and a documented harness/compute split that, per the launch post, helps keep credentials out of environments where model-generated code runs.
+- Human-in-the-loop approvals with serializable `RunState`, so paused runs can be resumed after a decision.
+- MIT license; Python and TypeScript SDKs.
+
+### Cons
+
+- Pre-1.0. Stable is 0.26.0, with a 1.0 alpha on GitHub only; OpenAI's release policy says minor versions may break non-beta interfaces, and the 0.22.0 notes say that release tightens failure handling and data isolation for several existing APIs.
+- Some of the best features are tied to OpenAI's Responses API (hosted tool search, programmatic tool calling, hosted containers). Hosted tool search, for example, is documented as available only with OpenAI Responses models.
+- Skills are scoped to sandbox and hosted shell flows, not a general agent option.
+- The unix-local sandbox adds no OS-level confinement on Linux; for untrusted input the docs tell you to use Docker, a hosted sandbox or external isolation.
+- Sandbox providers bill separately, and we did not verify their prices.
+- Sandbox agents launched Python-first: the April 15 launch post says TypeScript support is planned for a later release. We did not verify whether the TypeScript SDK has caught up since, so check before committing.
+
+### Benefits for your use case
+
+You get a framework with a small surface: write agents as data, compose them with handoffs, and ship. If you want to experiment with sandboxes, you can start with the local Unix client and move the same `SandboxAgent` to a hosted provider by changing the client in `SandboxRunConfig`, which is the portability pitch of the `Manifest` abstraction. We did not run this migration ourselves.
+
+{% x id="2044479379452137655" /%}
+
+### Pricing and limits
+
+The SDK is MIT and free. The April announcement says the new sandbox and harness capabilities use standard API pricing "based on tokens and tool use". As of November 27, 2026, OpenAI's pricing page lists, per MTok, gpt-6.2-sol at $2.00 input / $10.00 output (cached input $0.10), gpt-6.2-astra at $8.00 / $40.00, gpt-6-astra at $10.00 / $50.00 and gpt-6.1-sol at $2.00 / $10.00 on standard processing, with Batch at half those rates. Tracing storage and any sandbox provider fees are separate lines we did not price.
+
+### Standout use case
+
+A multi-agent support or research workflow where you want handoffs, guardrails and tracing from day one, or a Codex-like file-editing agent where you want to choose your own sandbox vendor.
+
+### Skip it if
+
+You need deterministic multi-step graphs with checkpointing semantics (look at ADK 2.0 or LangGraph), you want a turnkey coding agent with a rich permission model (Claude Agent SDK), or you cannot accept a pre-1.0 API.
+
+## Google ADK (Agent Development Kit)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/google-adk.png" name="Google ADK" size=40 /%}
+
+### What it is
+
+ADK is Google's open-source (Apache-2.0) framework for building, evaluating and deploying agents. It is optimized for Gemini and Google Cloud but its models page documents Claude models, LiteLLM, Ollama, vLLM and Apigee. Python, TypeScript, Go, Java and Kotlin are all supported, though feature parity varies by language and page.
+
+**ADK 2.0** is the biggest change: it introduces a Workflow Runtime that moves ADK "from a hierarchical agent executor to a graph-based execution engine", where agents, tools and functions run as nodes. Per the ADK docs, ADK Python 2.0 reached general availability on May 19, 2026, Go 2.0 on June 30, 2026 and TypeScript 2.0 on August 21, 2026. The docs also list breaking changes from 1.x, including a new `Event` schema (`node_info`, `output`) that affects custom session storage.
+
+{% x id="2072063955607192057" /%}
+
+### Who it is for
+
+Teams that want explicit control over agent steps (graph workflows with retries and human input nodes), need Java, Go or Kotlin, or deploy on Google Cloud (Agent Runtime on Agent Platform, Cloud Run, GKE) and want Cloud Trace.
+
+{% figure src="https://adk.dev/assets/hp-adk-web1.png" alt="Image from the ADK documentation homepage showing the ADK web interface" caption="The ADK dev UI launched with `adk web`. Source: Google (adk.dev)" /%}
+
+### Key features
+
+- **Workflows (2.0).** `Workflow(name=..., edges=[("START", agent_a, function_b, agent_c)])` with each node's return value passed to the next. Dynamic workflows use plain code for loops and branching; collaborative workflows use coordinator agents with sub-agents.
+- **Human input nodes.** A node that `yield`s `RequestInput(message=...)` pauses the workflow until the user replies, with no model call needed, so the pause is deterministic. Google's Go 2.0 announcement also lists native human-in-the-loop primitives and built-in retry.
+- **Skills.** `SkillToolset` with `load_skill_from_dir` (below).
+- **MCP.** `McpToolset` with `StdioConnectionParams` and an optional `tool_filter`.
+- **Sessions and memory.** `SessionService` abstractions and `MemoryService` options: `InMemoryMemoryService`, `VertexAiMemoryBankService` and `VertexAiRagMemoryService`.
+- **Code execution.** `BuiltInCodeExecutor` (Gemini's code execution tool, with a documented single-tool-per-agent limitation), `ExecuteBashTool` (local workspace, POSIX only, Python 1.27.0+) and a Daytona plugin for isolated sandboxes.
+- **Observability.** The ADK docs describe trace views for debugging, OpenTelemetry configuration, a Google Cloud Trace integration page and a Langfuse integration page.
+- **Evaluation.** A built-in evaluation framework (Python) for scoring trajectories and final answers.
+- **A2A.** Agent2Agent protocol support (Python, Go and Java; experimental in Go and Java).
+- **Deployment.** The deploy page features Agent Runtime on Google's Agent Platform and Cloud Run.
+
+### Skills support
+
+ADK is the only one of the three whose skills page covers several languages at once: Python (v1.25.0+), TypeScript (v0.6.1+), Go (v1.2.0+) and Kotlin (v0.1.0+), with the feature marked experimental in TypeScript and Kotlin. It is based on the Agent Skills specification and loads skills incrementally to protect the context window. You can define skills in code or load them from a directory.
+
+```python
+import pathlib
+from google.adk import Agent
+from google.adk.skills import load_skill_from_dir
+from google.adk.tools import skill_toolset
+
+weather_skill = load_skill_from_dir(
+    pathlib.Path(__file__).parent / "skills" / "weather-skill"
+)
+
+def get_weather_tool(city: str) -> dict:
+    """Retrieves the current weather report for a specified city."""
+    return {"status": "success", "report": f"The weather in {city} is sunny with a temperature of 25C."}
+
+my_skill_toolset = skill_toolset.SkillToolset(
+    skills=[weather_skill],
+    additional_tools=[get_weather_tool],
+)
+
+root_agent = Agent(
+    model="gemini-flash-latest",
+    name="skill_user_agent",
+    description="An agent that can use specialized skills.",
+    instruction="You are a helpful assistant that can leverage skills to perform tasks.",
+    tools=[my_skill_toolset],
+)
+```
+
+*Adapted from the ADK "Skills for ADK agents" page, fetched November 27, 2026.*
+
+The design differs from Claude's: in ADK a skill is a toolset object you attach to an agent, and the page says skills can be defined in code or loaded from a filesystem. That is explicit, though you wire it yourself rather than getting an ambient `.claude/skills/` convention.
+
+### Setup
+
+```bash
+pip install google-adk
+adk create my_agent    # scaffold a project
+adk run my_agent       # terminal chat
+adk web --port 8000    # dev UI with trace view
+```
+
+A graph workflow from the ADK 2.0 docs:
+
+```python
+from google.adk import Agent, Workflow, Event
+from pydantic import BaseModel
+
+city_generator_agent = Agent(
+    name="city_generator_agent",
+    model="gemini-flash-latest",
+    instruction="Return the name of a random city. Return only the name, nothing else.",
+)
+
+class CityTime(BaseModel):
+    time_info: str
+    city: str
+
+def lookup_time_function(node_input: str):
+    """Simulate returning the current time in the specified city."""
+    return CityTime(time_info="10:10 AM", city=node_input)
+
+city_report_agent = Agent(
+    name="city_report_agent",
+    model="gemini-flash-latest",
+    input_schema=CityTime,
+    instruction="You receive a CityTime. Output one line stating that it is that time in that city.",
+)
+
+def completed_message_function(node_input: str):
+    return Event(message=f"{node_input}\n WORKFLOW COMPLETED.")
+
+root_agent = Workflow(
+    name="root_agent",
+    edges=[("START", city_generator_agent, lookup_time_function,
+            city_report_agent, completed_message_function)],
+)
+```
+
+*Condensed from the ADK 2.0 "Graph-based workflows" page, fetched November 27, 2026.*
+
+And an MCP filesystem server:
+
+```python
+from google.adk.agents import LlmAgent
+from google.adk.tools.mcp_tool import McpToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
+from mcp import StdioServerParameters
+
+root_agent = LlmAgent(
+    model="gemini-flash-latest",
+    name="filesystem_assistant",
+    instruction="Help users manage local files.",
+    tools=[McpToolset(
+        connection_params=StdioConnectionParams(
+            server_params=StdioServerParameters(
+                command="npx",
+                args=["-y", "@modelcontextprotocol/server-filesystem", "/abs/path/accessible_files"],
+            ),
+        ),
+        tool_filter=["list_directory", "read_file"],  # optional
+    )],
+)
+```
+
+### Pros
+
+- Five languages documented, Apache-2.0 on the repos we checked, with Python, Go and TypeScript all at 2.0 GA per the docs.
+- Graph workflows with deterministic human-input nodes: the clearest "reliable multi-step" story of the three.
+- Skills toolset documented across Python, TypeScript, Go and Kotlin.
+- Documented memory options (in-memory, Memory Bank, RAG-backed) and Google Cloud deployment paths.
+- Dev UI (`adk web`), built-in evaluation framework (Python) and Cloud Trace integration.
+- The docs say 2.0 is designed to be compatible with ADK 1.x agents, with a documented list of breaking changes.
+
+### Cons
+
+- The center of gravity is Gemini and Google Cloud. Other models are supported, but docs, memory services and deploy options lean on Google products.
+- 2.0 introduced real migration work (event schema, session storage) for existing 1.x apps.
+- Feature parity differs by language: skills are experimental in TypeScript and Kotlin, `ExecuteBashTool` is Python-only, A2A is experimental in Go and Java, evaluation is documented for Python.
+- Code execution is thinner than the other two: the built-in executor is limited to one tool per agent, the bash tool is local and POSIX-only, and isolated sandboxes come through a Daytona plugin rather than a first-party sandbox abstraction.
+- Python 3.11 or newer is required for the PyPI package.
+- We did not check pricing for Google Cloud deployment targets.
+
+### Benefits for your use case
+
+When the process matters as much as the output (approvals, retries, data validation between steps), ADK 2.0 lets you encode the process as a graph and keep the model for the steps that need judgment. If your team is not all Python, ADK is the only one of the three with Java and Go SDKs (we did not compare their maturity).
+
+{% youtube id="fOIGMZusCs8" title="Google ADK 2.0 workflows tutorial: Building reliable multi-agent systems" /%}
+
+*Video from the Google Cloud Tech channel, confirmed to exist via YouTube oEmbed on November 27, 2026. We did not watch it or check its upload date.*
+
+### Pricing and limits
+
+ADK is free. Models: as of November 27, 2026, Google's Gemini API pricing page lists Gemini 4 Hydrogen at $1.50 input / $7.50 output per MTok, Gemini 4 Neon at $3.00 / $15.00, and Gemini 4 Carbon at $2.00 / $10.00 through November 30, 2026, rising to $4.00 / $20.00 starting December 1, 2026 (Carbon is not on the Free tier). Gemini 3.8 Flash is $0.75 / $3.75 through December 31, 2026, then $1.50 / $7.50 from January 1, 2027. The Gemini API has a Free tier with usage limits and a Paid tier with context caching and a 50% Batch API discount.
+
+### Standout use case
+
+A back-office or data pipeline agent where steps must run in a fixed order with a human approval in the middle, deployable to Cloud Run or Agent Runtime.
+
+### Skip it if
+
+You want a ready-made coding agent (Claude Agent SDK), you want the smallest possible API (OpenAI Agents SDK), or you are unwilling to adopt a graph model and 2.0 migration notes.
+
+## Other alternatives worth considering
+
+These five are shorter sections. They are here because each one wins a case the big three do not: provider flexibility, TypeScript-first web apps, graph durability, or Azure alignment. We read each project's own documentation on November 27, 2026 and did not run any of them.
+
+### LangGraph
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/langgraph.png" name="LangGraph" size=40 /%}
+
+LangGraph's docs describe it as "a low-level orchestration framework and runtime for long-running, stateful agents": you define workflows as graphs of shared state, nodes and edges, and mix deterministic and LLM-driven steps. The overview says it focuses on orchestration capabilities such as durable execution, streaming and human-in-the-loop, and that it does not prescribe prompts or agent architecture. Python (`langgraph` 1.2.24) and JavaScript (`@langchain/langgraph` 1.7.5) are both MIT-licensed; the Python repo had 45,512 stars on November 27, 2026, the most of any project in this post.
+
+- **Pros:** durable execution and human-in-the-loop are first-class; the biggest community of the group by GitHub stars.
+- **Cons:** low-level by design, so you write more yourself; observability is typically through LangSmith, which is a separate product we did not price; no built-in coding tools.
+- **Skip it if:** you want a ready-made file and shell agent, or you just need two agents and a handoff.
+
+### Vercel AI SDK
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/vercel-ai-sdk.png" name="Vercel AI SDK" size=40 /%}
+
+The AI SDK (`ai` 7.0.183, published November 26, 2026) is a TypeScript toolkit that standardizes model providers and ships UI primitives for React, Next.js, Vue, Svelte and Node. Its introduction page also mentions a harness abstraction, `HarnessAgent`, for using established harnesses such as Claude Code, Codex and Pi behind the same stream primitives. That is a notable design choice: instead of competing with the Claude Agent SDK, it can sit on top of coding-agent harnesses.
+
+- **Pros:** best fit when your agent lives inside a web app; provider-neutral; frequent releases.
+- **Cons:** TypeScript only; not a sandbox or skills runtime by itself in the pages we read.
+- **Skip it if:** your stack is Python or Java, or your agent is a backend worker with no UI.
+
+### Mastra
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/mastra.png" name="Mastra" size=40 /%}
+
+Mastra describes itself as "a TypeScript framework for building AI agents and applications" (`@mastra/core` 1.86.0, November 25, 2026). Its quickstart opens Mastra Studio locally (port 4111) for building and testing agents, workflows and tools, and it offers a general-purpose agent harness with a local workspace, shell tools, memory, task tracking, web access and recurring schedules. Its docs even tell local coding agents to install Mastra's own skills with `npx skills add mastra-ai/skills`, which is a neat example of the skills ecosystem reaching framework docs. Models are named as `provider/model` strings.
+
+- **Pros:** TypeScript-native, with a visual Studio and a harness that includes memory, task tracking and schedules.
+- **Cons:** TypeScript only; license shows as Apache-2.0 on npm but GitHub's API reported NOASSERTION, so read the repo's license file before you rely on it.
+- **Skip it if:** you are not a TypeScript shop.
+
+### Microsoft Agent Framework
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/microsoft-agent-framework.png" name="Microsoft Agent Framework" size=40 /%}
+
+Microsoft's overview lists four areas: Agents (supporting Microsoft Foundry, Anthropic, Azure OpenAI, OpenAI, Ollama and more, with MCP clients and middleware), a **Harness Agent** for long multi-step tasks (planning and todo tracking, context compaction, file access and memory, "don't-ask-again" tool approval, observability), Workflows (functional and graph-based) and Integrations. The Python package `agent-framework` is at 1.26.0 (November 12, 2026) and labelled Production/Stable with an MIT classifier. We could not retrieve GitHub star counts for the main repository because the API returned 404 for `microsoft/agent-framework` when we tried, so we leave that number out.
+
+- **Pros:** multi-provider including Anthropic; workflows plus a harness; a natural fit for Azure shops.
+- **Cons:** docs are Microsoft Learn pages, and the page we opened showed an authorization notice in places, so some content may need sign-in; we did not assess the API size.
+- **Skip it if:** you are not on Azure or .NET and want something smaller.
+
+### Strands Agents
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/claude-agent-sdk-vs-openai-agents-sdk-vs-google-adk-2026/logos/strands-agents.png" name="Strands Agents" size=40 /%}
+
+Strands Agents (`strands-agents` 1.67.0 on PyPI, November 25, 2026; `@strands-agents/sdk` 1.26.0 on npm) is described on PyPI as "a model-driven approach to building AI agents in just a few lines of code", under Apache-2.0, with Python and TypeScript packages. The project page now leads with a "Strands harness": an agent with tools, memory, session management and context management already configured (`pip install strands-harness`, `npm install @strands-agents/harness`). The star count we report (9,300 on November 27, 2026) is from `strands-agents/harness-sdk`.
+
+- **Pros:** Apache-2.0, Python and TypeScript, and a batteries-included harness with memory, sessions and context management.
+- **Cons:** smaller star count than LangGraph; the packaging now spans SDK and harness packages, so check which one the tutorial you follow uses.
+- **Skip it if:** you need Java or Go, or already standardized on one of the big three.
+
+{% figure src="https://strandsagents.com/og-image.png" alt="Strands Agents site social card" caption="Strands Agents' site social image. Source: Strands Agents (strandsagents.com)" /%}
+
+## Pricing table (checked November 27, 2026)
+
+All SDKs below are free to install. The real cost is model tokens, sandbox or hosting, and any trace backend.
+
+| Item | Claude Agent SDK | OpenAI Agents SDK | Google ADK |
+| --- | --- | --- | --- |
+| SDK license / price | Free; Python repo MIT; Commercial Terms apply | Free; MIT | Free; Apache-2.0 |
+| Flagship-class model, input / output per MTok | Claude Opus 5.5: $4 / $20; Fable 5.2: $8 / $40 | gpt-6.2-astra: $8.00 / $40.00 | Gemini 4 Carbon: $2.00 / $10.00 through Nov 30, then $4.00 / $20.00 from Dec 1, 2026 |
+| Workhorse-class model, input / output per MTok | Sonnet 5.5: $2 / $10 | gpt-6.2-sol: $2.00 / $10.00 | Gemini 4 Hydrogen: $1.50 / $7.50; Gemini 3.8 Flash: $0.75 / $3.75 through Dec 31, 2026 |
+| Cached input | Cache hit $0.10 (Sonnet 5.5), $0.20 (Opus 5.5) | $0.10 (gpt-6.2-sol); $0.40 (gpt-6.2-astra) | Context caching $0.075 (Hydrogen), $0.15 (Neon) |
+| Batch discount | Documented separately; not checked | 50% off standard (gpt-6.2-sol batch $1.00 / $5.00) | 50% (Gemini API Batch) |
+| Free model tier | No | Not shown on the pricing page we read | Yes for some models (Carbon excluded) |
+| Sandbox / hosting cost | Your containers, or Anthropic Managed Agents (not priced here) | Your Docker, or provider fees (Modal, E2B, Daytona etc., not priced here) | Cloud Run / Agent Runtime / Daytona (not priced here) |
+| Trace backend | Any OTLP backend you run | OpenAI Traces dashboard (default) or another processor | Cloud Trace, Langfuse or OTel backend |
+
+{% callout type="warning" %}
+Model names and prices move monthly. Google's Carbon price doubles on December 1, 2026, and Gemini 3.8 Flash doubles on January 1, 2027, per Google's pricing page. Compare total task cost on your own workload, not list price.
+{% /callout %}
+
+## Feature matrix
+
+"Yes" means the vendor's docs describe a first-party feature. "Partial" means a narrower or plugin-based version exists. "Not verified" means we did not confirm it in the pages we read.
+
+| Feature | Claude Agent SDK | OpenAI Agents SDK | Google ADK |
+| --- | --- | --- | --- |
+| Languages | Yes: Python, TypeScript | Yes: Python, TypeScript | Yes: Python, TypeScript, Go, Java, Kotlin |
+| Skills support (SKILL.md) | Yes: filesystem skills, `skills` option, `/name` dispatch; no programmatic registration | Partial: sandbox `Skills` capability and hosted shell skills; not a general agent option | Yes: `SkillToolset`, defined in code or loaded from a directory; experimental in TypeScript and Kotlin |
+| Sandbox | Partial: hosting and secure-deployment guidance for containers and sandbox providers; no in-SDK provider layer found | Yes: `SandboxAgent` with Unix-local, Docker and hosted providers | Partial: Daytona plugin, local bash tool, Gemini code execution |
+| MCP | Yes: external servers plus in-process SDK servers | Yes: stdio, Streamable HTTP, SSE, hosted MCP | Yes: `McpToolset` with stdio and tool filter |
+| Tracing | Yes: OpenTelemetry export | Yes: default Traces dashboard, custom processors, disable via env var | Yes: trace views, Cloud Trace, Langfuse, OTel (per ADK docs) |
+| Multi-agent | Yes: subagents (`AgentDefinition`) | Yes: handoffs and agents-as-tools | Yes: sub-agents, graph workflows, A2A |
+| Memory | Partial: CLAUDE.md and project files; no managed long-term memory service found in docs read | Yes: sandbox Memory capability; sessions for history | Yes: `MemoryService` options (in-memory, Memory Bank, RAG; Memory Bank and RAG need `google-adk[gcp]`) |
+| Sessions | Yes: continue, resume, fork | Yes: many backends (SQLite, Redis, SQLAlchemy, Mongo, Dapr, encrypted) | Yes: `SessionService` abstraction |
+| Human in the loop | Yes: `can_use_tool` / `canUseTool` callback, permission modes, plan mode | Yes: approvals, interruptions, serializable `RunState` | Yes: `RequestInput` nodes; native human-in-the-loop primitives in Go 2.0 per Google |
+| Non-vendor models | No documented path | Partial: Responses and Chat Completions model classes; some features Responses-only; other providers not verified | Partial: Claude, LiteLLM, Ollama, vLLM documented |
+| Evaluation tooling | Not verified | Not verified | Yes: built-in evaluation framework (Python) |
+
+A compact view of the alternatives, from their own docs:
+
+| Feature | LangGraph | Vercel AI SDK | Mastra | Microsoft Agent Framework | Strands Agents |
+| --- | --- | --- | --- | --- | --- |
+| Languages | Python, JavaScript | TypeScript | TypeScript | Python (.NET not verified) | Python, TypeScript |
+| Skills | Not verified | Harness abstraction for coding agents | Publishes skills for coding agents | Not verified | Not verified |
+| Sandbox | Not verified | Not verified | Local workspace and shell | Not verified | Not verified |
+| MCP | Not verified | Not verified | Not verified | Yes (MCP clients) | Not verified |
+| Tracing | Via LangSmith (separate product) | Not verified | Studio | "Observability" in Harness Agent | Not verified |
+| Multi-agent | Yes: graphs of nodes | Agent surfaces | Workflows | Yes: workflows | Not verified |
+| Memory | Not verified | Not verified | Yes | Yes (Harness Agent) | Yes (harness) |
+| Sessions | Yes: persistence | Not verified | Not verified | Not verified | Yes (harness) |
+| Human in the loop | Yes: human-in-the-loop | Not verified | Not verified | Yes: tool approval | Not verified |
+
+## Head-to-head: which to pick
+
+### Claude Agent SDK vs OpenAI Agents SDK
+
+**Pick the Claude Agent SDK** when the agent's main job is to work on a codebase or document tree and you want mature permissions, hooks and skills now. It brings Claude Code's behavior with it. **Pick the OpenAI Agents SDK** when you want a small orchestration core, default tracing, many session backends and a choice of sandbox vendors, and your agents will use OpenAI models (or you accept reduced features on others).
+
+The honest split on skills: Claude's are ambient (drop folders in `.claude/skills/`), OpenAI's are attached to a sandbox or hosted shell. The honest split on sandboxes: OpenAI ships a provider abstraction in the SDK; with Claude you bring your own container and Anthropic's hosting guide tells you how.
+
+### OpenAI Agents SDK vs Google ADK
+
+**Pick the OpenAI Agents SDK** for the quickest path from idea to a working multi-agent app with traces. **Pick Google ADK** when you need explicit graph control and human-input nodes, Java or Go, or Google Cloud deployment. ADK's 2.0 workflow model is the main differentiator: OpenAI's handoffs let the model route, while ADK graph edges let you route. If you need both, ADK also supports A2A, so a mixed system is plausible, though we did not test cross-SDK interoperability.
+
+### Claude Agent SDK vs Google ADK
+
+**Pick the Claude Agent SDK** for a single powerful, model-driven worker. **Pick Google ADK** for a controlled pipeline with many roles, languages or Google services. On skills, ADK's explicit `SkillToolset` is wired in code, while Claude's filesystem approach is easier to share with human developers using Claude Code. We did not test either for testability.
+
+### Claude Agent SDK vs LangGraph
+
+This pairing shows up in search suggestions, and it is a category difference. The Claude Agent SDK is a **ready-made agent** that you configure; LangGraph is a **runtime for graphs** you design. If you want an agent that edits files tonight, use the SDK. If you want durable, long-running, stateful multi-step workflows that you design yourself, use LangGraph. Some teams may combine both: a LangGraph node that calls a Claude agent for the file-heavy step. We have not tested that combination, and we have no usage data on how common it is.
+
+## Skills and MCP servers that work with these tools
+
+These are real entries in the [agentskills.codes catalog](https://agentskills.codes/skills/mcp-builder). Each page returned HTTP 200 on November 27, 2026. They are community or vendor-published skills; we read the catalog descriptions but did not install or run them with the SDKs above, so treat "works with" as "targets the same technology" rather than a tested guarantee. Install counts are from the catalog API on the same date.
+
+- [mcp-builder](https://agentskills.codes/skills/mcp-builder) (anthropics, 136 installs): a guide for building high-quality MCP servers. Every SDK in this post can consume MCP servers, so this is the most portable skill here.
+- [mcp-integration](https://agentskills.codes/skills/mcp-integration) (anthropics, 21 installs): triggers on requests to add or configure MCP servers, useful when wiring `mcp_servers` into a Claude agent.
+- [openai-docs](https://agentskills.codes/skills/openai-docs) (openai): for building with OpenAI products and APIs using up-to-date official docs, a good companion while you work with Agents SDK APIs that change often.
+- [openai-knowledge](https://agentskills.codes/skills/openai-knowledge) (openai): guidance for the OpenAI API (Responses API) and platform features, which the Agents SDK builds on.
+- [adk-agent-builder](https://agentskills.codes/skills/adk-agent-builder) (jeremylongshore): describes building production agents with Google's Agent Development Kit.
+- [adk-engineer](https://agentskills.codes/skills/adk-engineer) (jeremylongshore): ADK engineering best practices for production-ready agents.
+- [adk-deploy-guide](https://agentskills.codes/skills/adk-deploy-guide) (kumaran-is): deployment guidance for ADK agents on Google Cloud (Cloud Run, Agent Engine, Vertex AI).
+- [agent-evaluation](https://agentskills.codes/skills/agent-evaluation) (davila7): behavioral testing and benchmarking for LLM agents, relevant whichever SDK you choose.
+- [langgraph](https://agentskills.codes/skills/langgraph) (davila7): a LangGraph expert skill for the stateful, multi-actor alternative.
+- [langsmith-fetch](https://agentskills.codes/skills/langsmith-fetch) (ComposioHQ): fetches execution traces from LangSmith to debug LangChain and LangGraph agents.
+- [phoenix-tracing](https://agentskills.codes/skills/phoenix-tracing) (Arize-ai): OpenInference conventions for Phoenix observability, relevant to the OpenTelemetry paths in Claude and ADK.
+
+For deeper skill picks, see our posts on the [best Claude Code skills for developers](https://agentskills.codes/blog/best-claude-code-skills-for-developers-2026) and the [best Codex skills](https://agentskills.codes/blog/best-codex-skills-2026).
+
+## Best for X: decision table
+
+| If you need... | Pick | Why |
+| --- | --- | --- |
+| A coding or document agent with permissions and hooks, fast | Claude Agent SDK | Same tools, hooks and skills as Claude Code |
+| Lightest multi-agent core with default tracing | OpenAI Agents SDK | `Agent` plus `Runner`, handoffs, guardrails, Traces |
+| Hosted or pluggable sandboxes for file-heavy agents | OpenAI Agents SDK | `SandboxAgent` with Blaxel, Cloudflare, Daytona, E2B, Modal, Runloop, Vercel, Docker |
+| Deterministic steps with human approval nodes | Google ADK | 2.0 graph workflows and `RequestInput` nodes |
+| Java, Go or Kotlin | Google ADK | The only one of the three with those languages documented |
+| Skills defined in code | Google ADK | `SkillToolset` supports in-code or filesystem skills |
+| Reuse a team's existing `.claude/skills/` | Claude Agent SDK | Loaded through `setting_sources` |
+| Durable, long-running graph execution | LangGraph | Stateful orchestration runtime with durable execution and human-in-the-loop |
+| Agent inside a React or Next.js app | Vercel AI SDK or Mastra | TypeScript-first with UI or Studio |
+| Azure and Foundry shop | Microsoft Agent Framework | Foundry, Azure OpenAI and Anthropic support |
+| Apache-2.0 Python or TypeScript harness with memory and sessions preconfigured | Strands Agents | `strands-harness` and `@strands-agents/harness` packages |
+
+## Common mistakes
+
+1. **Choosing by GitHub stars.** On November 27, 2026 the OpenAI Python repo (30,902) beat ADK Python (22,378) and Claude's Python repo (8,657), but stars say nothing about fit; the Claude Agent SDK wraps the Claude Code CLI, so its repo count is not directly comparable.
+2. **Assuming "1.0" exists.** `openai-agents` is 0.26.0 on PyPI. The v1.0.0-alpha.2 build is a GitHub-only preview with a native Codex runtime; do not put it in production dependencies.
+3. **Using the local sandbox with untrusted input.** OpenAI's own docs say the Unix-local client has no OS-level confinement on Linux. Use Docker or a hosted sandbox.
+4. **Expecting skills to be one API.** The three SDKs load skills in three different ways (filesystem convention, sandbox capability or hosted reference, toolset object). A skill folder may be reusable, but the wiring is not.
+5. **Forgetting persistence.** Claude Agent SDK sessions are session files owned by the CLI subprocess on local disk, per the hosting guide; plan how to persist them if containers are replaced.
+6. **Ignoring the vendor lock in model choice.** Claude's SDK docs describe only Claude models; OpenAI's best features need Responses models; ADK leans on Gemini. If model neutrality matters, weigh the AI SDK, Mastra or Microsoft Agent Framework.
+7. **Skipping migration notes.** ADK 2.0 changes the Event schema, which matters if you built custom session storage on 1.x.
+
+## Buying and setup checklist
+
+- Write down the job in one sentence: file-heavy worker, orchestrated team, or deterministic pipeline.
+- Pick the language(s) first; that alone narrows ADK versus the other two.
+- Pin SDK versions (all three move weekly) and read release notes before upgrading.
+- Decide where code runs: container, hosted sandbox or your laptop; do not use unconfined local execution for untrusted input.
+- Choose a trace backend on day one (OpenAI Traces, OTLP for Claude, Cloud Trace or Langfuse for ADK).
+- Decide how sessions persist (database, Redis, managed service).
+- Test your skills folder in the target SDK before assuming portability.
+- Estimate monthly model cost from your own token counts using the vendor price pages above.
+- Plan for human approval on destructive tools (permission modes, `RunState` approvals or `RequestInput`).
+- Put a turn or step cap on every run (the Claude hosting docs show `max_turns=20` as an example).
+
+## How we evaluated
+
+This is a documentation and registry comparison. On November 27, 2026 we:
+
+- Queried PyPI and npm for current versions, upload dates and license fields of all eight SDKs.
+- Queried the GitHub API for stars, license, push dates and release tags (the OpenAI releases list is where the v1.0.0-alpha tags appear).
+- Fetched and read the official docs: Anthropic's Agent SDK pages (overview, quickstart, skills, MCP, subagents, sessions, permissions, hosting, observability, hooks), the OpenAI Agents SDK docs (release notes, sandbox guide and clients, tools, sessions, human in the loop, tracing, MCP, multi-agent, handoffs, guardrails) and the ADK docs on adk.dev (2.0, graphs, human input, skills, MCP, memory, sessions, observability, deploy, code execution).
+- Fetched the three vendors' model pricing pages (Anthropic, OpenAI, Google).
+- Verified YouTube videos through oEmbed, X posts through the public syndication endpoint, images through HTTP HEAD, and every internal link through HTTP status.
+- Queried the agentskills.codes catalog API for matching skills.
+
+We did **not** install or run any of the SDKs, did not run any of the linked skills, did not benchmark speed or quality, and did not price sandbox providers or Google Cloud deployment. We found no neutral head-to-head benchmark of these three SDKs, so none is reported. Code samples are adapted from vendor docs and not executed by us. Vendor claims are attributed as such.
+
+## FAQ
+
+### Is the OpenAI Agents SDK at version 1.0?
+
+Not as a stable release. As of November 27, 2026 PyPI's latest is 0.26.0 (November 24). GitHub has pre-releases v1.0.0-alpha.1 (November 20) and v1.0.0-alpha.2 (November 23); the alpha.2 notes call it a GitHub-only preview bundling `openai-agents` with a native Codex runtime, and warn that new persisted state formats mean you should upgrade checkpoint readers before writers.
+
+### Does the OpenAI Agents SDK support skills?
+
+Yes, in two places. The sandbox `Skills` capability (for example with `LocalDirLazySkillSource`) copies requested skills into the sandbox workspace, and the hosted `ShellTool` container mode accepts skill references and inline skill bundles. A plain `Agent` with function tools has no built-in skills loader in the docs we read.
+
+### Does the OpenAI Agents SDK have a sandbox?
+
+Yes. `SandboxAgent` runs against a sandbox client chosen in `SandboxRunConfig`: Unix-local, Docker or a hosted provider. OpenAI's April 15, 2026 post names Blaxel, Cloudflare, Daytona, E2B, Modal, Runloop and Vercel. The docs warn that Unix-local has no OS-level confinement on Linux.
+
+### What is the difference between the Claude Agent SDK and the Claude API?
+
+The API gives you model calls and tool use; you write the loop. The Agent SDK gives you the Claude Code loop, built-in tools and permission system, which spawns a `claude` CLI subprocess. Anthropic also offers Managed Agents, where Anthropic hosts the loop; we did not evaluate it in depth.
+
+### Can the Claude Agent SDK use non-Claude models?
+
+We found no documented path in Anthropic's docs. It can use Claude models through Anthropic's API, Amazon Bedrock, Google Cloud's Agent Platform (Vertex) or Microsoft Foundry. For multi-provider agents consider the Vercel AI SDK, Mastra or Microsoft Agent Framework, which list several providers in their docs.
+
+### Can I use my Claude subscription login in an app built on the Agent SDK?
+
+Anthropic's docs say that, unless previously approved, third-party developers may not offer claude.ai login or rate limits for their products built on the SDK; use API key authentication per the quickstart. Check Anthropic's current terms for your exact case.
+
+### Is Google ADK only for Gemini?
+
+No. ADK is optimized for Gemini but documents Claude models, LiteLLM, Ollama and vLLM support, plus Apigee. Some features (Memory Bank, Agent Runtime deployment, code execution tool) are Google Cloud or Gemini-specific.
+
+### What changed in ADK 2.0?
+
+ADK 2.0 adds a graph-based Workflow Runtime, dynamic workflows in code and collaborative coordinator-and-subagent setups. Per the docs, Python 2.0 was GA on May 19, 2026, Go on June 30 and TypeScript on August 21. It lists breaking changes from 1.x, including Event schema fields that affect custom session storage.
+
+### Which SDK has the best tracing?
+
+It depends on where you want traces. OpenAI's is on by default with a hosted dashboard. Claude exports OpenTelemetry to any OTLP backend. ADK has a local web UI trace view, a Cloud Trace integration and a Langfuse integration. We did not benchmark overhead or usability.
+
+### Which SDK is best for MCP?
+
+All three support MCP well. OpenAI documents stdio, Streamable HTTP, SSE and hosted MCP; Claude supports external servers plus in-process servers created with `create_sdk_mcp_server`; ADK uses `McpToolset` with an optional tool filter. Pick on the rest of your stack.
+
+### Can I reuse the same SKILL.md folder across all three?
+
+Possibly for the folder itself: ADK says its skills follow the Agent Skills specification, and the Claude and OpenAI docs both describe `SKILL.md` folders. The loading code differs, and we did not test a single skill across all three SDKs, so validate in your target.
+
+### Are these SDKs free?
+
+The SDK packages are free under open-source or permissive terms (Claude's terms point to Anthropic's Commercial Terms). Model usage, sandbox providers and hosting are paid; see the pricing table above.
+
+### Which should a beginner pick?
+
+For a first agent on any stack, the OpenAI Agents SDK surface is the smallest (`Agent`, `Runner`, a decorated function). If you mainly want to automate work in a code repo, the Claude Agent SDK quickstart builds a bug-fixing agent in a few lines. If you are on Google Cloud, `adk create` scaffolds a project and `adk web` gives you a local UI.
+
+## Sources
+
+All fetched on November 27, 2026 unless noted.
+
+- Anthropic, Agent SDK docs: [overview](https://code.claude.com/docs/en/agent-sdk/overview), [quickstart](https://code.claude.com/docs/en/agent-sdk/quickstart), [skills](https://code.claude.com/docs/en/agent-sdk/skills), [subagents](https://code.claude.com/docs/en/agent-sdk/subagents), [hosting](https://code.claude.com/docs/en/agent-sdk/hosting), [observability](https://code.claude.com/docs/en/agent-sdk/observability)
+- Anthropic, [model pricing](https://platform.claude.com/docs/en/about-claude/pricing)
+- OpenAI, [Agents SDK docs](https://openai.github.io/openai-agents-python/) and [release notes](https://openai.github.io/openai-agents-python/release/)
+- OpenAI, [The next evolution of the Agents SDK](https://openai.com/index/the-next-evolution-of-the-agents-sdk/) (April 15, 2026)
+- OpenAI, [API pricing](https://developers.openai.com/api/docs/pricing)
+- OpenAI, [openai-agents-python releases (GitHub)](https://github.com/openai/openai-agents-python/releases)
+- Google, [ADK documentation](https://adk.dev/), [ADK 2.0](https://adk.dev/2.0/) and [ADK skills](https://adk.dev/skills/)
+- Google, [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- [PyPI](https://pypi.org/project/openai-agents/) and [npm](https://registry.npmjs.org/@openai/agents) registries (package versions); GitHub API (stars, licenses)
+- LangChain, [LangGraph overview](https://docs.langchain.com/oss/python/langgraph/overview); [AI SDK introduction](https://ai-sdk.dev/docs/introduction); [Mastra docs](https://mastra.ai/docs); [Microsoft Agent Framework overview](https://learn.microsoft.com/en-us/agent-framework/overview/); [Strands Agents](https://strandsagents.com/latest/)
+- Posts on X: [Alex Albert](https://x.com/alexalbert__/status/1972718342197981194), [@claudeai](https://x.com/claudeai/status/1972758349944111445), [@AnthropicAI](https://x.com/AnthropicAI/status/2018771170938724682), [@OpenAIDevs](https://x.com/OpenAIDevs/status/2044466699785920937), [@OpenAIDevs (Vercel Sandbox)](https://x.com/OpenAIDevs/status/2044479379452137655), [@googledevs](https://x.com/googledevs/status/2072063955607192057)
+- Sister-site guides: [OpenAI Agents SDK sandbox, memory and coding](https://agentpedia.codes/blog/openai-agents-sdk-sandbox-memory-coding-guide) and [OpenAI Agents Python SDK guide](https://agentpedia.codes/blog/openai-agents-python-guide)
+- Related agentskills.codes posts: [Claude Code vs Cursor](https://agentskills.codes/blog/claude-code-vs-cursor-2026), [OpenAI DevDay 2026 recap for agent builders](https://agentskills.codes/blog/openai-devday-2026-recap-agent-builders)
