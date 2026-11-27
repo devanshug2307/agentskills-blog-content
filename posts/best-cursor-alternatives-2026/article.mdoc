@@ -1,0 +1,637 @@
+Cursor changed a lot this year. It was acquired by SpaceX, it is now sold as part of "The X Subscription" next to Grok and X, its cheapest paid tier only runs Cursor's own models, and in November it published a post-mortem on a supply-chain security incident. None of that makes it a bad editor. It does give a reasonable developer a reason to ask what else is out there, and "what else" now covers editors, terminal agents, IDE plugins and cloud agents, not just VS Code forks.
+
+We checked ten real alternatives against their own pricing pages, docs and GitHub repos on November 27, 2026. The short version, and it is our judgment, not a benchmark result: Claude Code is our pick for agent-first work, GitHub Copilot is the lowest-friction switch, Zed suits people who want a native editor and their own agents, Kilo Code is the open-source pick, and Antigravity is the cheapest way to try agents. The rest depends on your editor, your budget and how much structure you want.
+
+{% youtube id="8qeym0p969Y" title="Stop Using VS Code! Best AI Code Editors 2026 (Cursor vs Windsurf vs Zed)" /%}
+
+*A third-party 2026 walkthrough of Cursor, Windsurf and Zed from The Macroscope (title confirmed through YouTube oEmbed on November 27, 2026). It is a reviewer's opinion, not a vendor demo, and it covers only three of the ten tools below.*
+
+## What is Cursor, and why do people look for alternatives?
+
+{% callout type="info" %}
+**What is Cursor?** Cursor describes itself as "your coding agent for building ambitious software." It is an AI-first code editor and agent: you describe a task, the agent works across your project, and you review the changes. Its pricing docs also mention Cloud Agents, Automations, Bugbot (code review) and Origin (code hosting, in early beta). As of November 27, 2026 it is part of SpaceX (Cursor's own post is dated August 14, 2026) and is sold through The X Subscription.
+{% /callout %}
+
+**Cursor AI features** that people usually mean when they search for them: an Agent that edits across files, Cloud Agents and Automations, code review with Bugbot, a code-hosting product called Origin, MCP support (stdio, SSE and Streamable HTTP transports per its docs), and Cursor's own models (Grok 4.7, Grok 4.6, Grok 4.5 and Composer 2.5). In October it added Computer Use, which lets agents click and type across desktop apps.
+
+{% x id="2113661518780998003" /%}
+
+Reasons readers give for leaving, in the order we see them:
+
+1. **Pricing changed shape.** Cursor's plans are now Free $0, Plus $8, Premium $30, Super $100 and Ultra $200 a month (Teams $30, $100 or $200 a seat). Plus has no third-party models, no Auto and no Cloud Agents. Premium and above bill third-party models at API list price from prepaid credit. The older Hobby, Start, Pro, Pro+ and Ultra plans are labelled "legacy" and keep working for existing subscribers. Source: cursor.com/pricing and Cursor's Models and Pricing docs, read November 27, 2026.
+2. **Ownership.** The August 14 post says SpaceX completed its acquisition of Cursor, a process that began in April with a partnership with SpaceXAI. Some teams want a vendor with a different parent. Others see cheaper compute as a plus. We take no side.
+3. **Security.** Cursor's November 13 post says an attacker obtained an access key that Fireworks had exposed, and on October 29 used a stolen credential to publish a malicious copy of Anthropic's Claude Code extension in Cursor's VS Code extension marketplace. Cursor also says less than 0.01% of customers had API credentials exposed and that it contacted affected customers directly. These are Cursor's own statements; we did not independently verify them.
+
+{% x id="2121411147714970092" /%}
+
+4. **Workflow preference.** Plenty of developers now prefer a terminal agent or a plugin inside the editor they already use.
+
+If you are happy with Cursor, nothing here forces a move. For a head-to-head with the closest terminal rival, see our [Claude Code vs Cursor comparison](https://agentskills.codes/blog/claude-code-vs-cursor-2026). For a deeper pricing read on Cursor itself, our sister site AgentPedia has a [Cursor vs Antigravity breakdown](https://agentpedia.codes/blog/cursor-vs-antigravity).
+
+## Quick picks
+
+| If you want | Pick | Why, in one line |
+| --- | --- | --- |
+| The best agent quality and depth | Claude Code | Built around the agent loop; terminal, IDE, desktop and web |
+| The easiest switch from Cursor | GitHub Copilot | Works in VS Code, Visual Studio, Xcode, JetBrains IDEs, Neovim and Eclipse |
+| The closest editor-plus-agent experience | Windsurf (now Devin Desktop) | Editor with free Tab completions and an Agent Command Center |
+| A native editor with your own agents | Zed | Parallel agent threads, bring your own keys or external agents |
+| Best free way to try agents | Google Antigravity | Free individual plan with a weekly baseline quota |
+| Best open source | Kilo Code | MIT-licensed, any model, VS Code, JetBrains and CLI |
+| Spec-driven, structured work | Kiro | Specs and steering files in an IDE and CLI |
+| JetBrains users | JetBrains Junie | Runs in IntelliJ-based IDEs and as a CLI, bring your own key |
+| Already paying for ChatGPT | Codex | Included in ChatGPT plans, CLI is Apache-2.0 |
+| A cheap, regional AI IDE | Trae | $20 Pro, $8 Lite in select countries, SOLO mode |
+
+## Master comparison table
+
+Prices below are public list prices as of November 27, 2026, taken from each vendor's own page unless noted. "Not stated" means the pages we read do not say.
+
+| Tool | Paid plans (monthly list) | Free tier | Open source | Key limit | Standout |
+| --- | --- | --- | --- | --- | --- |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/claude-code.png" name="Claude Code" size=24 /%} Claude Code | Pro $20 ($17 with annual billing), Max $100, Ultra $200 | No (Claude Free does not list Claude Code) | No license listed on the GitHub repo | Usage windows every 5 hours and every week | Agent-first design, many surfaces |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/github-copilot.png" name="GitHub Copilot" size=24 /%} GitHub Copilot | Pro $10, Pro+ $39, Max $100 | Yes, 2,000 completions a month plus limited agent use | Not stated | Agent mode, review and CLI draw down GitHub AI Credits | Works in many editors you already use |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/windsurf.png" name="Windsurf" size=24 /%} Windsurf | Pro $20, Max $200, Teams $80 | Yes, light agent quota, unlimited Tab and inline edits | Not stated | Daily and weekly quotas | Agent Command Center, SWE-2 model |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/zed.png" name="Zed" size=24 /%} Zed | Pro $10 (includes $5 of tokens), Business $30 a seat | Yes, Personal plan with your own keys or external agents | Yes, editor repo is public | Tokens beyond $5 billed at usage rates | Native editor, parallel agent threads, ACP external agents |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/codex.png" name="Codex" size=24 /%} Codex | Included in ChatGPT plans; Pro at $100, $200 or $500 | Yes, in the desktop app on ChatGPT Free (subject to rollout) | CLI is Apache-2.0 | Allowance shared with ChatGPT Work | CLI, desktop app, web and IDE extension |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/kiro.png" name="Kiro" size=24 /%} Kiro | Pro $20, Pro+ $40, Pro Max $100, Power $200 | Yes, 50 credits a month | Not stated | Credits, add-ons at $0.04 each | Spec-driven development, steering files |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/google-antigravity.png" name="Google Antigravity" size=24 /%} Google Antigravity | Google AI Pro and Ultra (prices not on the page we read) | Yes, weekly baseline quota | Not stated | Quota numbers unpublished | App, CLI, IDE extensions and Python SDK |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/kilo-code.png" name="Kilo Code" size=24 /%} Kilo Code | Kilo Pass $19, Teams $15 a user | Yes, free extension; Auto Free, BYOK or local models | Yes (MIT) | You pay for inference | Any model, VS Code, JetBrains, CLI |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/jetbrains-junie.png" name="JetBrains Junie" size=24 /%} JetBrains Junie | Not verified (see section) | Vendor says free to start, no card | No (all rights reserved) | Bring your own key for 10+ models | Built on the IntelliJ engine |
+| {% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/trae.png" name="Trae" size=24 /%} Trae | Lite $8 (select countries), Pro $20, Pro+ $60, Ultra $200 | Yes, limited, Auto mode only | Not stated | Dollar-usage allowance, paid plans only in listed regions | SOLO mode, concurrent cloud tasks |
+
+How we ordered the sections below: by how well each product fits a developer leaving Cursor, which is a judgment about breadth of fit and not a benchmark score. We found no neutral head-to-head benchmark that covers all ten, and we say so rather than invent one.
+
+## 1. Claude Code
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/claude-code.png" name="Claude Code" size=40 /%}
+
+**What it is.** Anthropic's agentic coding tool. Its docs describe it as a tool that "reads your codebase, edits files, runs commands, and integrates with your development tools," available in the terminal, IDE extensions, a desktop app and the browser. The docs also mention a VS Code extension and a JetBrains plugin.
+
+**Who it is for.** Developers who want the agent to do the work and are comfortable reviewing diffs instead of typing in an editor. It also suits anyone who wants one agent across terminal, VS Code and JetBrains.
+
+**Key features.** CLAUDE.md files and auto memory for persistent instructions, subagents that can run in parallel, MCP integration, the Agent SDK for building your own agents, and a Chrome integration for debugging live web apps. In February Anthropic announced Claude Code Security in limited research preview, which scans codebases for vulnerabilities and suggests patches for human review.
+
+{% x id="2024907535145468326" /%}
+
+**Pros**
+- The most agent-first design in this list: the editor is optional.
+- Runs in your existing editor through extensions, so a move from Cursor does not mean a new IDE.
+- Large public footprint: the anthropics/claude-code repo showed 157,246 stars on November 27, 2026.
+
+**Cons**
+- No free tier: the pricing page lists Claude Code for Pro, Max and Ultra only.
+- Usage limits reset on 5-hour and weekly windows, so heavy days can hit a wall.
+- It is an agent, not an autocomplete product, so do not expect Cursor-style Tab completions from it alone.
+- The GitHub repo lists no license, so do not assume it is open source.
+
+**Benefits for a Cursor user.** You keep your editor and gain a stronger long-running agent. Your CLAUDE.md rules translate easily to shared AGENTS.md conventions (see the skills block below).
+
+**Pricing, November 27, 2026.** Pro $20 a month ($17 a month with annual billing, $200 billed up front). Max $100 (5x Pro usage). Ultra $200 (10x Pro weekly usage, no 5-hour limit for verified accounts). Max and Ultra also include monthly API credits ($100 and $200). Prices exclude tax. Source: claude.com/pricing.
+
+**Free tier.** None for Claude Code. Claude Free covers chat only.
+
+**Standout use case.** Multi-file refactors and long tasks you want to hand off and review later.
+
+**Skip it if** you want a free tool, or you rely on inline autocomplete while typing.
+
+**Setup.** The docs recommend the native installer (macOS, Linux, WSL):
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+```
+
+## 2. GitHub Copilot (agent mode in VS Code)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/github-copilot.png" name="GitHub Copilot" size=40 /%}
+
+**What it is.** GitHub's AI assistant, now centred on agent mode, Copilot in the cloud, code review and a CLI. The plans page lists availability on GitHub, VS Code, Visual Studio, Xcode, JetBrains IDEs, Neovim, Eclipse, Raycast, SQL Server Management Studio and Zed.
+
+**Who it is for.** Anyone who wants an agent without changing editor, and teams that already live on GitHub.
+
+**Key features.** Agent mode, unlimited code completions and next edit suggestions on paid plans, model selection, Copilot in the cloud, code review, Copilot Fusion (Standard, High and Max, where Copilot picks one model per task), and delegation to third-party agents like Claude and Codex in preview.
+
+{% figure src="https://images.ctfassets.net/8aevphvgewt8/4KxWJH8PVVXdqBLs1V3UJ8/7b7f6e8405daa24565374f993c0fca68/github-copilot-open-graph-img.jpg" alt="GitHub Copilot social preview image from github.com/features/copilot" caption="GitHub's Copilot social preview image. Source: github.com" /%}
+
+**Pros**
+- Tied with Zed Pro for the lowest paid entry in this list at $10 a month (Trae's $8 Lite plan exists only in 12 countries).
+- Available across ten listed platforms, so teams with mixed tooling can standardize.
+- Completions and next edit suggestions do not use credits on paid plans.
+
+**Cons**
+- Agent mode, review, cloud agents and CLI draw down GitHub AI Credits, so heavy agent use can outrun the allotment.
+- The page contradicts itself on third-party agents: the Pro plan card lists "Access to 3rd party agents (Claude Code and Codex)", while the comparison table marks delegation to third-party agents as not included on Pro and included on Pro+ and Max. We cite both and do not know which is current.
+- Top models, including Opus, sit on Pro+ and above.
+
+**Benefits for a Cursor user.** Almost no migration. Install the extension, keep your VS Code settings, and test agent mode on a real task.
+
+**Pricing, November 27, 2026.** Free $0. Pro $10. Pro+ $39. Max $100. The page shows total monthly credits of $15 for Pro, $70 for Pro+ and $200 for Max (base credits plus a "flex allotment" that GitHub says may change over time). Source: github.com/features/copilot/plans.
+
+**Free tier.** Yes: no card required, limited chat and agent use, 2,000 completions a month and entry-level models.
+
+**Standout use case.** Day-to-day coding inside the editor you already use, plus GitHub-native review.
+
+**Skip it if** you want a self-contained agent that is unconstrained by credits, or you need top-tier models on a small budget.
+
+**Setup.** Install GitHub Copilot from your editor's extension marketplace and sign in with your GitHub account. No repository changes are required.
+
+## 3. Windsurf (now Devin Desktop)
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/windsurf.png" name="Windsurf" size=40 /%}
+
+**What it is.** Windsurf is now Devin Desktop. Devin's own post, "Windsurf is now Devin Desktop," calls it "the next generation of Windsurf: a full IDE with the Agent Command Center built in for managing fleets of local and cloud agents from one surface." The windsurf.com site now says Devin Desktop and the pricing page is titled "Devin Plans and Pricing." We keep the Windsurf name in this article because that is what most people still search for.
+
+**Who it is for.** Developers who want an editor with agents and Tab completions that feels close to Cursor, and teams that want one place to watch many agents.
+
+**Key features.** Unlimited Tab completions and inline edits on the free plan, Devin Cloud agents on Pro, Devin Bots on Max and Teams, multiplayer sessions on Teams, and SWE-2 (the vendor's own model, free to use on Pro per the pricing page). Pro quotas include models from OpenAI, Anthropic, Google and SpaceXAI.
+
+{% figure src="https://devin.ai/assets/images/desktop/og-desktop.png" alt="Devin Desktop social preview image" caption="Devin Desktop's social preview image. Source: devin.ai" /%}
+
+**Pros**
+- Has a real free tier with unlimited Tab and inline edits.
+- Pro is $20 a month, against $30 for Cursor Premium (the first Cursor plan with third-party models).
+- You can use your ChatGPT plan inside it, according to the pricing page.
+
+**Cons**
+- The product is moving toward a multi-agent control surface, which may feel heavier than an editor if you only want completions.
+- Quotas are described in terms of "light" and "significantly higher," not numbers, so you cannot budget exactly.
+- The Teams price is listed as "$80 per month" on the page; we could not tell whether that is per seat or per team from the text, so confirm before buying.
+
+**Benefits for a Cursor user.** The most familiar editing loop. If you used Cursor mostly for Tab completions and agent edits inside one editor, this is the shortest hop.
+
+**Pricing, November 27, 2026.** Free $0. Pro $20 a month. Max $200 a month. Teams $80 a month (up to 100 users, with SAML/OIDC SSO). Extra usage on Pro can be bought at API pricing. Source: windsurf.com/pricing.
+
+**Free tier.** Yes: a light agent quota, limited model availability, unlimited inline edits and unlimited Tab completions.
+
+**Standout use case.** Running several local and cloud agents from one screen.
+
+**Skip it if** you want exact quota numbers up front, or you want a lightweight editor without an agent control surface.
+
+**Setup.** Download from windsurf.com (the page offered a macOS download). Import your VS Code settings on first run.
+
+## 4. Zed
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/zed.png" name="Zed" size=40 /%}
+
+**What it is.** A high-performance, multiplayer code editor from the creators of Atom and Tree-sitter, with an Agent Panel, multiple agent threads and edit prediction. The zed-industries/zed repository showed 95,487 stars on November 27, 2026, and Zed's own X account announced v1.30 on November 25.
+
+{% x id="2125648215886250301" /%}
+
+**Who it is for.** Developers who want a native editor, want to keep their own API keys, or want to plug in outside agents instead of being tied to one model vendor.
+
+**Key features.** The Zed Agent, External Agents for ACP-integrated agents (the pricing page names Claude Agent and Codex CLI), Terminal Threads that host an agent CLI inside the Agent Panel, a Threads Sidebar for running several threads across projects, and unlimited edit predictions on Pro. Zed also has a product called Delta (the pricing page shares the trial balance across Zed and Delta) and announced DeltaDB, a Git-compatible version control system for agent context that links every edit to the conversation that produced it (Zed's own post, October 29).
+
+{% x id="2115831160840290394" /%}
+
+{% figure src="https://zed.dev/img/home/og.webp" alt="Zed homepage social preview image" caption="Zed's homepage preview image. Source: zed.dev" /%}
+
+**Pros**
+- Free Personal plan with unlimited use of your own API keys or external agents, per the pricing page.
+- Pro is $10 and includes $5 of tokens, billed at API list price beyond that.
+- The pricing page states that Zed is open source (the GitHub repo lists its license as "Other"), and the editor is a native app.
+
+**Cons**
+- It is not a VS Code fork, so VS Code extensions do not carry over.
+- SSO, SAML and SCIM for Business are "planned but not currently available" per the pricing page.
+- Business has no free trial.
+
+**Benefits for a Cursor user.** You trade VS Code compatibility for a native editor and model flexibility. If you already use Claude Code or Codex, Zed lets you run them in a first-party panel instead of a separate terminal.
+
+**Pricing, November 27, 2026.** Personal $0. Pro $10 a month with $5 of tokens included and usage-based billing beyond that. Business $30 per seat per month. A 14-day Pro trial gives $5 of GPT-6 Luna usage with no card, and GPT-6 Luna is the only hosted model during the trial. Source: zed.dev/pricing.
+
+**Free tier.** Yes, and it is the most generous way to bring your own agent in this list.
+
+**Standout use case.** Running Claude Agent or Codex CLI in a first-party panel next to your code.
+
+**Skip it if** you depend on VS Code extensions, or you want a flat price with a wide choice of hosted models.
+
+**Setup.** Download Zed from zed.dev, then open the Agent Panel. The docs name these Command Palette actions for starting work:
+
+```text
+agent: new thread
+agent: new external agent thread
+```
+
+The first uses Zed's own agent with whichever model access you configure; the second starts an ACP-integrated external agent such as Claude Agent or Codex CLI.
+
+## 5. Codex
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/codex.png" name="Codex" size=40 /%}
+
+**What it is.** OpenAI's coding agent. The GitHub README calls the CLI "a coding agent from OpenAI that runs locally on your computer," and the same README points to a desktop app, an IDE extension (VS Code, Cursor, Windsurf) and the cloud-based Codex Web. The openai/codex repo is Apache-2.0 and showed 136,670 stars on November 27, 2026.
+
+**Who it is for.** Developers who already pay for ChatGPT and want the coding agent included, and teams that want a scriptable CLI and SDK for CI.
+
+**Key features.** Local CLI and desktop app, cloud tasks, automatic code review and Slack integration on paid plans, an IDE extension, and API-key sessions for shared environments like CI (the pricing page notes API-key sessions have no cloud-based features such as GitHub code review or Slack).
+
+{% figure src="https://images.ctfassets.net/kftzwdyauwt9/2Z64goaCYuEmGe825kLJFB/ccd8ea0a41e98a3a273357ae621dfe72/codex-og-image.png?w=1600&h=900&fit=fill" alt="Codex product page social preview image from openai.com/codex" caption="OpenAI's Codex preview image. Source: openai.com" /%}
+
+**Pros**
+- Included in ChatGPT plans, so there is no separate bill if you already subscribe.
+- Open-source CLI under Apache-2.0.
+- Runs in your terminal, in your editor, in a desktop app or in the cloud.
+
+**Cons**
+- Pricing is tied to ChatGPT, and the page we read does not show per-plan dollar prices for Go or Plus, only that Pro comes at $100, $200 or $500.
+- Allowances are shared with other ChatGPT agentic features, and OpenAI's own page says message estimates "are not fixed message limits."
+- Model names and speeds change often; check the current list before you commit.
+
+**Benefits for a Cursor user.** If your team already standardizes on ChatGPT Business or Enterprise, Codex adds an agent with no new vendor. It also runs inside Cursor and Windsurf, which makes a gradual trial easy.
+
+**Pricing, November 27, 2026.** Codex is included in ChatGPT Free, Go, Plus, Pro, Business, Edu and Enterprise plans and shares usage with ChatGPT Work. Pro plans are $100, $200 or $500 a month; the $500 tier adds Ultrafast mode. Plus can extend usage with ChatGPT credits. Usage-based billing is available for credits and pay-as-you-go. Source: developers.openai.com/codex/pricing.
+
+**Free tier.** Yes: the pricing page lists Codex on ChatGPT Free, subject to rollout. Check the page for current model and speed limits.
+
+**Standout use case.** Delegating well-scoped tasks to cloud runs and reviewing the resulting pull requests.
+
+**Skip it if** you need predictable per-message pricing, or you do not want to tie a coding tool to a ChatGPT subscription.
+
+**Setup** (macOS or Linux):
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+codex   # then sign in with your ChatGPT account or an API key
+```
+
+If you want to share project rules between Codex and Claude Code, see the [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules guide](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules) and our [best Codex skills roundup](https://agentskills.codes/blog/best-codex-skills-2026).
+
+## 6. Kiro
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/kiro.png" name="Kiro" size=40 /%}
+
+**What it is.** An agentic development environment (IDE and CLI). An AWS page describes it as "built from the ground up for spec-driven development": "instead of reacting to individual prompts, Kiro works from structured specifications to plan, implement, and verify changes across your entire codebase."
+
+**Who it is for.** Teams that want repeatable, reviewable agent work, and builders who find free-form chat prompts too loose for larger features.
+
+**Key features.** Spec-driven planning, steering files for project conventions, an Auto agent, and model choices that Kiro's pricing page lists as GPT-5.6 Sol, Claude Opus 5.5, Grok 4.7 and open-weight models. Paid plans get the premium models, and not every model is available in every country or region.
+
+{% figure src="https://kiro.dev/images/opengraph/home.png" alt="Kiro homepage social preview image" caption="Kiro's homepage preview image. Source: kiro.dev" /%}
+
+**Pros**
+- Specs make large changes reviewable before any code is written.
+- Credit pricing is explicit, with add-on credits at a published $0.04 each.
+- A free tier exists and the first Pro upgrade comes with a free rest-of-month plus 500 trial credits.
+
+**Cons**
+- Credits are a unit of work, not tokens, so cost per task varies by model and prompt; the page says simple prompts can use less than 1 credit and spec tasks usually more.
+- The free tier is small: 50 credits a month, with Claude Sonnet 4.5 and open-weight models only.
+- Spec-driven work is more process than some solo developers want.
+
+**Benefits for a Cursor user.** If your Cursor sessions drift because the plan lives only in chat, Kiro's specs and steering files pin it down. Our catalog has a [create-steering-documents skill](https://agentskills.codes/skills/create-steering-documents) and a [kiro-discovery skill](https://agentskills.codes/skills/kiro-discovery) that fit that workflow.
+
+**Pricing, November 27, 2026.** Free $0 (50 credits). Pro $20. Pro+ $40. Pro Max $100. Power $200 (10,000 credits). Teams: $20 a seat a month with 500 shared credits per seat, and $0.04 per add-on credit. Prices exclude tax. Source: kiro.dev/pricing.
+
+**Free tier.** Yes: 50 credits a month, perpetual.
+
+**Standout use case.** Turning a vague feature request into a spec and an ordered task list, then letting the agent execute it with checkpoints.
+
+**Skip it if** you want free-form chat editing, or you need predictable pricing in dollars per task.
+
+**Setup.** Download the IDE from kiro.dev and sign in. Add a steering file to the repo so the agent starts with your conventions.
+
+{% x id="2116222819407118651" /%}
+
+*A Kiro post from October 30 (embedded as-is; we checked that it still resolves). It shows the team is actively posting; it is not a product benchmark.*
+
+## 7. Google Antigravity
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/google-antigravity.png" name="Google Antigravity" size=40 /%}
+
+**What it is.** Google's agent-first development product. The pricing page lists the Antigravity app, CLI, IDE extensions and a Python SDK, with parallel background agents, subagents, browser use and scheduled tasks.
+
+**Who it is for.** Developers who want to try several agents in parallel without paying, and Google AI subscribers who want to use their plan quota for coding.
+
+**Key features.** An individual plan at $0 a month with a baseline quota refreshed weekly, higher quotas on Google AI Pro and Ultra that refresh every 5 hours, an Orchestrator and `/boost` deep reasoning on Pro and above, and Google Cloud deployment for organizations. Models on the free plan include Gemini 4 Hydrogen, Gemini 3.8 Flash, Claude Sonnet 4.6 and Opus 4.6 (thinking) and GPT-OSS-120b, per the pricing page. That page footnotes every free-plan model except Gemini 4 Hydrogen with "Will be removed on November 30, 2026," so the free model list is about to shrink.
+
+{% figure src="https://antigravity.google/og/index.png" alt="Google Antigravity social preview image" caption="Antigravity's social preview image. Source: antigravity.google" /%}
+
+**Pros**
+- Genuinely free to start, with access across app, CLI, IDE extensions and SDK.
+- Multi-model, including third-party models on paid plans.
+- Strong fit if you already pay for Google AI Pro or Ultra.
+
+**Cons**
+- The pages we read do not publish quota numbers; the free plan is "baseline agent quota."
+- We could not find dollar prices for Google AI Pro or Ultra on the Antigravity pages, so we do not quote them.
+- Four of the five free-plan models are marked for removal on November 30, 2026, three days after this article's date, and the newer frontier models (Gemini 4 Neon and Carbon, Claude Sonnet 5.5 and Opus 5.5) sit behind paid Google plans.
+
+**Benefits for a Cursor user.** A no-cost sandbox for agent workflows. For a deeper pricing comparison, AgentPedia's [Cursor vs Antigravity](https://agentpedia.codes/blog/cursor-vs-antigravity) post covers the pairing; this article takes a wider view.
+
+**Pricing, November 27, 2026.** Individuals $0 a month. Google AI Pro and Google AI Ultra add higher quotas and more models (prices not shown on the pages read). Google Cloud: Standard and Plus plans from $30 per seat per month, or pay as you go with no seat fee. Source: antigravity.google/pricing.
+
+**Free tier.** Yes, with a weekly baseline quota.
+
+**Standout use case.** Running parallel background agents and scheduled tasks without a subscription.
+
+**Skip it if** you need guaranteed numbers on how much you can run each day.
+
+**Setup.** Download from antigravity.google, sign in with a personal Google account (the page notes Workspace accounts cannot use the AI Pro and Ultra plans), and pick a workspace.
+
+## 8. Kilo Code
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/kilo-code.png" name="Kilo Code" size=40 /%}
+
+**What it is.** An open-source agentic coding assistant for VS Code, JetBrains and the command line. The Kilo-Org/kilocode repo is MIT-licensed and showed 28,109 stars on November 27, 2026. Its README says the Kilo CLI is a fork of OpenCode.
+
+**Who it is for.** Developers who want any model, open source and no lock-in, including people who run local models through Ollama or LM Studio.
+
+**Key features.** Agentic coding, code completion and generation, Auto Model routing across Frontier, Efficient and Free tiers, bring-your-own-key for Anthropic, OpenAI, Google, Azure, AWS Bedrock and others, a Kilo Gateway with 500+ models across 60+ providers at provider rates with no markup, and team features like shared agents and usage analytics.
+
+**Pros**
+- MIT license and an active contributor base (the top three contributors each have more than 2,000 commits).
+- You pick how to pay for inference: free models, your own keys, local models, pay-as-you-go or a subscription.
+- Works across VS Code, JetBrains and the CLI.
+
+**Cons**
+- You pay for inference separately from the tool, so total cost depends on your model habits.
+- Auto Free routes to free models through Kilo Gateway "where available," so which models you get can change. Check the data terms for the model you use before pointing it at private code.
+- The README says `main` is not accepting new features and new work goes to a `v2` branch, so expect a transition.
+- The pricing page says "Kilo has been acquired by Anaconda." We saw this on Kilo's own page and have not confirmed it elsewhere, so we flag it in our verification notes.
+
+**Benefits for a Cursor user.** The closest open-source, model-agnostic route. If you are leaving Cursor partly over model lock-in or ownership, Kilo gives you your own keys and a free baseline.
+
+**Pricing, November 27, 2026.** Free and open source for individuals (usage billed separately). Kilo Pass $19 a month for a monthly credit amount with up to 50% bonus credits. Teams $15 per user per month with a 14-day Enterprise trial. Enterprise is custom. Kilo Gateway is pay as you go at provider rates. Source: kilo.ai/pricing.
+
+**Free tier.** Yes: the extension is free; use Auto Free, your own keys or local models.
+
+**Standout use case.** Mixing a cheap model for routine edits with a stronger one for hard tasks, from one extension.
+
+**Skip it if** you want a single predictable subscription, or you do not want to manage model choices.
+
+**Setup.** Install the Kilo Code extension from the VS Code or JetBrains marketplace, or install the CLI from kilo.ai, then choose Auto Free, a provider key or a local model.
+
+## 9. JetBrains Junie
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/jetbrains-junie.png" name="JetBrains Junie" size=40 /%}
+
+**What it is.** JetBrains' AI coding agent. Junie's site says the CLI runs in your terminal and "Junie Local runs inside JetBrains IDEs," that it is "built on the IntelliJ IDEA engine" and works "with any model you choose." The JetBrains/junie GitHub repo showed 576 stars on November 27, 2026.
+
+**Who it is for.** Anyone who already works in IntelliJ IDEA, PyCharm, WebStorm or another JetBrains IDE, and teams that want an agent that can also run in CI.
+
+**Key features.** A terminal CLI, an in-IDE agent, a GitHub Action you can install with `/install-github-action` so Junie can respond to issues, pull requests and CI failures, bring-your-own-key support for 10+ models, and update channels (stable, EAP, nightly, experimental) selectable per launch.
+
+**Pros**
+- JetBrains says it is built on the IntelliJ IDEA engine and performs well on SWE-Rebench (vendor claim; we did not verify the benchmark).
+- Free to start with no card, according to the vendor.
+- Works in the terminal and in CI as well as in the IDE.
+
+**Cons**
+- The GitHub repo says "All rights reserved" and use is subject to JetBrains AI service terms, so it is not open source.
+- We could not retrieve a usable paid price list for Junie, so we do not quote one.
+- A smaller public footprint than most tools here (576 GitHub stars for the CLI repo on November 27, 2026).
+
+**Benefits for a Cursor user.** You keep your JetBrains IDE and add an agent. Our catalog's [agent-conf-sync skill](https://agentskills.codes/skills/agent-conf-sync) lists JetBrains Junie among the tools whose configs it regenerates.
+
+**Pricing, November 27, 2026.** Not verified. The vendor says "free to start." We recommend checking junie.jetbrains.com before purchase.
+
+**Free tier.** Yes, per the vendor, with no card or subscription required. Limits not stated on the pages we read.
+
+**Standout use case.** Running an agent against a large Java, Kotlin or Python project that already lives in a JetBrains IDE.
+
+**Skip it if** you do not use JetBrains tools, or need a documented price before you can pilot it.
+
+**Setup** (macOS or Linux):
+
+```bash
+curl -fsSL https://junie.jetbrains.com/install.sh | bash
+junie
+```
+
+The Junie site also lists a Homebrew route: `brew tap jetbrains-junie/junie && brew install junie`.
+
+## 10. Trae
+
+{% logo src="https://raw.githubusercontent.com/devanshug2307/agentskills-blog-content/main/images/best-cursor-alternatives-2026/logos/trae.png" name="Trae" size=40 /%}
+
+**What it is.** The docs describe TRAE as available as a desktop app, a web app and a mobile app. TRAE Desktop has an Agent window and an IDE window; the IDE window supports VS Code extensions and offers IDE mode and SOLO mode. The docs also note that two earlier products, TraeCode and TraeWork, were merged into "the all-new TRAE."
+
+**Who it is for.** Developers who want a lower-priced IDE with a built-in agent and are in a region where paid plans are offered.
+
+**Key features.** CUE (completion, multi-line edits, next-edit prediction, smart imports and renaming for Python, TypeScript and Go), SOLO mode where "AI takes the lead," custom agents with MCP servers, Figma-to-code, Supabase, Vercel and Stripe integrations, Privacy mode and sandboxed command execution.
+
+**Pros**
+- Low entry prices: Pro is $20 a month, and an $8 Lite plan exists in 12 listed countries.
+- Supports VS Code extensions in the IDE window.
+- Mobile and web clients let you start and monitor tasks away from your desk.
+
+**Cons**
+- Paid services are only available in a listed set of countries and regions (the docs list about 70), and Lite is limited to 12 of them.
+- SOLO mode is paid-only (the plan table marks it unavailable on Free).
+- Free plan is Auto mode only with limited completions, and the Free queue is standard rather than fast.
+- We did not find an ownership or open-source statement in the docs pages we read, so we make no claim about either.
+
+**Benefits for a Cursor user.** A lower-priced AI IDE with dollar-based usage you can read: the Pro plan's $20 buys $20 of usage, against $30 for Cursor Premium.
+
+**Pricing, November 27, 2026.** Free $0 (limited allowance). Lite $8 a month ($80 a year) in Thailand, Indonesia, Vietnam, the Philippines, India, Pakistan, Turkey, Malaysia, Brazil, Colombia, Peru and Nigeria only. Pro $20 ($200 a year). Pro+ $60 ($600 a year). Ultra $200 ($2,000 a year). Dollar-usage allowances match the plan price ($8, $20, $60, $200). Concurrent cloud tasks: 2, 2, 10, 15 and 20. On-demand usage is billed in $3 increments. Source: docs.trae.ai plans and billing page.
+
+**Free tier.** Yes: limited monthly allowance, Auto mode only, limited autocompletion, 2 concurrent cloud tasks.
+
+**Standout use case.** Budget-conscious builders who want a SOLO agent that plans, builds, previews and deploys.
+
+**Skip it if** your country is not in the paid-service list, or you need a documented open-source license.
+
+**Setup.** Download TRAE Desktop from trae.ai, choose IDE mode for hands-on editing or SOLO mode for an agent-led run, and import your extensions.
+
+## What about Void?
+
+Void is the open-source "Cursor alternative" that many older roundups still list. We checked it and dropped it: the voideditor/void README says "Void is now deprecated" and that it is "no longer accepting contributions." The code is still available (28,699 stars on November 27, 2026) and the README says it remains "one of the best references to use when forking VS Code," but there is no maintained product to recommend. If you want an open-source editor-style agent today, Kilo Code or Zed are the maintained choices.
+
+
+## Pricing table (as of November 27, 2026)
+
+List prices per month from each vendor's own page. Taxes excluded. "Not verified" means we could not read a current figure.
+
+| Tool | Free | Entry paid | Middle | Top | Team or business |
+| --- | --- | --- | --- | --- | --- |
+| Cursor (for reference) | $0 | Plus $8 (Cursor models only) | Premium $30 | Super $100, Ultra $200 | Teams $30, $100 or $200 a seat |
+| Claude Code | None | Pro $20 ($17 annual) | Max $100 | Ultra $200 | Not covered by the page we read |
+| GitHub Copilot | $0 | Pro $10 | Pro+ $39 | Max $100 | Not covered by the page we read |
+| Windsurf (Devin Desktop) | $0 | Pro $20 | Not listed | Max $200 | Teams $80 (per seat or per team is unclear) |
+| Zed | $0 (Personal) | Pro $10 (includes $5 of tokens) | Not listed | Not listed | Business $30 a seat |
+| Codex | Included on ChatGPT Free, subject to rollout | Included in ChatGPT paid plans | Pro $100 | Pro $200 or $500 | Business, Edu and Enterprise plans |
+| Kiro | $0 (50 credits) | Pro $20 | Pro+ $40, Pro Max $100 | Power $200 | $20 a seat with 500 shared credits |
+| Google Antigravity | $0 (weekly baseline quota) | Google AI Pro (price not on page) | Not listed | Google AI Ultra (price not on page) | Google Cloud plans from $30 a seat |
+| Kilo Code | $0 (inference billed separately) | Kilo Pass $19 | Not listed | Not listed | Teams $15 a user |
+| JetBrains Junie | Vendor says free to start | Not verified | Not verified | Not verified | Not verified |
+| Trae | $0 (limited) | Lite $8 (12 countries), Pro $20 | Pro+ $60 | Ultra $200 | Not covered by the page we read |
+
+Two things stand out. First, the prices cluster: $10 to $20 for a single paid seat, $100 to $200 at the top. Second, the cheapest sticker prices hide different meanings of "usage." Cursor Plus at $8 only runs Cursor's own models, Zed Pro's $10 includes $5 of tokens, and Trae and Kiro both express usage in a unit you can run out of. Compare what the entry plan includes, not just the number.
+
+## Feature matrix
+
+"Yes" means we found it on a vendor page or doc. "Partial" means it exists in a narrower form (stated in the cell notes below the table). "Not verified" means we did not find it on the pages we read, which is not the same as "No."
+
+| Tool | Desktop editor or app | Terminal CLI | MCP support | Bring your own key | Cloud or background agents | Free tier |
+| --- | --- | --- | --- | --- | --- | --- |
+| Claude Code | Partial | Yes | Yes | Not verified | Partial | No |
+| GitHub Copilot | Partial | Yes | Yes (paid plans) | Not verified | Yes | Yes |
+| Windsurf (Devin Desktop) | Yes | Not verified | Not verified | Not verified | Yes | Yes |
+| Zed | Yes | Partial | Yes | Yes | Not verified | Yes |
+| Codex | Partial | Yes | Yes | Yes (API key sessions) | Yes | Yes |
+| Kiro | Yes | Yes | Yes | Not verified | Partial | Yes |
+| Google Antigravity | Yes | Yes | Yes | Not verified | Yes | Yes |
+| Kilo Code | Partial | Yes | Not verified | Yes | Not verified | Yes |
+| JetBrains Junie | Partial | Yes | Not verified | Yes | Partial | Yes (vendor-reported) |
+| Trae | Yes | Not verified | Yes | Not verified | Yes | Yes |
+
+Notes on the "Partial" cells:
+
+- **Claude Code**: the docs list the terminal, IDE extensions, a desktop app and the browser. There is no editor of its own beyond those surfaces.
+- **GitHub Copilot, Codex, Kilo Code, Junie**: these run as extensions or inside an IDE you already have, plus (for Codex) a desktop app.
+- **Zed**: it hosts agent CLIs in Terminal Threads, but it is an editor, not a CLI product.
+- **Kiro**: the pricing page lists Kiro Web among the places a subscription works.
+- **Junie**: a GitHub Action lets it respond to issues and pull requests in CI.
+
+## Head-to-head: which to pick
+
+### Claude Code vs Codex
+
+Both are agent-first, both run in a terminal, and both reach into editors through extensions. Claude Code is sold through Claude Pro, Max and Ultra with no free tier. Codex is included in ChatGPT plans, including a free allowance subject to rollout, and its CLI is Apache-2.0 while the Claude Code repo lists no license. Pick Claude Code if you already pay for Claude and want its subagents and CLAUDE.md memory. Pick Codex if ChatGPT is already on your expense report and you want an open-source CLI you can script. We found no neutral benchmark that settles which agent writes better code, so run each on one real task from your own repo before you commit. We covered the Cursor side of this comparison in [Claude Code vs Cursor](https://agentskills.codes/blog/claude-code-vs-cursor-2026).
+
+### GitHub Copilot vs Windsurf (Devin Desktop)
+
+Copilot asks you to change nothing: it lives in the editor you already use and starts at $10. Windsurf gives you a full editor with unlimited Tab completions and inline edits on the free plan, and Pro is $20. Copilot's agent features draw down GitHub AI Credits, while Windsurf describes its quotas in words ("light," "significantly higher") rather than numbers. Pick Copilot if your team is mixed across VS Code, JetBrains and Visual Studio. Pick Windsurf if you want one editor that feels closest to Cursor and you are happy to move into it.
+
+### Zed vs Kilo Code
+
+Both are about choice. Zed is a native editor with an Agent Panel, bring-your-own-key use on a free plan, and external agents over ACP. Kilo Code is an MIT-licensed extension (plus a CLI) that works with many providers and local models. Pick Zed if you want to leave VS Code behind and run Claude Agent or Codex CLI in a first-party panel. Pick Kilo Code if you want to stay in VS Code or JetBrains and control exactly how you pay for inference. Note that the Kilo repo says `main` is not accepting new features and new work goes to `v2`, so expect changes.
+
+## Skills and MCP servers that work with these tools
+
+Every tool above can be steered by project instruction files, and most support skills or MCP in some form. These entries from the agentskills.codes catalog each returned HTTP 200 on November 27, 2026. We read their catalog descriptions; we did not install or run them for this article.
+
+| Skill | What it does | Why it fits this list |
+| --- | --- | --- |
+| [agent-conf-sync](https://agentskills.codes/skills/agent-conf-sync) | Regenerates configs for Cursor, Claude Code, GitHub Copilot, VS Code, JetBrains Junie and Codex | Keeps one source of truth if you try several tools from this article |
+| [agents-md](https://agentskills.codes/skills/agents-md) | Creates or updates root and nested AGENTS.md files with scoped conventions | AGENTS.md is the shared instruction file the Codex README and several of these tools point to |
+| [agent-md-refactor](https://agentskills.codes/skills/agent-md-refactor) | Splits bloated AGENTS.md, CLAUDE.md or similar files into smaller, linked pieces | Useful when you migrate a long Cursor rules file into another tool |
+| [cursor-rules-config](https://agentskills.codes/skills/cursor-rules-config) | Configures `.cursorrules` for project-specific AI behavior | The starting point if you are moving rules out of Cursor |
+| [codex-claude-loop](https://agentskills.codes/skills/codex-claude-loop) | Has Claude Code plan and implement while Codex validates and reviews | A concrete way to use two of the agents above together |
+| [codex-cli-bridge](https://agentskills.codes/skills/codex-cli-bridge) | Generates AGENTS.md from CLAUDE.md and provides Codex CLI helpers | Bridges Claude Code and Codex without rewriting rules by hand |
+| [create-steering-documents](https://agentskills.codes/skills/create-steering-documents) | Generates steering documents with project standards and workflows | Fits Kiro's steering-file workflow |
+| [kiro-discovery](https://agentskills.codes/skills/kiro-discovery) | Decides whether to update an existing spec, create a new one or split the work | A spec-driven entry point for Kiro-style development |
+| [windsurf-cascade-agents](https://agentskills.codes/skills/windsurf-cascade-agents) | Creates custom Cascade agent configurations for specialized tasks | The Windsurf-specific option in the catalog |
+| [mcp-builder](https://agentskills.codes/skills/mcp-builder) | Guides building well-designed MCP servers | Several tools here support MCP, so one server can serve all of them |
+
+For the underlying file formats, read our [AGENTS.md vs CLAUDE.md vs SKILL.md vs Cursor rules guide](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules). For the free end of this market, see [Best Free AI Coding Agents in 2026](https://agentskills.codes/blog/best-free-ai-coding-agents-2026). For credits and Copilot, see [Copilot AI credits for agent skills](https://agentskills.codes/blog/copilot-ai-credits-for-agent-skills).
+
+## Best for X
+
+| If you are... | Start with | Because |
+| --- | --- | --- |
+| Leaving Cursor but keeping VS Code | GitHub Copilot or Claude Code | Both run as extensions, so there is no new editor to learn |
+| Wanting the closest editor replacement | Windsurf (Devin Desktop) | A full editor with Tab completions and agents |
+| Wanting a native, non-VS Code editor | Zed | Native app, bring your own keys, external agents |
+| Handing off long tasks | Claude Code or Codex | Agent-first, terminal and cloud runs |
+| On a tight budget | Antigravity, Copilot Free or Zed Personal | Free plans with real agent or completion access |
+| Wanting open source | Kilo Code (MIT) or the Codex CLI (Apache-2.0) | Licenses stated in the GitHub repos |
+| A JetBrains user | JetBrains Junie, Copilot or Claude Code | Each has a documented JetBrains path |
+| Running a team with specs and reviews | Kiro | Specs, steering files and shared credit pools |
+| In a region with regional pricing | Trae | Lite plan in 12 listed countries |
+
+## Common mistakes
+
+1. **Comparing sticker prices only.** Cursor Plus at $8 cannot use third-party models, Copilot's agent use draws down credits, and Kiro and Trae meter usage in credits or dollars. Read what the plan includes.
+2. **Assuming "free" means unlimited.** Antigravity's free plan is a weekly baseline quota with no published numbers, and Windsurf's free agent quota is "light."
+3. **Trusting a roundup that still lists Void.** Its README says it is deprecated. Check the repo before you build a workflow on any tool.
+4. **Ignoring where code goes.** Free routes such as Kilo's Auto Free depend on which free models are available, and Cursor's November post shows why you should read incident notes. Check each vendor's data terms before using private code.
+5. **Moving all your rules by hand.** Use a shared AGENTS.md or a sync skill instead of rewriting rules per tool.
+6. **Switching everything at once.** Trial one real task per tool for a week before you move a team.
+
+## Buying and setup checklist
+
+- [ ] List the three tasks you do most in Cursor (for example, multi-file refactors, quick edits, code review).
+- [ ] Pick one editor-based and one agent-based alternative from this list and run the same task in each.
+- [ ] Confirm the plan you would actually buy, and what happens when its allowance runs out.
+- [ ] Check whether the tool is available in your country (Trae and Kiro both note regional limits on some models or plans).
+- [ ] Copy your Cursor rules into AGENTS.md so every tool can read them.
+- [ ] Check the vendor's data and privacy terms before pointing a tool at private code.
+- [ ] Re-check prices on the vendor page the day you buy. Several vendors here have changed plans this year.
+
+## How we evaluated
+
+We did not benchmark these tools. For each product, on November 27, 2026, we read the vendor's pricing page, its docs, and (where it exists) its GitHub repository through the public page, and we recorded plan names, prices, free-tier terms, limits and licenses as they appear. We checked star counts on the same day. We confirmed that every link, image, YouTube video and X post used here resolves, and we confirmed that the YouTube title and the tweet authors match what the article says. We did not install or run any of these tools, and we ran none of the catalog skills.
+
+What this means for you: statements about pricing, plans and licenses are as reliable as the vendor pages on the day we read them, and statements about which tool is "best" are our judgment from those pages, not a measured result. Several pages contradicted themselves or left numbers out (Copilot's third-party agent access, Windsurf's Teams pricing, Antigravity's quotas, Junie's paid prices). Where that happened we said so in the section instead of choosing a side.
+
+We dropped one product, Void, because its own README says it is deprecated and no longer accepting contributions. We kept Windsurf because it is still sold, under the Devin Desktop name.
+
+## FAQ
+
+### What is the best AI code editor like Cursor?
+
+It depends on what you liked about Cursor. If you want an editor that feels similar, Windsurf (now Devin Desktop) is the closest match we found. If you want to stay in VS Code, GitHub Copilot and Claude Code both run as extensions. If you want a native editor, Zed. If you mostly want agents, Claude Code and Codex. This ranking is our judgment, not a benchmark result.
+
+### What is Cursor AI?
+
+Cursor describes itself as "your coding agent for building ambitious software." It is an AI-first code editor and agent, with Cloud Agents, Automations, Bugbot for code review and a code-hosting product called Origin. As of November 27, 2026 it is part of SpaceX, according to Cursor's own August 14 post.
+
+### What are Cursor AI's main features?
+
+From Cursor's own pages and docs: an Agent that edits across files, Cloud Agents and Automations, code review with Bugbot, MCP support, its own models (Grok 4.7, Grok 4.6, Grok 4.5 and Composer 2.5) and, since October, Computer Use for clicking and typing across desktop apps. Plan limits vary, and the Plus plan has no third-party models and no Cloud Agents.
+
+### What is the most reliable AI code editor in 2026?
+
+We cannot name one. We found no neutral reliability benchmark that covers these products, and vendor claims are not comparable. What we can say is which signals are checkable: a maintained product, a published pricing page, a stated license, and a clear ownership line. Every tool here met those tests except where noted, and Void failed the first one.
+
+### Are there free alternatives to Cursor?
+
+Yes. Google Antigravity has a free individual plan with a weekly baseline quota. GitHub Copilot Free gives 2,000 completions a month plus limited agent use. Windsurf's free plan has unlimited Tab and inline edits. Zed's Personal plan is free with your own keys or external agents. Kilo Code is free software with inference billed separately. Kiro gives 50 credits a month. Trae has a limited free plan. Codex is included on ChatGPT Free, subject to rollout. For limits in detail, see our [free coding agents guide](https://agentskills.codes/blog/best-free-ai-coding-agents-2026).
+
+### What is the cheapest paid alternative?
+
+On sticker price: Trae Lite at $8 (12 listed countries only), then GitHub Copilot Pro and Zed Pro at $10, then Windsurf, Kiro, Trae and Claude Code Pro at $20 (Claude Pro is $17 a month if billed annually). For comparison, Cursor Plus is $8 but runs only Cursor's own models. The cheapest plan is not always the cheapest way to finish a task, because included usage differs.
+
+### Which Cursor alternatives are open source?
+
+Kilo Code (MIT license on the GitHub repo) and the Codex CLI (Apache-2.0) are the clearest. Zed's pricing page describes the editor as open source, and its GitHub repo lists the license as "Other." Claude Code's GitHub repo lists no license, and Junie's repo says "All rights reserved." Void was open source but is deprecated.
+
+### Is Void still maintained?
+
+No. The README says "Void is now deprecated" and that it is no longer accepting contributions. The code remains online and had 28,699 GitHub stars on November 27, 2026, but we do not recommend building on it.
+
+### Is Windsurf still called Windsurf?
+
+Windsurf is now Devin Desktop, according to Devin's own post "Windsurf is now Devin Desktop," and the windsurf.com pricing page is titled "Devin Plans and Pricing." The Windsurf name is still widely used in search, so we use both.
+
+### Do I have to leave VS Code to leave Cursor?
+
+No. GitHub Copilot, Claude Code, Codex and Kilo Code all offer VS Code extensions or integrations, according to their docs and README files. Only Zed and Trae's IDE window are separate editors in this list (Trae's IDE window supports VS Code extensions), and Antigravity ships its own app.
+
+### Which alternative is best for JetBrains users?
+
+JetBrains Junie runs inside JetBrains IDEs and as a CLI. GitHub Copilot lists JetBrains IDEs as supported, and Claude Code's docs mention a JetBrains plugin. Kilo Code lists a JetBrains extension, and the Windsurf site says its JetBrains plugin remains available for download. Junie's paid prices were not available on the pages we could read.
+
+### Can I reuse my Cursor rules in other tools?
+
+Mostly. Copy the content into AGENTS.md, which the Codex README and several other tools read, or keep a CLAUDE.md for Claude Code. The catalog skills agent-conf-sync and agent-md-refactor in the block above help with the move, and our [rules-file guide](https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules) explains the formats.
+
+### How often do these prices change?
+
+Often. Cursor's plan structure has changed this year and now labels the old plans "legacy," and Windsurf has been renamed. Treat every number here as valid on November 27, 2026 and re-check the vendor page before buying.
+
+## Sources
+
+All pages were fetched on November 27, 2026 unless another date is shown.
+
+- Cursor pricing: https://cursor.com/pricing and Cursor Models and Pricing docs; features: https://cursor.com/features
+- Cursor on joining SpaceX (post dated August 14, 2026): https://cursor.com/blog/joining-spacex
+- Cursor security incident update (November 13, 2026): https://cursor.com/blog/security-incident-update
+- Cursor on X, Computer Use (October 23, 2026): https://x.com/cursor_ai/status/2113661518780998003 and incident update (November 14, 2026): https://x.com/cursor_ai/status/2121411147714970092
+- Claude pricing: https://claude.com/pricing; Claude Code docs: https://code.claude.com/docs/en/overview; repository (157,246 stars): https://github.com/anthropics/claude-code
+- Claude on X, Claude Code Security (February 20, 2026): https://x.com/claudeai/status/2024907535145468326
+- GitHub Copilot plans: https://github.com/features/copilot/plans
+- Windsurf pricing: https://windsurf.com/pricing; Devin post: https://devin.ai/blog/windsurf-is-now-devin-desktop; Cascade docs: https://docs.windsurf.com
+- Zed pricing: https://zed.dev/pricing; AI docs: https://zed.dev/docs/ai/overview; repository (95,487 stars): https://github.com/zed-industries/zed
+- Zed on X (November 25 and October 29, 2026): https://x.com/zeddotdev/status/2125648215886250301 and https://x.com/zeddotdev/status/2115831160840290394
+- Codex pricing: https://developers.openai.com/codex/pricing; repository (136,670 stars): https://github.com/openai/codex
+- Kiro pricing: https://kiro.dev/pricing; AWS description: https://aws.amazon.com/; Kiro on X (October 30, 2026): https://x.com/kirodotdev/status/2116222819407118651
+- Google Antigravity pricing: https://antigravity.google/pricing; docs: https://antigravity.google/docs/plans and https://antigravity.google/docs/home
+- Kilo Code pricing: https://kilo.ai/pricing; repository (28,109 stars): https://github.com/Kilo-Org/kilocode
+- JetBrains Junie: https://junie.jetbrains.com; repository (576 stars): https://github.com/JetBrains/junie
+- Trae docs, what TRAE is: https://docs.trae.ai/ide/what-is-trae; plans and billing: https://docs.trae.ai/ide/new-plans-and-billing
+- Void: https://github.com/voideditor/void (28,699 stars) and https://voideditor.com
+- YouTube, The Macroscope: https://www.youtube.com/watch?v=8qeym0p969Y
+- agentskills.codes catalog and guides: https://agentskills.codes/skills, https://agentskills.codes/blog/claude-code-vs-cursor-2026, https://agentskills.codes/blog/best-codex-skills-2026, https://agentskills.codes/blog/agents-md-vs-claude-md-vs-skill-md-vs-cursor-rules, https://agentskills.codes/blog/best-free-ai-coding-agents-2026, https://agentskills.codes/blog/copilot-ai-credits-for-agent-skills
+- AgentPedia: https://agentpedia.codes/blog/cursor-vs-antigravity
